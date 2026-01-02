@@ -8,5 +8,18 @@ Rails.application.configure do
   config.active_support.disallowed_deprecation_messages = []
   config.active_record.migration_error = :page_load
   config.active_record.verbose_query_logs = true
+
+  # Raises error for missing translations.
+  # config.i18n.raise_on_missing_translations = true
+
+  # Annotate rendered view with file names.
+  # config.view_annotations_format = :debug
+
+  # Use an evented file watcher to asynchronously detect changes in source code,
+  # routes, locales, etc. This feature depends on the listen gem.
+  # config.file_watcher = ActiveSupport::EventedFileUpdateChecker
+
+  # Ensure changes are picked up in docker
+  config.file_watcher = ActiveSupport::FileUpdateChecker
 end
 

@@ -1,6 +1,4 @@
-module Interactors
-  class BaseInteractor
-    include ServiceObject
-  end
+class BaseInteractor
+  include ServiceObject
 end
 

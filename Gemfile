@@ -6,6 +6,7 @@ ruby '3.0.2'
 gem 'rails', '~> 7.0.0'
 gem 'pg', '~> 1.1'
 gem 'puma', '~> 5.0'
+gem 'rack-cors'
 gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 
 # Business logic & pattern gems

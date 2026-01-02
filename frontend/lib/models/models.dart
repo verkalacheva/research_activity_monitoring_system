@@ -1,16 +1,46 @@
 class Researcher {
-  final int id;
-  final String fullName;
-  final String position;
+  final int? id;
+  final String name;
+  final String surname;
+  final String? secondName;
+  final String? degreeLevel;
+  final int? course;
+  final String? subjectArea;
 
-  Researcher({required this.id, required this.fullName, required this.position});
+  Researcher({
+    this.id,
+    required this.name,
+    required this.surname,
+    this.secondName,
+    this.degreeLevel,
+    this.course,
+    this.subjectArea,
+  });
+
+  String get fullName => '$surname $name ${secondName ?? ''}'.trim();
 
   factory Researcher.fromJson(Map<String, dynamic> json) {
     return Researcher(
       id: json['id'],
-      fullName: json['full_name'],
-      position: json['position'],
+      name: json['name'],
+      surname: json['surname'],
+      secondName: json['second_name'],
+      degreeLevel: json['degree_level'],
+      course: json['course'],
+      subjectArea: json['subject_area'],
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (id != null) 'id': id,
+      'name': name,
+      'surname': surname,
+      'second_name': secondName,
+      'degree_level': degreeLevel,
+      'course': course,
+      'subject_area': subjectArea,
+    };
   }
 }
 

@@ -179,6 +179,8 @@ GEM
       nio4r (~> 2.0)
     racc (1.8.1)
     rack (2.2.21)
+    rack-cors (2.0.2)
+      rack (>= 2.0.0)
     rack-test (2.2.0)
       rack (>= 1.3)
     rails (7.0.10)
@@ -242,6 +244,7 @@ DEPENDENCIES
   interactor
   pg (~> 1.1)
   puma (~> 5.0)
+  rack-cors
   rails (~> 7.0.0)
   tzinfo-data
 
