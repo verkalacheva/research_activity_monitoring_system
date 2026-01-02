@@ -45,16 +45,39 @@ class Researcher {
 }
 
 class Team {
-  final int id;
-  final String name;
+  final int? id;
+  final String title;
+  final int? leaderId;
+  final List<Researcher>? researchers;
 
-  Team({required this.id, required this.name});
+  Team({
+    this.id,
+    required this.title,
+    this.leaderId,
+    this.researchers,
+  });
 
   factory Team.fromJson(Map<String, dynamic> json) {
     return Team(
       id: json['id'],
-      name: json['name'],
+      title: json['title'] ?? '',
+      leaderId: json['leader_id'],
+      researchers: json['researchers'] != null
+          ? (json['researchers'] as List)
+              .map((r) => Researcher.fromJson(r))
+              .toList()
+          : null,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (id != null) 'id': id,
+      'title': title,
+      'leader_id': leaderId,
+      if (researchers != null)
+        'researcher_ids': researchers!.map((r) => r.id).toList(),
+    };
   }
 }
 

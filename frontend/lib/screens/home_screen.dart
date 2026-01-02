@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'entity_list_screen.dart';
 import 'researcher_list_screen.dart';
+import 'team_list_screen.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_dimensions.dart';
@@ -261,6 +262,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => const ResearcherListScreen(),
+                      ),
+                    );
+                    return;
+                  }
+                  if (dir['title'] == 'Проекты') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const TeamListScreen(),
                       ),
                     );
                     return;
