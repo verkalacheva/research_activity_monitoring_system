@@ -50,3 +50,15 @@ achievement_statuses.each do |attrs|
     as.points = attrs[:points]
   end
 end
+
+achievement_participations = [
+  { title: 'Индивидуальный', points: 16.0 },
+  { title: 'Коллективный', points: 8.0 },
+  { title: 'Без упоминания', points: 2.0 }
+]
+
+achievement_participations.each do |attrs|
+  AchievementParticipation.find_or_create_by!(title: attrs[:title]) do |ap|
+    ap.points = attrs[:points]
+  end
+end

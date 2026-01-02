@@ -5,6 +5,7 @@ import 'team_list_screen.dart';
 import 'achievement_type_list_screen.dart';
 import 'achievement_result_list_screen.dart';
 import 'achievement_status_list_screen.dart';
+import 'achievement_participation_list_screen.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_dimensions.dart';
@@ -301,6 +302,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => const AchievementStatusListScreen(),
+                      ),
+                    );
+                    return;
+                  }
+                  if (dir['title'] == 'Типы участия') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AchievementParticipationListScreen(),
                       ),
                     );
                     return;
