@@ -17,6 +17,12 @@ ps:
 logs:
 	$(DC) logs -f
 
+logs-web:
+	$(DC) logs -f web
+
+logs-frontend:
+	$(DC) logs -f frontend
+
 shell:
 	$(DC) exec web bash
 

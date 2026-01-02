@@ -1,15 +1,6 @@
 module Commands
   class BaseCommand
-    include Dry::Monads[:result, :do]
-    extend Dry::Initializer
-
-    def self.call(...)
-      new(...).call
-    end
-
-    def call
-      raise NotImplementedError, "#{self.class} has not implemented method '#{__method__}'"
-    end
+    include ServiceObject
 
     protected
 
