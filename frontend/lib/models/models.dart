@@ -82,16 +82,26 @@ class Team {
 }
 
 class AchievementType {
-  final int id;
+  final int? id;
   final String title;
+  final double? points;
 
-  AchievementType({required this.id, required this.title});
+  AchievementType({this.id, required this.title, this.points});
 
   factory AchievementType.fromJson(Map<String, dynamic> json) {
     return AchievementType(
       id: json['id'],
-      title: json['title'],
+      title: json['title'] ?? '',
+      points: json['points'] != null ? (json['points'] as num).toDouble() : null,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (id != null) 'id': id,
+      'title': title,
+      if (points != null) 'points': points,
+    };
   }
 }
 // ... other models can be added similarly

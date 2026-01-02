@@ -3,6 +3,7 @@ Rails.application.routes.draw do
     namespace :v1 do
       resources :researchers
       resources :teams
+      resources :achievement_types
     end
   end
 end
