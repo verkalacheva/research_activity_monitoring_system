@@ -5,6 +5,7 @@ Rails.application.routes.draw do
       resources :teams
       resources :achievement_types
       resources :achievement_results
+      resources :achievement_statuses
     end
   end
 end
