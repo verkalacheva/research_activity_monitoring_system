@@ -4,6 +4,7 @@ Rails.application.routes.draw do
       resources :researchers
       resources :teams
       resources :achievement_types
+      resources :achievement_results
     end
   end
 end
