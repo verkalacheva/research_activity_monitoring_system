@@ -18,12 +18,20 @@ class _AchievementTypeFormScreenState extends State<AchievementTypeFormScreen> {
 
   late TextEditingController _titleController;
   late TextEditingController _pointsController;
+  List<AchievementField> _fields = [];
 
   @override
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.type?.title ?? '');
     _pointsController = TextEditingController(text: widget.type?.points?.toString() ?? '');
+    _fields = widget.type?.fields.map((f) => AchievementField(
+      id: f.id,
+      title: f.title,
+      fieldType: f.fieldType,
+      isRequired: f.isRequired,
+      options: List.from(f.options),
+    )).toList() ?? [];
   }
 
   @override
@@ -33,12 +41,55 @@ class _AchievementTypeFormScreenState extends State<AchievementTypeFormScreen> {
     super.dispose();
   }
 
+  void _addField() {
+    setState(() {
+      _fields.add(AchievementField(
+        title: '',
+        fieldType: 'string',
+        isRequired: false,
+        options: [],
+      ));
+    });
+  }
+
+  void _removeField(int index) {
+    setState(() {
+      if (_fields[index].id != null) {
+        // Mark for destruction
+        _fields[index] = AchievementField(
+          id: _fields[index].id,
+          title: _fields[index].title,
+          fieldType: _fields[index].fieldType,
+          isRequired: _fields[index].isRequired,
+          options: _fields[index].options,
+          destroy: true,
+        );
+      } else {
+        _fields.removeAt(index);
+      }
+    });
+  }
+
+  void _addOption(int fieldIndex) {
+    setState(() {
+      _fields[fieldIndex].options.add('');
+    });
+  }
+
+  void _removeOption(int fieldIndex, int optionIndex) {
+    setState(() {
+      _fields[fieldIndex].options.removeAt(optionIndex);
+    });
+  }
+
   void _save() async {
     if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
       final type = AchievementType(
         id: widget.type?.id,
         title: _titleController.text,
         points: double.tryParse(_pointsController.text),
+        fields: _fields,
       );
 
       try {
@@ -60,6 +111,8 @@ class _AchievementTypeFormScreenState extends State<AchievementTypeFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final activeFields = _fields.where((f) => f.destroy != true).toList();
+    
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.type == null ? 'Новый тип достижения' : 'Редактирование'),
@@ -69,6 +122,7 @@ class _AchievementTypeFormScreenState extends State<AchievementTypeFormScreen> {
         child: Form(
           key: _formKey,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               TextFormField(
                 controller: _titleController,
@@ -82,9 +136,143 @@ class _AchievementTypeFormScreenState extends State<AchievementTypeFormScreen> {
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
               ),
               const SizedBox(height: AppDimensions.paddingExtraLarge),
-              ElevatedButton(
-                onPressed: _save,
-                child: const Text('Сохранить'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Дополнительные поля', style: Theme.of(context).textTheme.titleMedium),
+                  IconButton(
+                    icon: const Icon(Icons.add_circle_outline),
+                    onPressed: _addField,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ],
+              ),
+              const Divider(),
+              ...List.generate(_fields.length, (index) {
+                if (_fields[index].destroy == true) return const SizedBox.shrink();
+                
+                return Card(
+                  margin: const EdgeInsets.only(bottom: AppDimensions.paddingMedium),
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppDimensions.paddingMedium),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: TextFormField(
+                                initialValue: _fields[index].title,
+                                decoration: const InputDecoration(labelText: 'Название поля'),
+                                validator: (v) => v == null || v.isEmpty ? 'Обязательно' : null,
+                                onSaved: (v) => _fields[index] = AchievementField(
+                                  id: _fields[index].id,
+                                  title: v!,
+                                  fieldType: _fields[index].fieldType,
+                                  isRequired: _fields[index].isRequired,
+                                  options: _fields[index].options,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: AppDimensions.paddingMedium),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline, color: Colors.red),
+                              onPressed: () => _removeField(index),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: DropdownButtonFormField<String>(
+                                value: _fields[index].fieldType,
+                                decoration: const InputDecoration(labelText: 'Тип'),
+                                items: const [
+                                  DropdownMenuItem(value: 'string', child: Text('Текст')),
+                                  DropdownMenuItem(value: 'number', child: Text('Число')),
+                                  DropdownMenuItem(value: 'date', child: Text('Дата')),
+                                  DropdownMenuItem(value: 'boolean', child: Text('Логический')),
+                                  DropdownMenuItem(value: 'select', child: Text('Выпадающий список')),
+                                ],
+                                onChanged: (v) => setState(() {
+                                  _fields[index] = AchievementField(
+                                    id: _fields[index].id,
+                                    title: _fields[index].title,
+                                    fieldType: v!,
+                                    isRequired: _fields[index].isRequired,
+                                    options: _fields[index].options,
+                                  );
+                                }),
+                              ),
+                            ),
+                            const SizedBox(width: AppDimensions.paddingMedium),
+                            Expanded(
+                              child: CheckboxListTile(
+                                title: const Text('Обязательно'),
+                                value: _fields[index].isRequired,
+                                onChanged: (v) => setState(() {
+                                  _fields[index] = AchievementField(
+                                    id: _fields[index].id,
+                                    title: _fields[index].title,
+                                    fieldType: _fields[index].fieldType,
+                                    isRequired: v ?? false,
+                                    options: _fields[index].options,
+                                  );
+                                }),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_fields[index].fieldType == 'select') ...[
+                          const SizedBox(height: AppDimensions.paddingSmall),
+                          const Divider(),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Варианты ответа:'),
+                              TextButton.icon(
+                                icon: const Icon(Icons.add, size: 18),
+                                label: const Text('Добавить'),
+                                onPressed: () => _addOption(index),
+                              ),
+                            ],
+                          ),
+                          ...List.generate(_fields[index].options.length, (optIndex) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: AppDimensions.paddingSmall),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: TextFormField(
+                                      initialValue: _fields[index].options[optIndex],
+                                      decoration: InputDecoration(
+                                        hintText: 'Вариант ${optIndex + 1}',
+                                        isDense: true,
+                                      ),
+                                      onChanged: (v) => _fields[index].options[optIndex] = v,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.close, size: 18, color: Colors.red),
+                                    onPressed: () => _removeOption(index, optIndex),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                        ],
+                      ],
+                    ),
+                  ),
+                );
+              }),
+              const SizedBox(height: AppDimensions.paddingExtraLarge),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _save,
+                  child: const Text('Сохранить'),
+                ),
               ),
             ],
           ),

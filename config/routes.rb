@@ -7,6 +7,7 @@ Rails.application.routes.draw do
       resources :achievement_results
       resources :achievement_statuses
       resources :achievement_participations
+      resources :achievements
     end
   end
 end

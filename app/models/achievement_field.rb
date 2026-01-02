@@ -1,6 +1,5 @@
 class AchievementField < ApplicationRecord
-  has_many :achievement_type_fields
-  has_many :achievement_types, through: :achievement_type_fields
-  has_many :achievement_field_answers
+  belongs_to :achievement_type
+  has_many :achievement_field_answers, dependent: :destroy
 end
 

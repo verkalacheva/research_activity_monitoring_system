@@ -1,0 +1,1111 @@
+ФИО
+Руководитель
+Баллы за достижения
+Баллы за разработку (LISA/МФ ТИнТ)
+Итого
+Сумма баллов
+Количество сотрудников
+Средний вклад
+Грудинин В.А.
+Федоров Д.А.
+Митягин С.А.
+Ватьян А.С.
+Иванов С.В.
+Никитин Н.О.
+Хлопотов М.В.
+Климова А.С.
+Насонов Д.А.
+Отметка времени
+Название достижения
+Дата
+Тип достижения
+Статус
+Результат
+Участие
+Балл
+Достоверность
+Герасимчук Михаил Юрьевич
+Архангельская Елизавета Павловна
+Федорова Мария Витальевна
+Иржанова Юлия Ирназаровна
+Бондарев Юрий Алексеевич
+Поляков Александр Владимирович
+Маракулин Андрей Андреевич
+Усольцева Дарья Дмитриевна
+Дедкова Анастасия Викторовна
+Иванова Дарья Алексеевна
+Калинин Павел Сергеевич
+Киселëв Артëм Сергеевич
+Соболева Софья Дмитриевна
+Гогуев Керам Магометович
+Гаджиева Патина Гасановна
+Кнышев Иван Алексеевич
+Костенко Кирилл Денисович
+Шафиков Максим Азатович
+Грицких Михаил Алексеевич
+Смирнов Даниил Александрович
+Лапшина Юлия Сергеевна
+Смирнов Александр Вячеславович
+Мурашов Никита Александрович
+Перегородиев Данил Евгеньевич
+Ишутина Елизавета
+Вяхирев Иван Олегович
+Московский Антон Александрович
+Саитбаталов Тимергали Радикович
+Анджаев Батнасан Мукобенович
+Гукасян Григорий Камоевич
+Шнайдер Полина Анатольевна
+Исаков Артем Олегович
+Харьковской Роман Русланович
+Зайцева Мария Александровна
+Шперлинг Михаил Антонович
+Ульянова Екатерина Алексеевна
+Рахманов Владислав Алексеевич
+Синюков Лев Владимирович
+Лактионова Елизавета Артемовна
+Шурова Анастасия Вячеславовна
+Кондрашов Игорь Сергеевич
+Гуйван Артем Русланович
+Карташов Игорь Олегович
+Леманов Андрей Александрович
+Терещенко Владислав Витальевич
+Аминов Натиг Сабит оглы
+Мельник Софья Николаевна
+Сандалов Александр Дмитриевич
+Панкова Кристина Сергеевна
+Тамразов Валерий Каренович
+Рыбинская Злата Владиславовна
+Дворников Артем Сергеевич
+Бауков Дмитрий Владиславович
+Зорина Яна Сергеевна
+Миляев Дмитрий Дмитриевич
+Терехова Полина Андреевна
+Гуршина Валентина Павловна
+Черников Кирилл Михайлович
+Балцат Константин Иванович
+Лютый Никита Артемович
+Толстухина Ксения Александровна
+Мищенко Максим Юрьевич
+Трикула Артем Константинович
+Хисаметдинова Динара Наилевна
+Чуприн Сергей Александрович
+Научный руководитель
+Ник на GH
+Репозиторий
+КП-Наличие программного кода
+КП-Наличие и корректная структура README
+КП-Структура и организация директорий
+КП-Тесты
+КП-CI/CD
+КП-Примеры использования
+КП-Соблюдение git-конвенций
+КП-Использование PR
+КП-Использование Issues
+КП-Code Review
+А-Коммиты в проект
+А-Проведение Code Review
+А-Pull Request'ы в проект
+А-Добавление Issue
+Итог
+Терещенко В.В.
+natigaminov
+elizawetta
+https://github.com/aimclub/Edulytica
+Baltsat
+Банах Андрей Максимович
+drlinggg
+https://github.com/drlinggg/population-restorator
+xrenvtomate
+https://github.com/LISA-ITMO/img2latex
+ybondv
+6OVNavi
+aimspot
+Глазыкин Владимир Вадимович
+Keram-Gog
+mgrts
+artemguivan
+inawalent
+https://github.com/LISA-ITMO/Eye_movement/
+DvornikovArtem
+AnastasyaDedkova
+Денисов Илья Алексеевич
+tail-call
+https://github.com/LISA-ITMO/CGT4NN
+Darianchic1
+https://github.com/LISA-ITMO/Nir-service
+JuliaIrzhanova
+artemisak
+https://github.com/LISA-ITMO/rl-task-scheduler
+Ishuachka
+https://github.com/LISA-ITMO/universal-eduplatform
+pashkalini
+https://github.com/LISA-ITMO/e-health_calls_analysis
+Никитин Н.О. (Федоров)
+IGK-arch
+https://github.com/LISA-ITMO/NIR_Ice_clustering
+Киселев Артем Сергеевич
+0rtemk
+KondrashovIgor
+https://github.com/LISA-ITMO/Wrong-transport-scheme-for-CDEK
+JGSnapp
+https://github.com/LISA-ITMO/teept-gui-assistant
+lisalaktionova
+dymonyx
+https://github.com/LISA-ITMO/ai_assistant_bot_tmp
+auto-replier
+Летенков Илья Алексеевич
+Ли Юньчжэнь
+SmaF1-dev
+https://github.com/aimclub/SPARK
+MrMegnis
+Мацкевич Анна Андреевна
+AnnaMatskevich
+https://github.com/LISA-ITMO/Eye_movement
+Митягин С.А. (Федоров Д.А.)
+dimilka
+https://github.com/LISA-ITMO/LISA-Hub
+L33tl
+Nick-Mur
+https://github.com/LISA-ITMO/Information_parsing
+southrussian
+https://github.com/LISA-ITMO/ppo_resource_management
+Плеханова Дарья Денисовна
+Dasha-p
+Sandrolek
+VladislavRkm
+zltrbn
+https://github.com/LISA-ITMO/LLM-AI-Lector
+Рябцева Алина Сергеевна
+nelyuboov
+Timurkas2112
+alex-sandalov
+alex-sandalov-info
+MrL013
+https://github.com/LISA-ITMO/Forest-Inventory-and-Increment-core-data
+Скворцов Денис Александрович
+Goshective
+https://github.com/LISA-ITMO/Communal-Services-ML
+alexsmirnov6
+Sozmeme
+https://github.com/LISA-ITMO/SchoolOCR
+Субботин Александр Станиславович
+ZZISST
+Vl-Tershch
+Ksenia-alex
+Asmoorr
+Ekarerina-Ulyanova
+https://github.com/aimclub/OSA
+Darrifus
+fedorova-m
+RomanKharkovskoy
+https://github.com/LISA-ITMO/ai-assistant
+Царьков Григорий Иванович
+Gr3gorie
+newpotatato
+https://github.com/newpotatato/LISA_get_classification
+Cubigator
+smol-llm-research
+MrAmfix
+Шилоносов Владимир Романович
+vovanshil95
+https://github.com/LISA-ITMO/LLM-resume-moderator
+PolinaShneider
+https://github.com/LISA-ITMO/pdf-questions-generator
+mshperling
+Доклады ППС
+Доклады КМУ
+Студ стартап
+КНВШ
+Стипендия Президента и Правительства
+Федоров Д.А. (лаба КТ)
+Насонов Д. A.
+Улизько Максим
+Терещенко В.В. (лаба КТ)
+Тип
+Значение
+Критерии проекта
+Активность сотрудника
+Хакатон
+Университетский/РИНЦ
+Участие/Без квартиля
+Коллективный/ИТМО
+Наличие программного кода
+Коммиты в проект
+Грант
+Региональный/ВАК
+Спецприз/Q4 (К4)
+Индивидуальный/LISA
+Наличие и корректная структура README
+Проведение Code Review
+Статья
+Всероссийский/RSCI
+3 место/Q3 (К3)
+Без упоминания
+Структура и организация директорий
+Pull Request'ы в проект
+Конференция
+Международный/Scopus/Web of Science
+2 место/Q2 (К2)
+Тесты
+Добавление Issue
+Упоминание в СМИ
+Победа/Q1 (К1 для RSCI)
+CI/CD
+Публикация в СМИ
+Примеры использования
+Стипендия
+Соблюдение git-конвенций
+Стажировка
+Использование PR
+РИД
+Использование Issues
+Наставничество/менторство
+Code Review
+Тип * Статус * Результат * Участие
+Сумма(Значение КП) * Сумма(Значения Активностей)
+Факультет
+Телеграм
+Почта
+Уровень образования
+Курс
+Направление
+Трудоустройство
+ИСУ
+Подпись отчета
+ФПИн
+https://t.me/natigaminov
+natig.aminov@gmail.com
+аспирант
+2.3.5
+сентябрь 2024
+https://t.me/Library_Reader
+mail81025@mail.ru
+магистрант
+11.04.02
+март 2025
+https://t.me/iampank
+lari.x@mail.ru
+бакалавр
+09.03.03
+Балдина Дарья
+внештатный
+ИПКН
+https://t.me/BALTSAT
+obrasovach@mail.ru
+09.04.01
+ФИТиП
+https://t.me/qweqweqweqweqweqweewew
+uuetsukeu@mail.ru
+09.03.02
+https://t.me/dimaxren
+dimanexren@gmail.com
+ФТИИ
+https://t.me/ybondv
+yuriybondarev99@gmail.com
+1.2.1
+Братусь Денис
+Винников Артем
+Волгин Леонид
+https://t.me/opamuosra
+i.viakhirev@mail.ru
+11.03.02
+https://t.me/patineshka33
+patinagadzieva1@gmail.com
+https://t.me/dedinside4ever
+mishagerasimchuk@itmo.ru
+https://t.me/xmx77
+aboutmixsoft@gmail.com
+сентябрь 2024, увл
+https://t.me/YamaNoSenshi
+yamanosenshi@mail.ru
+09.04.03
+https://t.me/m_grts
+m.gritskikh@gmail.com
+2.3.4
+https://t.me/ArtemGuivan
+ag09121617@gmail.com
+https://t.me/rkJey77
+griguk77@gmail.com
+https://t.me/inawalent
+18v.gurshina81@gmail.com
+45.03.04
+февраль 2025
+ШРВ
+https://t.me/dvestisoten
+mysteryrabatt@gmail.com
+https://t.me/dedkova_anastasia
+dedkova_smolensk@mail.ru
+https://t.me/Krokodile8
+denisovila328@gmail.com
+https://t.me/poisonedpoisson
+infernalsaurian@gmail.com
+https://t.me/jelltok
+aMorazor@yandex.ru
+ФТМИ
+https://t.me/Darianchic
+ida30062006@gmail.com
+38.03.05
+https://t.me/jululiett
+julirzhanova@mail.ru
+https://t.me/art_isakov
+art.isakow@yandex.ru
+https://t.me/ishutachkaa
+liz16z2001@mail.ru
+https://t.me/pashkalini
+pashkalini2000@ya.ru
+https://t.me/Igkart
+igor.kartash2019@mail.ru
+https://t.me/Ortem_k
+lakeylive@gmail.com
+https://t.me/loveskillniy
+loveskillniy@gmail.com
+https://t.me/AskAsuka
+igorkondrasev19361@gmail.com
+https://t.me/JgSnapp
+JgSnapp@yandex.ru
+Кручинин Константин
+https://t.me/kaitzv
+laktionovaeliza@yandex.ru
+https://t.me/twentyne
+lapshina.study@mail.ru
+https://t.me/Andrysdf
+Weroset64@gmail.com
+https://t.me/leten_34
+ilya.letenkov5@icloud.com
+https://t.me/liyunzhen
+leeyunchzhen@gmail.com
+https://t.me/SmaF1_1
+nikita_lyutyi@mail.ru
+Манжос Геннадий
+https://t.me/Pizza_eater01
+mr.megnis@mail.ru
+01.03.02
+https://t.me/sonnyaponk
+sofyamelnik2004@gmail.com
+https://t.me/dimimon1
+milyaev.dima2016@yandex.ru
+https://t.me/FL33t1
+maxim.y.mischenko@gmail.com
+https://t.me/moskkovsky
+dkworkwtf@gmail.com
+https://t.me/murior
+nikitka.murashov@gmail.com
+Павел Вавилов
+pankovakriss@yandex.ru
+https://t.me/south_russian
+south.russian@mail.ru
+https://t.me/plekhanovadd
+Plehashadd@gmail.com
+https://t.me/Sandrolek
+sandrolek06@gmail.com
+https://t.me/still_rkm
+vladrachmanov@gmail.com
+https://t.me/zltrbn
+zltrbn@gmail.com
+Русскин Вадим
+https://t.me/nelyuboov
+alinarabceva416@gmail.com
+ФСУиР
+https://t.me/timergal1
+tritopolya2017@gmail.com
+май 2025
+https://t.me/alexandersandalov
+asandalov26@gmail.com
+Сайгадак Алина
+https://t.me/nt_workl
+lev.rock@yandex.ru
+Сбитнев Александр
+https://t.me/Goshective
+den.skvortsoff@gmail.com
+https://t.me/alexsm1213
+alexsmirnov1213@mail.ru
+https://t.me/Sozme
+dsmir1101@mail.ru
+https://t.me/qqaiai
+ssofochk@mail.ru
+https://t.me/CAHEK_aka_zzisst
+zzisst@mail.ru
+https://t.me/vartarnan
+tamrazov01@gmail.com
+https://t.me/polllkkka
+polina-terexova@list.ru
+https://t.me/Vl_Tershch
+vvtereshchenko@itmo.ru
+https://t.me/axsi_i
+kt26112006@mail.ru
+Тихонов Степан
+https://t.me/asmorr
+90kidex90@gmail.com
+Томилов Иван
+https://t.me/thecontrey
+contrey1337@gmail.com
+https://t.me/ulyanova_ekaterina_al
+0ulyanova.ekaterina.4@gmail.com
+март 2025, увл
+https://t.me/Darrifus
+dasha20044002@gmail.com
+https://t.me/fedorovaa_m
+maryfedorova2309@mail.ru
+https://t.me/RomanKharkovskoy
+roman.kharkovskoy@yandex.ru
+https://t.me/dinasaurae
+khdinova@gmail.com
+https://t.me/Gregorie
+grishagti@yandex.ru
+https://t.me/data_unsorted
+kirill242006@yandex.ru
+https://t.me/Ndienxjenh
+sergeychuprin2006@gmail.com
+https://t.me/mramfix
+nat.rud.ufa@gmail.com
+https://t.me/Vlodimirshil
+Vovanshil95@mail.ru
+https://t.me/polina_shneider
+beatrix.linkoln@gmail.com
+https://t.me/mikhailshperling
+mikhailshperling2006@gmail.com
+https://t.me/heymoisez
+anastas1a.shurova@yandex.ru
+Timestamp
+Email address
+Ваше ФИО
+Статус мероприятия
+Полное название мероприятия
+Ссылка на сайт мероприятия
+Дата выступления
+Название темы выступления
+Библиографическая ссылка тезиса
+Документ подтверждающий участие
+Квартиль
+Полное название журнала
+Ссылка на сайт журнала
+Дата публикации
+Полное название статьи
+Библиографическая ссылка
+Подтверждение о принятии
+Полное название хакатона
+Ссылка на сайт хакатона
+Дата окончания хакатона
+Документ подтверждающий участие/победу
+Полное название конкурса
+Ссылка на конкурс стипендий
+Дата публикации списка победителей
+Ссылка на конкурс грантов
+Степень участия
+Юридическое название организации
+Дата начала стажировки
+Документ подтверждающий стажировку
+Название СМИ
+В новости есть упоминание LISA или ИТМО и его подразделения?
+Ссылка на упоминание в СМИ
+Название статьи
+Ссылка на публикацию
+Название РИД
+Дата регистрации РИД
+Документ регистрации РИД
+Название программы
+Ссылка на сайт программы
+Дата начала прохождения программы
+Документ подтверждающий статус наставника/ментора
+Полное описание достижения
+Документ подтверждающий достижение
+Дата получения достижения
+Университетский
+AI Learning Lab
+https://ai-learninglab.itmo.ru/
+https://drive.google.com/open?id=13_2B0mYMqVOEQnJihMtsUomzo71Qnit8
+База знаний экспериментальных сценариев и результатов в решении задач детектирования объектов на изображениях с применением моделей глубокого обучения
+Пятьдесят четвертая (LIV) научная и учебно-методическая конференция ИТМО
+https://pps.itmo.ru/
+Применение визуально-языковых трансформеров для семантического индексирования и улучшения качества рекомендаций
+https://drive.google.com/open?id=1QNl282fNSJSDyzv77B6LLzNfvNRnj2XO
+Создание и анализ различных правил формирования паттернов промптов для больших языковых моделей
+https://drive.google.com/open?id=1AsTPGyMuw0u6TqBvtkdLo726RBYNnA4e
+Обзор существующих инструментов для создания клиентской части приложений на основе больших языковых моделей
+https://drive.google.com/open?id=1jjO5wSQPDpvzlYgj5dF_xLDrhohgzDQY
+Анализ существующих методов и алгоритмов окрестрации больших языковых моделей
+https://drive.google.com/open?id=1HsB-CAwlPbDvs0RV--RGLfg3Vbf3jRqQ
+Другое
+Тренировок по алгоритмам 6.0
+https://yandex.ru/yaintern/training/results
+https://drive.google.com/open?id=1kFfophe4IeIOll8FpNJy_nNV3GEH2Z2j
+Оценка связности разделов научной статьи с применением методов обработки естественного языка
+https://drive.google.com/open?id=1cN9imJWOSQLOg0QhDXDxXCAA25fuCo-c
+Интеллектуальный ассистент преподавателя для формирования цифрового паспорта учащегося в реальном времени учебного процесса
+https://drive.google.com/open?id=1lrlG4D1_XGQ97nwULDQeeBckobIE4K4i
+Всероссийский
+Hack&amp;Change by Changellenge 2024
+https://changellenge.com/
+https://drive.google.com/open?id=1_mpoWigrVr3tShcB-s1DroBijtJM8Kut
+Alfa Hack 2024
+https://alfabank.ru/alfastudents/event/hack/
+https://drive.google.com/open?id=1FxXOcW3ROVuHJSGX8PmmPhu0uZmm5sHl
+Топологический анализ эволюции сложности изображений при распространении по сверточной нейросети
+https://drive.google.com/open?id=17HolVhX4k9xVQvrI8GivhDpqEk5ab1VD
+Международный
+Международная конференция «Молодые профессионалы» 2024
+https://studnauka.itmo.ru/molodie-professionaly
+Компьютерное зрение в управлении медицинской клиникой - автоматизация мониторинга потока пациентов
+https://drive.google.com/open?id=1fe1QkPaUhpvKPEDEjBtK8mB0wd3mYR1V
+https://drive.google.com/open?id=1NlZHjPV4toDCG97776nHa4tCXJEEOF5u
+Сириус.Лето
+https://siriusleto.ru
+https://drive.google.com/open?id=1UNZRaW5O_aF1qEZnxdPWuanO07uUEFw_
+Формирование сценариев пользовательского поведения для обработки изображений в Computer Vision задачах на основе лучших практик
+https://drive.google.com/open?id=1tsaGzhghu-RLZftu6mSE5NAsuiREjaSm
+Межфакультетские учебные курсы МГУ
+Обучение по курсу &quot;Введение в глубокое обучение&quot;
+https://drive.google.com/open?id=1y8uRdsoQHzCANQqx07KRu3dnZGxu0s-p
+https://siriusleto.ru/
+https://drive.google.com/open?id=1rrup3YSD1J9CVdyX1a4OVtGAweSLiRFz
+Применение больших языковых моделей в контексте пациентоориентированного здравоохранения
+https://drive.google.com/open?id=1MyO7j8GNgSO4ubTBwzPZggwHdgDlbkrT
+Эксперт программы &quot;Сириус.ИИ&quot;
+https://sochisirius.ru/obuchenie/distant/smena1894/8751
+https://drive.google.com/open?id=1jSSnmo9UWCJPCe99vITwwRYOwatpmBeF
+3-я Всероссийская конференция молодых ученых «Цифровые технологии в современной медицине» ИТМ Сеченов 2024
+https://itmcongress.ru/Sechenov/
+Реализация пациент-ориентированных сервисов с помощью чат-ботов
+https://drive.google.com/open?id=1tro06DeEHQlrvDJM0tceRQPm9C7ji9J8
+ВАК
+Q1 (К1 для RSCI)
+Современные наукоёмкие технологии
+https://top-technologies.ru/
+ОБЗОР СОВРЕМЕННЫХ ПОДХОДОВ К АВТОМАТИЗАЦИИ РЕЦЕНЗИРОВАНИЯ ТЕКСТОВ СЛОЖНЫХ РАБОТ СТУДЕНТОВ И МОЛОДЫХ УЧЕНЫХ
+Бондарев Ю.А., Терещенко В.В., Марцинкевич В.И., Духанов А.В. ОБЗОР СОВРЕМЕННЫХ ПОДХОДОВ К АВТОМАТИЗАЦИИ РЕЦЕНЗИРОВАНИЯ ТЕКСТОВ СЛОЖНЫХ РАБОТ СТУДЕНТОВ И МОЛОДЫХ УЧЕНЫХ // Современные наукоемкие технологии. 2025. № 6. С. 72-79; URL: https://top-technologies.ru/ru/article/view?id=40424 (дата обращения: 09.07.2025). DOI: https://doi.org/10.17513/snt.40424
+Создание и анализ различных правил формирования паттернов промптов для больших языковых моделей.
+https://drive.google.com/open?id=1N14-NAtE7mTnQE_WBdRqn56an044SBs7
+РИНЦ
+Без квартиля
+Российский журнал телемедицины и электронного здравоохранения
+https://www.jtelemed.ru/journal/vypusk-4-2024
+Реализация пациент-ориентированных сервисов с помощью чат- ботов
+https://doi.org/10.29188/2712-9217-2024-10-4-26-28
+lakeylive@yandex.ru
+Кросс-тестирование учащихся как способ оценки и тренировки когнитивных функций человека
+https://drive.google.com/open?id=1MLiXkIxdBT8_JdoLT5uiFqiv7yr6UUt9
+ООО &quot;Медси Диджитал&quot;
+https://drive.google.com/open?id=1Xv4Zb3t-su6v8U6rrqLLypcMGHyOS0C2
+XIX Санкт-Петербургская международная конференция «Региональная информатика» 2024
+http://www.spoisu.ru/conf/ri2024
+Пациентоориентированность цифровых сервисов здравоохранения в контексте цифрового неравенства
+Калинин, П. С. Пациентоориентированность цифровых сервисов здравоохранения в контексте цифрового неравенства / П. С. Калинин // Региональная информатика (РИ-2024) : Материалы XIX Санкт-Петербургской международной конференции, Санкт-Петербург, 23–25 октября 2024 года. – Санкт-Петербург: Санкт-Петербургское Общество информатики, вычислительной техники, систем связи и управления, 2024. – С. 394-395. – EDN SRUGGE.
+https://drive.google.com/open?id=1ImH_72Fs1MXlnwhqMJ2cbX55SsaHaj-s
+Обзор образовательных чат-ботов на основе больших языковых моделей
+https://drive.google.com/open?id=1YgeMP6JEAXkCnUXyjAuO0URMcuXD_Xz7
+goguev_keram@mail.ru
+Scopus/Web of Science
+25th International Conference on Computational Science Singapore
+https://www.iccs-meeting.org/iccs2025/
+Bayesianization of ML models in Forecasting Small Da-ta Sequences with Missing Values
+https://drive.google.com/open?id=1pbuq1iq3-3KfNOHGv983ogFyaFe-X_-k
+Применение теоретико-игрового метода моделирования в здравоохранении.
+https://drive.google.com/open?id=1-Vcjd-1lSsUfFdzdwwPPs6Km8kyD1eAw
+https://drive.google.com/open?id=1quUAjxuJWHgJURsznJBXKo7okpLXFPvb
+Эволюция страха: как видеоигры учились пугать игроков (от ретро-хоррора до современных AAA).
+https://drive.google.com/open?id=1apGk-7wgqfv8BH1d5oMPD3T6F5y4Vfx9
+227886@niuitmo.ru
+https://drive.google.com/open?id=124vjzv0aFd2xmPvVdhU9oduiycq_Jk-j
+Комбинирование анализа GUI и языковых моделей в контексте интеллектуальных агентов
+https://drive.google.com/open?id=1qH81ERAXTpGv-6AwCLOQ4TOX0yviCl6t
+74ая международная научно студенческая конференция секция «Информационные системы и технологии, автоматизация и управление
+https://astu.org/Uploads/%D0%98%D0%BD%D1%84%D0%BE%D1%80%D0%BC%D0%B0%D1%86%D0%B8%D0%BE%D0%BD%D0%BD%D0%BE%D0%B5%20%D0%BF%D0%B8%D1%81%D1%8C%D0%BC%D0%BE%2074%20%D0%9C%D0%A1%D0%9D%D0%A2%D0%9A.docx?ysclid=mchxliwo4t303597366
+Подсистема «мониторинга и статистики данных» для информационно-аналитической системы управления сетевой активностью сотрудников компании
+https://drive.google.com/open?id=1AE07KNcb2Z3lhU4t6mDBtK3022bxpRtC
+https://drive.google.com/open?id=1ZYPSZNTZ7bfBUM6C1AuRp2cPSNz_PTQu
+https://www.xn--80aa3anexr8c.xn--p1acf/tpost/7evi0082k1-hack-amp-change-by-changellenge-gtgt
+https://drive.google.com/open?id=19Xj92XjC7z3aV7nzm245IL8g2QeH536s
+Q2 (К2)
+Lecture Notes in Computer Science (LNCS)
+https://www.springer.com/gp/computer-science/lncs?srsltid=AfmBOoo_X3q4sOreRh8gpwWnfUwcOL56DAKCkepVOuoTyot_nuKBuith
+Loss Function Role in Processing Sequences with Heavy-Tailed Distributions
+Gritskikh M., Isakov A., Gusarova N., Dobrenko D., Tomilov I., Vatian A. Loss Function Role in Processing Sequences with Heavy-Tailed Distributions. Lecture Notes in Computer Science (including subseries Lecture Notes in Artificial Intelligence and Lecture Notes in Bioinformatics). 2025. Vol. 15346. pp. 361-374.
+Разработка сервиса мониторинга, анализа и прогноза цен на маркетплейсах и в интернет-магазинах.
+https://drive.google.com/open?id=1XEP3k1ZRDOM84N_K9fOJaBZKKwOokyvb
+Анализ существующих методов и алгоритмов оркестрации больших языковых моделей
+https://drive.google.com/open?id=1JuYC1QlL3OWwdZdOxaFo19Xvll-IIcU4
+lapshina.study@mail.com
+Оценка точности, полноты и надежности ответов LLM в образовании
+https://drive.google.com/open?id=1XYEoqc5s3r7-kn8C4-l6JtaMZlfTHUMz
+Корень из ИТМО
+ИТМО
+https://t.me/itmoru/5019
+ФТИИ ИТМО
+https://t.me/dx_itmo/145
+Победа
+https://aiijc.com/
+https://drive.google.com/open?id=1FJvK8qObYryeaRlL1kjPqyvs1qXXzN5A
+Региональный
+3 место
+Окружной хакатон (СФО)  &quot;Цифровой Прорыв. Сезон: Искусственный интеллект&quot; (2024)
+https://hacks-ai.ru/events/1077378
+https://drive.google.com/open?id=1teFME_J-uGFgbESzt08rp_CXYageTTEA
+Международный хакатон &quot;Цифровой Прорыв. Сезон: Искусственный интеллект&quot; (2024)
+https://hacks-ai.ru/events/1077382
+https://drive.google.com/open?id=1R2eQbaHl-jqvnWMRdxljTjrHgt60Yh9l
+Эврестические алгоритмы оценки качества разбора структуры документов для использования в LLM-пайплайнах
+https://drive.google.com/open?id=1IBQZuWg2kKWeqwnHKeFsX9Jl2vXEsNyu
+deperegorodiev@itmo.ru
+Selectel Career Wave
+https://careers.selectel.ru/careerwave_scholarship
+https://drive.google.com/open?id=1blb5xiZyETBX5u1tkW0j3HeTZeqkQAUl
+Программный компонент для реализации функции наград в мультиагентной системе составления расписания в реальном времени с независимой оценкой
+https://drive.google.com/open?id=1S_USxKJuYBcdO_AAovwXuATUkys5DVz1
+Конкурс «Код Искусственный интеллект (очередь VII)» (в рамках выполнения результата федерального проекта «Искусственный интеллект» национальной программы «Цифровая экономика Российской Федерации»)
+https://fasie.ru/press/fund/kod-ai-7-results/
+Коллективный
+https://drive.google.com/open?id=1GMthz9KV2diPQt8Idf74o_k0J0ZkteMi
+Intelligent Data Engineering and Automated Learning – IDEAL 2024
+https://ideal2024.webs.upv.es/
+Cooperative-Competitive Decision-Making in Resource Management: A Reinforcement Learning Perspective
+Isakov A. et al. Cooperative-Competitive Decision-Making in Resource Management: A Reinforcement Learning Perspective //International Conference on Intelligent Data Engineering and Automated Learning. – Cham : Springer Nature Switzerland, 2024. – С. 375-386.
+https://drive.google.com/open?id=1BudNTx61AXzXgseK1p3RGLw9KiCfrAHl
+Конкурс на получение стипендии Президента РФ и Правительства РФ по приоритетным направлениям
+https://xn--d1abicxkmi7j.xn--p1ai/st_prav
+https://drive.google.com/open?id=1ROm84VDj4VEtjXokOslV4oSlSta6h-ev
+Стипендия им. К.А. Валиева для студентов
+https://xn--80ahclcba9ameqejaeh.xn--p1ai/valiev
+https://drive.google.com/open?id=1aUujVVee8fhme9BeGme9JWXwZIPaRBy1
+Как AI-ассистент и кросс-тестирование меняют подход к обучению
+Индивидуальный
+https://vc.ru/ai/1824697-kak-ai-assistent-i-kross-testirovanie-menyayut-podhod-k-obucheniyu
+Альманах научных работ молодых ученых Университета ИТМО
+https://studnauka.itmo.ru/sbornik/almanac
+Сервис для интеллектуального кросс-тестирования учащихся
+https://studnauka.itmo.ru/assets/files/sborniki/sbornik_almanac_2024_tom_2.pdf
+https://drive.google.com/open?id=1QI4_q9vwh4ZUq7h9nPVN2yxi1obXNFF8
+Окружной хакатон (СЗФО)  &quot;Цифровой Прорыв. Сезон: Искусственный интеллект&quot; (2024)
+https://hacks-ai.ru/events/1077380
+https://drive.google.com/open?id=10B0AvBoZDoF2R_GTld5FxElndkyDv14R
+https://drive.google.com/open?id=1qBdjN2i_msOfl6Ov1p6A9uNSv381gNrt
+moskovskywork@yandex.ru
+Обучение модели
+По заданиям, которые мне дали, провел полный анализ по обучению модели на уровне знаниям школьного образования. Используя платформу LLM Explorer, выделил ряд подходящих языковых моделей.
+https://drive.google.com/open?id=1bj6cGAqvc_ItJFe6oz5zQdnZDPbz6irK
+Применение LLM для генерации учебных материалов и тестов
+https://drive.google.com/open?id=1d8IAXT6lCUZkwE-9OFiRcmapcK0JhfWN
+Интеллектуальный ассистент  преподавателя для формирования  цифрового паспорта учащегося  в  реальном времени учебного процесса
+https://drive.google.com/open?id=1waU8LUMrLhRtN1X1BxFDaGUhpEHNn6rI
+https://drive.google.com/open?id=1iSN708JPA2uDOEGDbT-AWF4LtKRJG53t
+https://drive.google.com/open?id=1v8py1DsJSvstJO3oMF681ZWyIFSW0CYZ
+Оценка точности, полноты и надежности ответов LLM в образовании.
+https://drive.google.com/open?id=11B1oFkRqoKqy4yufdwO46_hz5dCM-fhY
+aoisakov@itmo.ru
+Technologies
+https://www.mdpi.com/journal/technologies
+Real-Time Scheduling with Independent Evaluators: Explainable Multi-Agent Approach
+https://doi.org/10.3390/technologies12120259
+npj Biofilms and Microbiomes
+https://www.nature.com/npjbiofilms/
+Personalized prediction of glycemic responses to food in women with diet-treated gestational diabetes: the role of the gut microbiota
+https://doi.org/10.1038/s41522-025-00650-9
+https://link.springer.com/book/10.1007/978-3-031-77731-8
+https://doi.org/10.1007/978-3-031-77731-8_34
+Экономика. Право. Инновации.
+https://ecinn.itmo.ru/
+Объяснимость поведения агентов в системах поддержки принятия клинических решений
+Исаков А. О., Гусарова Н. Ф., Добренко Д. А., Голубев А. А. Объяснимость поведения агентов в системах поддержки принятия клинических решений // Экономика. Право. Инновации. 2024. № 4. С. 50–59. http://dx.doi.org/10.17586/2713-1874-2024-4-50-59.
+Система интеллектуальной поддержки научных исследований с использованием больших языковых моделей
+https://drive.google.com/open?id=1qRGu_nI-8GWsvAod0Lmeaxy9W3P5bWBo
+Объяснимый искусственный интеллект в многоагентных системах: интеграция байесовских сетей, трансформеров и гауссовых процессов
+https://drive.google.com/open?id=1G7xLaWq_as_Eeuwm-3KLMMdcn5NBlL8d
+Методы исследования характеристических свойств нейронных сетей с применением теоретико-игрового подхода
+https://drive.google.com/open?id=1QTAZr_fa4Kxg-gwdKPZF74aZCx3-KMxG
+Gritskikh, M., Isakov, A., Gusarova, N., Dobrenko, D., Tomilov, I., Vatian, A. (2025). Loss Function Role in Processing Sequences with Heavy-Tailed Distributions. In: Julian, V., et al. Intelligent Data Engineering and Automated Learning – IDEAL 2024. IDEAL 2024. Lecture Notes in Computer Science, vol 15346. Springer, Cham. https://doi.org/10.1007/978-3-031-77731-8_33
+Q4 (К4)
+Scientific and Technical Journal of Information Technologies, Mechanics and Optics
+https://ntv.ifmo.ru/en/
+Aspects of organizing game interactions among asymmetric agents using graph neural networks
+Isakov A.O., Peregorodiev D.E., Tomilov I.V., Gusarova N.F., Golubev A.A. Aspects of organizing game interactions among asymmetric agents using graph neural networks. Scientific and Technical Journal of Information Technologies, Mechanics and Optics, 2024, vol. 24, no. 6, pp. 1044–1048 (in Russian). doi: 10.17586/2226-1494-2024-24-6-1044-1048
+mike_shp@mail.ru
+https://drive.google.com/open?id=16CRRYhC5XPn1zyD3ltLSU-Jtdak-MMB2
+GSEA
+gsea.ru
+https://drive.google.com/open?id=1hpTg4PpuqoeAwcBwPfSYoQWgSW5YkeY5
+Международный научно-исследовательский журнал
+https://research-journal.org/
+Индивидуальный цифровой имидж человека как фактор капитализации личности
+Gorelik S.L. Individual digital image of a person as a factor of capitalisation of personality / S.L. Gorelik, V.A. Grudinin, Y. Ishutina // Mezhdunarodny'j nauchno-issledovatel'skij zhurnal [International Research Journal]. — 2024. — №7 (145) . — URL: https://research-journal.org/archive/7-145-2024-july/10.60797/IRJ.2024.145.91 (accessed: 27.02.2025). — DOI: 10.60797/IRJ.2024.145.91
+https://drive.google.com/open?id=1e4PGFzabKl3OW5hFTdQQDIVIXwPmEy5v
+Робастное взаимодействие независимых интеллектуальных агентов на примере игрового сценария
+https://drive.google.com/open?id=1TrvGlKbBpmi5SQhJUARQzfXJ81G4Rl1a
+Обзор методов построения RAG
+https://drive.google.com/open?id=1vXGATkI2jW3AKnbaNT3Z3ecmyYp-j7rV
+Q4
+New Perspectives in Science Education Conference 2025
+https://conference.pixel-online.net/NPSE/conferenceproceedings.php
+Hybrid Intelligence - The Next Stage in the Education Technology
+https://scholar.google.com/citations?view_op=view_citation&amp;hl=it&amp;user=SGybgyEAAAAJ&amp;citation_for_view=SGybgyEAAAAJ:5nxA0vEk-isC
+День НТО для учащихся 5–11 классов
+https://school777.spb.ru/event/665
+https://drive.google.com/open?id=154Odzy8jxRA6RiRGOYmIh3rJDO2-3sO8
+Центр регионального и международного сотрудничества
+https://centercoop.ru/press-tsentr/novosti/den-nto-obedinil-uchashchikhsya-i-pedagogov-iz-19-peterburgskikh-shkol-/
+Комитет по образованию СПб
+https://k-obr.spb.ru/o-komitete/news/87666/
+https://drive.google.com/open?id=1qUuSfJOh5d-Y-1qiW1D8aC2SWQp9JW3u
+«Искусственный интеллект» в образовательном центре «Импульс»,
+https://impulse35.ru/shifts/dekabrskaya-programma-iskusstvennyj-intellekt/
+https://drive.google.com/open?id=1H2AJYS-MMuksfS5wsJCSzMR37D48lw_M
+«Инженеры XXI века», направление «Информационные технологии» в образовательном центре «Импульс»
+https://impulse35.ru/shifts/fevralskaya-proektno-issledovatelskaya-programma-inzhener-xxi-veka/
+https://drive.google.com/open?id=1SD1ZkbT6iESlBQAxMxBvH5SJYZQBdQNJ
+https://drive.google.com/open?id=1Md3wqOfdRdcy1i3HzT73whD3mhK8i3C-
+Имитационные игровые модели сб-оптимального распределения потока мигрантов на базе многоагентных Chip-firing сетей
+https://drive.google.com/open?id=1LPrsJ7Nvu7KkiCf6X_qzn4q8_ko9Oly3
+https://drive.google.com/open?id=1mbKqsmeVc3jcdDQN71_g9nV1RE5MHS3N
+Сборник трудов Международной конференции 2025 Урало-Сибирская конференция по биомедицинской инженерии, радиоэлектронике и информационным технологиям (с)
+https://usbereit.ieeesiberia.org
+Assessment of the Clinic's Digital Maturity Achievement in Terms of Patient-orientation via Call-Center Dialogues Emotional Analysis
+https://drive.google.com/open?id=1zpUQGg-BSzk-UvSXit4UwXptswLzVlWu
+Акселератор ИТМО
+accel.itmo.ru
+https://drive.google.com/open?id=1jS30XuUe-0fuU0ciOjQBJxxzfrIJ6cWS
+Всероссийский хакатон &quot;Цифровой Прорыв. Сезон: Искусственный интеллект&quot; (2024)
+https://hacks-ai.ru/events/1077379
+https://drive.google.com/open?id=1xtjzc4J_67j5xN0fu2texVePIYOJaLPP
+https://drive.google.com/open?id=1lUIALmsk-N6Bk43ILnd5Mdp8zwTqHtCB
+https://drive.google.com/open?id=1Y-0E8-TJNZSyK4iY6zqbrNA2-xD7itK4
+Кластеризация временных  паттернов ледовых условий  в Арктике
+https://drive.google.com/open?id=1Nlvo3LqxXiOc1Z4NdpYfBAZWeQo6NyTj
+Роль функции потерь в обработке последовательностей с распределениями с тяжелыми хвостами
+https://drive.google.com/open?id=14ZVGk0coqVgmQTSyhRbo6WVc6seYMmZS
+https://www.arl.org/event/ideal-2024-conference/
+https://drive.google.com/open?id=1apJjGI6pXBM9xyYnoMMPR2zS_6tZfozk
+ИИ платформа для онлайн разметки и обработки высокотехнологичных медицинских изображений
+12/20/0024
+https://drive.google.com/open?id=1cCW1x_pfzb38mfany_1BGUb4INOwBM_s
+https://drive.google.com/open?id=1YfxG8CCcoPJMZdIsjVs5TLvThmB_P0ir
+https://drive.google.com/open?id=1lELHYKyyOfuhV8hVBRwtCv1pOxCfpk9m
+Использование LLM для решения задачи text2sql с применением технологии RAG для повышения точности генерации и уменьшения галлюцинаций
+https://drive.google.com/open?id=1JvJwixiQeIfJlNzkEEn9Hx1-O9xkP9Ri
+https://drive.google.com/open?id=1Z89kFQJBSL7q9GwiKeHGftQjgAb6qUEG
+Обзор существующих инструментов конвертации пользовательских интерфейсов мобильных приложений.
+https://drive.google.com/open?id=1HiW-hB5b04i5jtJdC639dzsRIUE0RJKr
+Анализ существующих методов и алгоритмов оркестрации больших языковых моделей.
+https://drive.google.com/open?id=1EQGUOF-TdCUh6iKWovgaioTqKpzClTcw
+https://drive.google.com/open?id=1LrQIyG7nJGwZthnZvk4RnGFCDJ9kBXZ7
+Подходы к машинному обучению в задачах классификации городских кварталов на основе геометрий
+https://drive.google.com/open?id=1jtPKqAECcxhXer8UKxi3xjuIfeZOigJV
+Обзор существующих инструментов создания клиентской части приложений с помощью языковых моделей.
+https://drive.google.com/open?id=1grBq6lv1EEGGf8X7nI7tG51ej9-H2xe0
+Эвристические алгоритмы оценки качества разбора структуры документов для использования в LLM-пайплайнах
+https://drive.google.com/open?id=1SMogdkczwurkzawNfIt3sfymRZ7LZYJp
+Анализ визуально- языковых моделей для стилизации портретных фотографий.
+https://drive.google.com/open?id=1VW8BWR1pddSoITbgWz01_z0o8FHGfZzl
+pankovakris@icloud.com
+Клиническая нейрофизиология и нейрореабилитация (КНИН) 2024
+https://xn--h1adjb.xn--p1ai/
+Возможности искусственного интеллекта в анализе изображений
+https://drive.google.com/open?id=1YfDmI-Mjwjjqbzj6ylQtnFPn2NWMMQ4U
+2 место
+https://drive.google.com/open?id=1RW8WPgPaJJ7VprK_0zG_B68j4-DKXiXt
+VK MKE
+Full-time работа на должности «Инженер машинного обучения» в команде рекомендаций социальных сервисов ВК
+https://drive.google.com/open?id=12qmT98RLgtOyXgXKb49NMjFah050xdik
+Научно-исследовательская работа в сфере искусственного интеллекта
+https://sno.itmo.ru/NIRSII
+https://drive.google.com/open?id=1x19o4sI-iTyvs2NpM3yi-qcX1jIwEe4T
+Телеграм “EMG club”
+https://t.me/SPB_EMG_Club/46
+https://drive.google.com/open?id=1koCTmT9Tj4UvOlERhMnWoL43XmIBnPtg
+Уральская проектная смена 2025
+https://schooltalents.urfu.ru/sirius2025/
+https://drive.google.com/open?id=1pH4HCDcXKx6cZaBQ4WU2yuLhIpz3Dkdo
+Возможности и ограничения использования больших языковых моделей для автоматизации процесса документирования при разработке ПО.
+https://drive.google.com/open?id=15baqm_WOFciKhqtUdykDSV4amI1VtEmL
+Конкурс стипендии СНО
+https://sno.itmo.ru/scholarship
+https://drive.google.com/open?id=1FP12Nead3qbOdOhmE2dnlAEHT5UYv82D
+Scientific Open Source Meetup №8
+Спикер на митапе с докладом &quot;Терещенко Владислав — Edulytica: LLM-ассистент для проверки научных работ.&quot;, приз за лучший доклад.
+https://drive.google.com/open?id=1owdt6-qIRr5LQy7uZy1-LGmhyYPUS0lY
+https://drive.google.com/open?id=1yryUg3Bfcbo-uFEZjhLtlyhFKX1EjuE5
+https://drive.google.com/open?id=17lmusYSQCiKr_KCM41QEnZWVBI-TRL1r
+Библиотека для редактирования вспомогательных элементов документов DOCX и ODT
+https://drive.google.com/open?id=1BWsRIrL4FHIjkfTBDO3g6F3Stu4-0TAd
+https://drive.google.com/open?id=15cYaXrW-ZYd23oUN_NVLFvLe_xK7x_aK
+ИТМО News
+https://news.itmo.ru/ru/news/14097/
+Конференция «Возможности женщин в разных странах и регионах мира»
+https://mgimo.ru/about/news/conferences/ii-conf-women-2024/?utm_source=google.com&amp;utm_medium=organic&amp;utm_campaign=google.com&amp;utm_referrer=google.com
+Положение женщин в современном Афганистане
+https://drive.google.com/open?id=18LW_WsOq0LPew9MjAGJKxCTI_HUwMHrl
+https://k-obr.spb.ru/o-komitete/news/86901/
+XVIII Круглый стол Петербургского ЭНМГ-клуба
+https://neurosoft.com/ru/events/xi-kruglyy-stol-peterburgskogo-enmg-kluba
+УЗИ языка и методы машинного обучения
+https://youtu.be/qtHE-5WsxAo
+https://drive.google.com/open?id=1cyd86p7mKQ1CTfMDnoPhCqxNiRvUXk6I
+https://k-obr.spb.ru/o-komitete/news/87669/
+https://drive.google.com/open?id=14KRs-tFu9KoNxqF33CL3-XiRqfDRmITc
+Возможности LLM для построения вопросно-ответных систем: опыт команды RASCAR.
+https://drive.google.com/open?id=19Iimrg-u462cx--Va7q_h3dct8Kv8jPn
+IV международная научная конференция «Женский труд в России и в мире: история, традиции, особенности
+https://www.rea.ru/structure/hs/vyisshaya-shkola-ekonomiki-i-biznesa/deansoffice/kafedra-politicheskoy-ekonomii-i-istorii-ekonomicheskoy-nauki/novosti/49717-jenskiy-trud-v-rossii-i-v-mire--istoriya-traditsii-osobennosti
+Женский оборонный труд во время блокады Ленинграда
+https://drive.google.com/open?id=1cm4WMsvzYOVuXwPBSJEjkD7Xb8UPTVeJ
+Подходы к машинному обучению в задаче классификации городских кварталов на основе геометрий
+https://drive.google.com/open?id=1QKpsp3dkh_y2mCSudLLCucef6QG27DkE
+Дизайн постов лаборатории
+В рамках достижения занимался оформлением постов лаборатории в социальных сетях, дизайном некоторых презентаций и мерча
+https://drive.google.com/open?id=1IL7q0GToFK3j_P8pJCK2TWWLC6gaAqBL
+Развитие СММ в LISA
+Копирайтинг, видение контент-плана, оформление постов
+Оценка когнитивных функций человека посредством анализа речевого и глазодвигательного аппаратов
+https://drive.google.com/open?id=1XRGSzgGcLYCdyZTePA5DFXY9A-YZZK9q
+https://drive.google.com/open?id=1A7sch5gglfimbxcyAHgVpHb7PPVmXOPl
+Утро России
+https://smotrim.ru/video/2892112
+Цифровой прорыв
+https://vk.com/video-176084509_456241483
+konstantin.baltsat@gmail.com
+https://drive.google.com/open?id=1Ma53iLZ050zynPgZPb5blhp4iZXRx1gn
+ВШЭ
+https://www.hse.ru/news/edu/974825227.html
+стипендии имени Евгения Касперского
+https://drive.google.com/open?id=1jHs7dwJA7qnnRg6apm375JXOOZHukPdq
+https://doi.org/10.3390/technologies12120259
+Конкурс Росмолодежь.гранты
+https://fadm.gov.ru/directions/grant/
+https://drive.google.com/open?id=18C7snViUBygBaPAHWLAxH64_6j8tqSj1
+Прохождение акселератора Startup-сезона.
+Прохождение акселератора Startup-сезоны.
+https://drive.google.com/open?id=1r_nUxOqTeHKD4t-oy7SYZ-_8rL3olKsp
+Научная Вселенная
+https://научнаявселенная.рф
+https://drive.google.com/open?id=10rH93OjMn4hz56yF6vSsBh6s3BzywVP6
+Научно-технический вестник информационных технологий, механики и оптики
+https://ntv.ifmo.ru
+Особенности организации игрового взаимодействия асимметричных агентов с использованием графовых нейронных сетей
+Исаков А. О. и др. Особенности организации игрового взаимодействия асимметричных агентов с использованием графовых нейронных сетей //Научно-технический вестник информационных технологий, механики и оптики. – 2024. – Т. 24. – №. 6. – С. 1044-1048.
+https://drive.google.com/open?id=1dzY5EN8dGboh7Y6OcG0PkgMc0m_624bm
+https://hacks-ai.ru
+https://drive.google.com/open?id=1GVNqld8y-B-NF5JSs_7FKayDXwcjO2aE
+Индикатор ру
+https://indicator.ru/mathematics/glavnyi-sovet-ne-boyatsya-i-verit-v-sebya.htm
+Премия выдающихся выпускников национальной технологической олимпиады &quot;Факел НТО&quot;
+https://award.ntcontest.ru/
+https://drive.google.com/open?id=1ebirPSFMJ5N_8wjN78SwlNiZx9pSM0lN
+Альфа-Шанс
+https://alfabank.ru/alfastudents/chance/studentgrants/
+Хакатон Б3
+https://www.xn--3-8sbab1ctg5ax.xn--p1ai/
+https://drive.google.com/open?id=1uoxH1AQpf4_d5EdBA2MfMornYhfUr926
+VTB API hackaton
+https://apihack.vtb.ru/
+https://drive.google.com/open?id=14TMNFZN-gBsDJu-P4YjylE1UyJoKOPob
+Окружной хакатон &quot;Цифровой Прорыв. Сезон: Искусственный интеллект&quot; (2024)
+https://hacks-ai.ru/
+https://drive.google.com/open?id=1rvSKFQJ6ySx-KkM_cZsKG8IpiT0Z4RMZ
+Большая Тройка
+https://big3.ru/media/news/final-khakatona-b3-pobediteli-opredeleny/
+Хакатона Б3
+https://drive.google.com/open?id=1uAd3ghBRTy-dd3nhvJP712sT_H3QaJKK
+XIV Конгресс молодых ученых ИТМО
+https://kmu.itmo.ru/
+Исследование возможностей YandexGPT и GigaChat для объяснения решений искусственного интеллекта
+Перегородиев Д.Е. (науч. рук. Гусарова Н.Ф.) Исследование возможностей yandex gpt и gigachat для объяснения решений искусственного интеллекта // Сборник тезисов докладов конгресса молодых ученых. Электронное издание. – СПб: Университет ИТМО, [2025]. URL: https://kmu.itmo.ru/digests/article/15556
+https://drive.google.com/open?id=1vu4as9nax6XNA8hZWfFQ455GZ43PTT2c
+Применение ансамбля моделей машинного обучения для обнаружения аномалий в сетевом трафике
+Перегородиев Д.Е. (науч. рук. Гусарова Н.Ф.) Применение ансамбля моделей машинного обучения для обнаружения аномалий в сетевом трафике // Сборник тезисов докладов конгресса молодых ученых. Электронное издание. – СПб: Университет ИТМО, [2025]. URL: https://kmu.itmo.ru/digests/article/15553
+https://drive.google.com/open?id=1cYTp5IvSfilPRnJvZiz-4oThcpcls6bs
+Всероссийская (национальная) научно-практическая конференция «Искусственный интеллект и машинное обучение»
+https://ai-ml-conference.bitrix24site.ru
+Применение алгоритма случайного леса для управления водохранилищем: подход к устойчивому принятию решений
+Перегородиев Д.Е., Ермакова М.И. Применение алгоритма случайного леса для управления водохранилищем: подход к устойчивому принятию решений // Искусственный интеллект и машинное обучение: материалы Все- рос. (нац.) науч.-практ. конф., г. Новочеркасск, 24 декабря 2024 г. / Южно-Российский государственный политехнический университет (НПИ) имени М.И. Платова. -Новочеркасск: ЮРГПУ (НПИ)
+https://drive.google.com/open?id=1psGvQdtYwEMyN1ESeJ92vF8GIdl3TL2F
+Оценка эффективности принятия управленческих решений в контексте пациентоориентированности
+Калинин П.С. (науч. рук. Федоров Д.А.) Оценка эффективности принятия управленческих решений в контексте пациентоориентированности // Сборник тезисов докладов конгресса молодых ученых. Электронное издание. – СПб: Университет ИТМО, [2025]. URL: https://kmu.itmo.ru/digests/article/14360
+https://drive.google.com/open?id=1vTl_77WJ_3ByCfPBbR5_owHWYzqii9-6
+2025 IEEE Ural-Siberian Conference on Biomedical Engineering, Radioelectronics and Information Technology (USBEREIT)
+Assessment of the clinic's digital maturity achievement in terms of patient-orientation via call-center dialogues emotional analysis
+https://drive.google.com/open?id=1osOsrbj4BFoBl_erdIbqxShtpNCjE-Y7
+Проектирование telegram чат-бота для отражения функционала ИИ-ассистента
+Рыбинская З.В., Соболева С.Д. (науч. рук. Хлопотов М.В.) Проектирование telegram чат-бота для отражения функционала ИИ-ассистента // Сборник тезисов докладов конгресса молодых ученых. Электронное издание. – СПб: Университет ИТМО, [2025]. URL: https://kmu.itmo.ru/digests/article/14640
+https://drive.google.com/open?id=10YTAAu270OdqRdaxLI4wfC01pW6NPvph
+Теоретико-игровые подходы для образования с применением искусственного интеллекта
+Рыбинская З.В., Табиева А.В., Соболева С.Д. (науч. рук. Москаленко М.А.) Теоретико-игровые подходы для образования с применением искусственного интеллекта // Сборник тезисов докладов конгресса молодых ученых. Электронное издание. – СПб: Университет ИТМО, [2025]. URL: https://kmu.itmo.ru/digests/article/14639
+https://drive.google.com/open?id=1-51hIacOTu_H-fGFsf7bNMIT0IQ59Nfs
+Исследование методов разрешения противоречий между источниками данных в RAG
+Шнайдер П.А., Чернышева А.В., Рыбинская З.В. (науч. рук. Хлопотов М.В.) Исследование методов разрешения противоречий между источниками данных в RAG // Сборник тезисов докладов конгресса молодых ученых. Электронное издание. – СПб: Университет ИТМО, [2025]. URL: https://kmu.itmo.ru/digests/article/14869
+https://drive.google.com/open?id=1DNNE6Py-tjvnL7VoBabLSxtFGaq1vrIZ
+Олимпиада НТО профиля &quot;Искусственный Интеллект&quot;
+https://ntcontest.ru/
+https://drive.google.com/open?id=1APCr42vVHvMALByf861Lj1XdihAPI2WB
+https://drive.google.com/open?id=1nHZ5zxHE7Wis_-0OIGhG_pRkG5RxNxzq
+IT_ONE Cup ML Challenge
+https://it-onecup-mlchallenge.ru/
+https://drive.google.com/open?id=1ZMkeojfVkbhUvNkiQbZRK_Zz98J9High
+Олимпиада DLS 2025
+https://talent.kruzhok.org/events/8362
+https://drive.google.com/open?id=129pmOXqX95UT_NNijLQtOU5W_9O40cvW
+https://drive.google.com/open?id=1q1KqgOo5GfTW_3AMIKx2NSvBTS6df5Kf
+Зайцева М.А., Томилов И.В. (науч. рук. Гусарова Н.Ф.) Методы исследования характеристических свойств нейронных сетей с применением теоретико-игрового подхода // Сборник тезисов докладов конгресса молодых ученых. Электронное издание. – СПб: Университет ИТМО, [2025]. URL: https://kmu.itmo.ru/digests/article/15244
+https://drive.google.com/open?id=1HgJG9Ug8TOntT9b0682jHknxOjy3l0rt
+Альманах научных работ Молодых Ученых Университета ИТМО
+Метод улучшения устойчивости к шуму полносвязных нейронных сетей на основе теории игр
+https://drive.google.com/open?id=1yQBHwoWEWhPHL4xBGB49lMvJJ-juSLtX
+ksenia_lexi@mail.ru
+Обзор существующих инструментов конвертации пользовательских интерфейсов мобильных приложений
+https://drive.google.com/open?id=1mVxE9sXpbmvZ44GUpo-0LoVg5yuyRHVt
+Тренинг предпринимательских компетенций
+Прошел тренинг предпринимательских компетенций в ИТМО
+https://drive.google.com/open?id=1GPEoSCXA-jJ7_o87N7Mm746iMt3PXUMS
+Эвристические алгоритмы оценки качества разбора структуры  документа для использования в LLM-пайплайнах
+https://drive.google.com/open?id=1tJ2qdtpYbzWRzuOi23BznR_2g-c2ubrV
+Инструмент для контроля качества парсинга текстовых документов на основе машинного  обучения.
+https://drive.google.com/open?id=1GvrP-9oYp-HR-lnncCFU_b7jJoWG0Bp1
+Интернет сервис «Цифровые параллели», свидетельство о регистрации - UIN 07N5O-93
+https://drive.google.com/open?id=1FpKLzeSmFbwPOUYBpIDskrfT6md_xb7i
+Glorax, ООО &quot;ЦИФРОВОЙ ГОРОД&quot;, работа
+https://drive.google.com/open?id=1sGVP5N23fQyozKo09vneW3qMSm9CcdwI
+Методы обучения интеллектуального ассистента преподавателя для формирования цифрового имиджа
+Ишутина, Е.Методы обучения интеллектуального ассистента преподавателя для формирования цифрового имиджа / Е. Ишутина, А.В. Шурова, А.В. Поляков, Б.М. Анджаев // Сборник тезисов докладов конгресса молодых ученых. Электронное издание. – СПб: Университет ИТМО, [2025]. URL: https://kmu.itmo.ru/digests/article/15216. - 2025.
+https://drive.google.com/open?id=1V7U7pkRJcQVhayF38i32iXAzHr71B8il
+AI Art Lab
+https://academia.interfax.ru/ru/news/articles/15284/
+https://drive.google.com/open?id=1d7OTmVjFNMdcxSAaiLjFh9Bin2L1vKRY
+Суб-оптимальные распределения миграционных потоков посредством chip-firing сетей как многоагентные игры с применением ии
+https://kmu.itmo.ru/digests/article/15326
+https://drive.google.com/open?id=1uUsROMowOVJ0W7SEmTgjjW2zMIBoz-yQ
+Сборник тезисов докладов конгресса молодых ученых. Электронное издание.
+https://kmu.itmo.ru
+Соревнование Kaggle жанровая классификация фильмов
+https://github.com/LISA-ITMO/Wrong-transport-scheme-for-CDEK/pull/1
+ИТМО.Адаптер
+https://student.itmo.ru/ru/adapter/
+https://drive.google.com/open?id=1i01YU2hX2rGAoF_sLJKUjpRbtzq1M2AL
+Анализ существующих методов применения больших языковых моделей для создания рекомендательных систем
+https://drive.google.com/open?id=10AeKqwslsOpxZ2bMt_WhjNjCicGsCwIE
+Автоматизированная обработка товарных данных из с категоризацией и стандартизацией характеристик
+https://kmu.itmo.ru/digests/article/15952
+https://drive.google.com/open?id=19Rj2jGiPqKdCSqohT6qOKv_s_LgljQhT
+Тренинг
+универсальный тренинг, на котором участники конкурса разрабатывают проекты в сфере технологического предпринимательства. Придумай идею, разработай решение и одержи победу! Вы пройдёте весь путь от генерации идеи до убедительного питча, используя методы дизайн-мышления и сервис-дизайна
+https://drive.google.com/open?id=1ok2NaSql4YNF-cWnIzr2rYj3GRRnQiEp
+XXVI Международная научная конференция &quot;Системы компьютерной математики и их приложения&quot;
+https://skmp.smolgu.ru
+Применение AI-моделей для прогнозирования успеваемости обучающихся
+https://drive.google.com/open?id=1SqC3j7yPImi8exc2-JM2EXS2xMrlOa8f
+https://k-obr.spb.ru/o-komitete/news/92201/?
+Чемпионат «Профессионалы»
+https://pro.firpo.ru/
+https://drive.google.com/open?id=1knzrSHkzzK6GEmcXCmOueahH7zr156dy
+Благодарность
+Благодарность за активное участие в проведение чемпионата по компетенции &quot;Летающая робототехника&quot;
+https://drive.google.com/open?id=1XBfcBjo3mBuAdSulOJmMHVi7WY6Bowpz
+Финалист премии «Факел Национальной технологической олимпиады»
+https://award.ntcontest.ru/
+https://drive.google.com/open?id=1Syp0MKBoF6SEsW45pbKjrHBUJTU-soeJ
+Грант Альфа-Шанс
+https://alfabank.ru/alfafuture/finance/studentgrants/
+https://drive.google.com/open?id=1VAQGTqWZuEvJ2YFMJIxGJQ5WUTj4teF4
+Премия выдающихся выпускников национальной технологической олимпиады
+https://drive.google.com/open?id=12Dw4SORgc4WgC3Dl1WtowaamVD05OKzP
+ИТМО ПИН ВК
+https://vk.com/wall-189033559_745
+https://kmu.itmo.ru/ru
+Применение моделей сегментации для лесотаксации по изображениям, полученным с помощью БПЛА
+https://kmu.itmo.ru/digests/article/15431
+https://drive.google.com/open?id=152cCXssTW2lGWYdGMudwgkOuLksSem7x
+ВК Академия цифровых технологий
+https://m.vk.com/wall-160009980_15688?from=group
+ОБЗОР ОБРАЗОВАТЕЛЬНЫХ ЧАТ-БОТОВ НА ОСНОВЕ БОЛЬШИХ ЯЗЫКОВЫХ МОДЕЛЕЙ
+https://drive.google.com/open?id=1JPPOFOBN0rsSQ-w1PW6cQR2X6a4dLh0T
+Разработка и оптимизация LLM-сервиса для консультирования пользователей по эксплуатации платформы — сравнение подходов проектирования вопросно-ответных систем
+https://kmu.itmo.ru/digests/article/15697
+https://drive.google.com/open?id=10n4hcN9FqghKb0CG-kauPy501VTW1I7B
+LISA
+https://news.itmo.ru/ru/new/14328/
+Разработка API для распознавания структурированных данных титульных листов всероссийских проверочных работ с применением нейросетевых методов
+https://kmu.itmo.ru/digests/article/15643
+https://drive.google.com/open?id=1y5DmepgXG_9MH1cZ1UknaWefSQC4jHZn
+УНИВЕРСИТЕТ ИТМО
+https://drive.google.com/open?id=1X4SYja_t-0OrtaB0gMHhUd_3Twu_1IGD
+Роль функции потерь в обработке последовательностей с тяжелыми хвостами
+https://drive.google.com/open?id=1_VEW-CniVeROGMUQnnwBky5vPpdHcyv-
+https://studnauka.itmo.ru/sbornik/kmu
+https://drive.google.com/open?id=1iKeKq61IBL3KFFpcHM2vZ5Uw-0z7cfbf
+Современные наукоемкие технологии
+https://top-technologies.ru
+Обзор современных подходов к автоматизации рецензирования текстов сложных работ студентов и молодых ученых
+Обзор современных подходов к автоматизации рецензирования текстов сложных работ студентов и молодых ученых Бондарев Ю.А., Терещенко В.В., Марцинкевич В.И., Духанов А.В.
+Конкурс грантов для студентов вузов, расположенных на территории Санкт-Петербурга, аспирантов вузов, отраслевых и академических институтов, расположенных на территории Санкт-Петербурга
+http://knvsh.gov.spb.ru/contests/view/455/
+https://drive.google.com/open?id=1BIsYCJ8zWY93oSjxM9JsemX-D20fnGF9
+International Conference on Artificial Intelligence, Computer, Data Sciences and Applications
+https://acdsa.org/index.php
+Vladislav Tereshchenko, Viacheslav Martsinkevich, Natig Aminov, Alexey Dukhanov The use of LLM to identify goals and objectives from the text of degree thesis using fine-tuning and prompt-engineering methods // International Conference on Artificial Intelligence, Computer, Data Sciences and Applications, 2025, pp. in press
+https://drive.google.com/open?id=15CzYwTbdUb4R75TfDEyjhK3jMZi2D7pz
+Благодарность за участие в экспертном опросе о проникновении практик искусственного интеллекта в повседневнос ть жи телей мегаполисов России
+https://drive.google.com/open?id=1lHZcNESxvKCFv_PgOYbkQJ8BdAjLBLVp
+Собака.ру
+https://www.sobaka.ru/entertainment/art/200182
+Спецприз
+Внедрейд
+https://vnedreid.orionsoft.ru/
+https://drive.google.com/open?id=1py8ju_-wDe9pUaFlh4qEK13GCkxAsoyc
+https://drive.google.com/open?id=1ZFJzUa1hHZJCU-SgW2JDr7aYLXELW0aI
+Петербургский международный экономический форум
+https://forumspb.com/?lang=ru
+участник без выступления
+https://drive.google.com/open?id=1e35Dq-xhPpMtjmq-3Acnue-IGLnXvUoX
+Старт-1
+https://www.fasie.ru/programs/programma-start/#konkursu
+https://drive.google.com/open?id=1XonMZpspbyq84dsTzIqEFBxNXb6V2x_j
+Командный
+ИИ-решение для инвестирования в объекты культурного наследия
+https://drive.google.com/open?id=17lcoRvlhjmBJJ35Xyieuku3wVeL17bHH
+ДОМ.РФ
+https://дом.рф/media/news/uchastniki-uralskoy-proektnoy-smeny-v-siriuse-razrabotayut-ii-reshenie-dlya-portala-nasledie-dom-rf/
+11th International Conference on e-Society, e-Learning and e-Technologies (ICSLT 2025)
+https://www.icslt.org/
+Empowering University AI Assistants: Improving LLM Performance with RAG and Self-Evaluation
+Сертификат участника пока не прислали, но, так как близится отчетный период, в качестве доказательства загружу конференционную программу. Сертификат дошлю позже, как дадут
+https://drive.google.com/open?id=1qhao6xUZbN4uHHadzwt-Mw1LF3YqRHL9
+International Conference on Artificial Intelligence, Computer, Data Sciences and Applications 2025
+https://acdsa.org
+The use of LLM to identify goals and objectives from the text of degree thesis using fine-tuning and prompt-engineering methods // International Conference on Artificial Intelligence, Computer, Data Sciences and Applications
+https://drive.google.com/open?id=1FgLtauOLrp01Z7ChFhac6Bz_XpS0Ev3y
+Внутренний Хакатон Циан
+https://companies.rbc.ru/news/5Ss8526P9n/tsian-provel-vnutrennij-hakaton-luchshie-idei-stanut-chastyu-platformyi/
+https://drive.google.com/open?id=1kbmI3RXVz0geOUYWtAvYsKjSWQqVCbcE
+Участие в лаборатории по воссозданию панно совместно с Yandex Cloud и Газпром + особая благодарность
+https://drive.google.com/open?id=1gmGwYX8MEXv9IrFX3mkfF_62j3I-bHSk
+Поиск эффективного метода детекции элемента GUI по его признакам.
+https://kmu.itmo.ru/digests/article/15613
+https://drive.google.com/open?id=1frCNPa9Nyj-MMWk4uyh6IDzmQQSPsI8i
+74ая Международная научно студенческая конференция секция «информационные системы и технологии, автоматизация и управление»
+https://astu.org/Uploads/%D0%98%D0%BD%D1%84%D0%BE%D1%80%D0%BC%D0%B0%D1%86%D0%B8%D0%BE%D0%BD%D0%BD%D0%BE%D0%B5%20%D0%BF%D0%B8%D1%81%D1%8C%D0%BC%D0%BE%2074%20%D0%9C%D0%A1%D0%9D%D0%A2%D0%9A.docx?ysclid=mchx6f59dq919464738
+https://drive.google.com/open?id=1kqo7XlkuL0R8qNtugcRy4e8lD-GSOQGH
+Анализ эффективности интеграции различных архитектур в обучаемые модели для повышения точности предсказаний и интерпретируемости решений в условиях ограниченного и неполного объема
+https://drive.google.com/open?id=1E4hHvzoX_eVAXfA8v7Wb3ygiu_-R3aY_
+https://drive.google.com/open?id=1IoBB2hX2qLdiccam7Mq8-2DxlyHZA_a6
+17th International Conference on e-Health Lisbon Portugal
+https://www.ehealth-conf.org/
+https://drive.google.com/open?id=1FBTtSZTcUDWM2AA2AajEcITTgUPDPvY-
+https://drive.google.com/open?id=1SL1xRWUbO4g6yEc9Aa9N5BXGoS4_rdzi
+Телеканал МИР
+https://mir24.tv/news/16638390/nejroseti-pomogut-vosstanovit-utrachennye-panno-zubovskogo-fligelya-ekaterininskogo-dvorca
+lapshina121@bk.ru
+ООО «КНС Групп»
+https://drive.google.com/open?id=1aHyp9Xxvb6zQrT7liWvTlABkz5h9jqQF
+Повышенная государственная стипендия
+https://student.itmo.ru/ru/scholarship_up/
+https://drive.google.com/open?id=1xD3te8eCDPlQip8hGyM-MVvjlI2c9bA_
+Lecture Notes in Networks and Systems
+https://www.springer.com/series/15179?srsltid=AfmBOorcBCd2BNeIIz4_wwLVtmFT_EjjXMVnI25Jhh30aFJCwisZhtWI
+Empowering University AI Assistants: Improving LLM Performance with RAG and Self-Evaluation (SUBMITTED)
+https://drive.google.com/open?id=14FPzOIvUMFaW72_KGjSqc8E3XNF6Zsxg
+Текущее место работы во внешних организациях
+Техник сортировочного центра Софийская, ООО СДЭК-Глобал
+Текущее или новое место работы в ИТМО
+Национальный центр когнитивных разработок, направление алгоритмов принятия решений в условиях неопределенности
+Продолжение работы в ИТМО по ранее выбранной тематике
+Приём на должность лаборанта в центр когнитивных разработок
+https://drive.google.com/open?id=1BdMtc58a4nuh_wZfrBQqpQ3AHTZsvzLr
+https://drive.google.com/open?id=1OAbEN1SKl2CDImIGSrB0HdND8935qXi1
+УМНИК-2025
+https://fasie.ru/press/fund/umnik-2025/
+https://drive.google.com/open?id=1LzJB34NuR-l_fTRNBn9nL8LSKLrhOlVb

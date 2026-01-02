@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_01_02_000000) do
+ActiveRecord::Schema[7.0].define(version: 2026_01_02_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -19,7 +19,9 @@ ActiveRecord::Schema[7.0].define(version: 2026_01_02_000000) do
     t.text "value"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "achievement_id", null: false
     t.index ["achievement_field_id"], name: "index_achievement_field_answers_on_achievement_field_id"
+    t.index ["achievement_id"], name: "index_achievement_field_answers_on_achievement_id"
   end
 
   create_table "achievement_fields", force: :cascade do |t|
@@ -27,6 +29,10 @@ ActiveRecord::Schema[7.0].define(version: 2026_01_02_000000) do
     t.text "field_type"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "is_required", default: false
+    t.bigint "achievement_type_id"
+    t.jsonb "options", default: []
+    t.index ["achievement_type_id"], name: "index_achievement_fields_on_achievement_type_id"
   end
 
   create_table "achievement_participations", force: :cascade do |t|
@@ -50,15 +56,6 @@ ActiveRecord::Schema[7.0].define(version: 2026_01_02_000000) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "achievement_type_fields", force: :cascade do |t|
-    t.bigint "achievement_type_id", null: false
-    t.bigint "achievement_field_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["achievement_field_id"], name: "index_achievement_type_fields_on_achievement_field_id"
-    t.index ["achievement_type_id"], name: "index_achievement_type_fields_on_achievement_type_id"
-  end
-
   create_table "achievement_types", force: :cascade do |t|
     t.text "title"
     t.float "points"
@@ -72,10 +69,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_01_02_000000) do
     t.bigint "achievement_result_id", null: false
     t.bigint "achievement_participation_id", null: false
     t.float "points"
-    t.bigint "achievement_field_answer_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["achievement_field_answer_id"], name: "index_achievements_on_achievement_field_answer_id"
     t.index ["achievement_participation_id"], name: "index_achievements_on_achievement_participation_id"
     t.index ["achievement_result_id"], name: "index_achievements_on_achievement_result_id"
     t.index ["achievement_status_id"], name: "index_achievements_on_achievement_status_id"
@@ -120,9 +115,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_01_02_000000) do
   end
 
   add_foreign_key "achievement_field_answers", "achievement_fields"
-  add_foreign_key "achievement_type_fields", "achievement_fields"
-  add_foreign_key "achievement_type_fields", "achievement_types"
-  add_foreign_key "achievements", "achievement_field_answers"
+  add_foreign_key "achievement_field_answers", "achievements"
+  add_foreign_key "achievement_fields", "achievement_types"
   add_foreign_key "achievements", "achievement_participations"
   add_foreign_key "achievements", "achievement_results"
   add_foreign_key "achievements", "achievement_statuses"

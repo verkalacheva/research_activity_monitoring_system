@@ -81,18 +81,67 @@ class Team {
   }
 }
 
+class AchievementField {
+  final int? id;
+  final String title;
+  final String fieldType;
+  final bool isRequired;
+  final List<String> options;
+  final bool? destroy;
+
+  AchievementField({
+    this.id,
+    required this.title,
+    required this.fieldType,
+    required this.isRequired,
+    this.options = const [],
+    this.destroy,
+  });
+
+  factory AchievementField.fromJson(Map<String, dynamic> json) {
+    return AchievementField(
+      id: json['id'],
+      title: json['title'] ?? '',
+      fieldType: json['field_type'] ?? 'string',
+      isRequired: json['is_required'] ?? false,
+      options: (json['options'] as List?)?.map((e) => e.toString()).toList() ?? [],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (id != null) 'id': id,
+      'title': title,
+      'field_type': fieldType,
+      'is_required': isRequired,
+      'options': options,
+      if (destroy != null) '_destroy': destroy,
+    };
+  }
+}
+
 class AchievementType {
   final int? id;
   final String title;
   final double? points;
+  final List<AchievementField> fields;
 
-  AchievementType({this.id, required this.title, this.points});
+  AchievementType({
+    this.id,
+    required this.title,
+    this.points,
+    this.fields = const [],
+  });
 
   factory AchievementType.fromJson(Map<String, dynamic> json) {
     return AchievementType(
       id: json['id'],
       title: json['title'] ?? '',
       points: json['points'] != null ? (json['points'] as num).toDouble() : null,
+      fields: (json['achievement_fields'] as List?)
+              ?.map((f) => AchievementField.fromJson(f))
+              .toList() ??
+          [],
     );
   }
 
@@ -101,6 +150,7 @@ class AchievementType {
       if (id != null) 'id': id,
       'title': title,
       if (points != null) 'points': points,
+      'achievement_fields_attributes': fields.map((f) => f.toJson()).toList(),
     };
   }
 }
