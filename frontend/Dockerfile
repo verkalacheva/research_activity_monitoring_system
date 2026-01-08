@@ -6,8 +6,11 @@ WORKDIR /app
 # Enable web support
 RUN flutter config --enable-web
 
-COPY . .
+# Copy only pubspec.yaml first to leverage caching for pub get
+COPY pubspec.yaml ./
 RUN flutter pub get
+
+COPY . .
 RUN flutter create . --platforms web
 RUN flutter build web --release
 

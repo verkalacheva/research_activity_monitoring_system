@@ -1,6 +1,6 @@
 .PHONY: build up down ps logs shell rails-c db-migrate db-setup
 
-DC = DOCKER_HOST=unix:///run/docker.sock docker-compose
+DC = COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 DOCKER_HOST=unix:///run/docker.sock docker-compose
 
 build:
 	$(DC) build

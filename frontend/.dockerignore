@@ -1,0 +1,11 @@
+.git
+.gitignore
+build/
+.dart_tool/
+.packages
+pubspec.lock
+.dockerignore
+Dockerfile
+*.log
+*.swp
+
