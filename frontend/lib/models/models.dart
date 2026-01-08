@@ -6,6 +6,7 @@ class Researcher {
   final String? degreeLevel;
   final int? course;
   final String? subjectArea;
+  final List<Achievement> achievements;
 
   Researcher({
     this.id,
@@ -15,6 +16,7 @@ class Researcher {
     this.degreeLevel,
     this.course,
     this.subjectArea,
+    this.achievements = const [],
   });
 
   String get fullName => '$surname $name ${secondName ?? ''}'.trim();
@@ -28,6 +30,10 @@ class Researcher {
       degreeLevel: json['degree_level'],
       course: json['course'],
       subjectArea: json['subject_area'],
+      achievements: (json['achievements'] as List?)
+              ?.map((a) => Achievement.fromJson(a))
+              .toList() ??
+          [],
     );
   }
 
@@ -40,6 +46,93 @@ class Researcher {
       'degree_level': degreeLevel,
       'course': course,
       'subject_area': subjectArea,
+    };
+  }
+}
+
+class AchievementFieldAnswer {
+  final int? id;
+  final int achievementFieldId;
+  final String value;
+
+  AchievementFieldAnswer({
+    this.id,
+    required this.achievementFieldId,
+    required this.value,
+  });
+
+  factory AchievementFieldAnswer.fromJson(Map<String, dynamic> json) {
+    return AchievementFieldAnswer(
+      id: json['id'],
+      achievementFieldId: json['achievement_field_id'],
+      value: json['value']?.toString() ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (id != null) 'id': id,
+      'achievement_field_id': achievementFieldId,
+      'value': value,
+    };
+  }
+}
+
+class Achievement {
+  final int? id;
+  final int achievementTypeId;
+  final int achievementStatusId;
+  final int achievementResultId;
+  final int achievementParticipationId;
+  final double? points;
+  final List<AchievementFieldAnswer> answers;
+  final AchievementType? type;
+  final AchievementStatus? status;
+  final AchievementResult? result;
+  final AchievementParticipation? participation;
+
+  Achievement({
+    this.id,
+    required this.achievementTypeId,
+    required this.achievementStatusId,
+    required this.achievementResultId,
+    required this.achievementParticipationId,
+    this.points,
+    this.answers = const [],
+    this.type,
+    this.status,
+    this.result,
+    this.participation,
+  });
+
+  factory Achievement.fromJson(Map<String, dynamic> json) {
+    return Achievement(
+      id: json['id'],
+      achievementTypeId: json['achievement_type_id'],
+      achievementStatusId: json['achievement_status_id'],
+      achievementResultId: json['achievement_result_id'],
+      achievementParticipationId: json['achievement_participation_id'],
+      points: json['points'] != null ? (json['points'] as num).toDouble() : null,
+      answers: (json['achievement_field_answers'] as List?)
+              ?.map((a) => AchievementFieldAnswer.fromJson(a))
+              .toList() ??
+          [],
+      type: json['achievement_type'] != null ? AchievementType.fromJson(json['achievement_type']) : null,
+      status: json['achievement_status'] != null ? AchievementStatus.fromJson(json['achievement_status']) : null,
+      result: json['achievement_result'] != null ? AchievementResult.fromJson(json['achievement_result']) : null,
+      participation: json['achievement_participation'] != null ? AchievementParticipation.fromJson(json['achievement_participation']) : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (id != null) 'id': id,
+      'achievement_type_id': achievementTypeId,
+      'achievement_status_id': achievementStatusId,
+      'achievement_result_id': achievementResultId,
+      'achievement_participation_id': achievementParticipationId,
+      if (points != null) 'points': points,
+      'achievement_field_answers_attributes': answers.map((a) => a.toJson()).toList(),
     };
   }
 }
@@ -124,12 +217,14 @@ class AchievementType {
   final int? id;
   final String title;
   final double? points;
+  final String? iconName;
   final List<AchievementField> fields;
 
   AchievementType({
     this.id,
     required this.title,
     this.points,
+    this.iconName,
     this.fields = const [],
   });
 
@@ -138,6 +233,7 @@ class AchievementType {
       id: json['id'],
       title: json['title'] ?? '',
       points: json['points'] != null ? (json['points'] as num).toDouble() : null,
+      iconName: json['icon_name'],
       fields: (json['achievement_fields'] as List?)
               ?.map((f) => AchievementField.fromJson(f))
               .toList() ??
@@ -150,6 +246,7 @@ class AchievementType {
       if (id != null) 'id': id,
       'title': title,
       if (points != null) 'points': points,
+      if (iconName != null) 'icon_name': iconName,
       'achievement_fields_attributes': fields.map((f) => f.toJson()).toList(),
     };
   }

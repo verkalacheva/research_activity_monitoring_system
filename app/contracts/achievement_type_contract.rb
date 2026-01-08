@@ -3,6 +3,7 @@ class AchievementTypeContract < BaseContract
     optional(:id).filled(:integer)
     required(:title).filled(:string)
     optional(:points).maybe(:float)
+    optional(:icon_name).maybe(:string)
     optional(:achievement_fields_attributes).array(:hash) do
       optional(:id).filled(:integer)
       required(:title).filled(:string)

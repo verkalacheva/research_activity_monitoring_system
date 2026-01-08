@@ -7,7 +7,11 @@ module Api
 
       def show
         researcher = Researcher.find(params[:id])
-        render json: researcher
+        render json: researcher, include: {
+          achievements: {
+            include: [:achievement_type, :achievement_status, :achievement_result, :achievement_participation, :achievement_field_answers]
+          }
+        }
       rescue ActiveRecord::RecordNotFound
         render_failure({ type: :not_found, message: "Researcher not found" })
       end

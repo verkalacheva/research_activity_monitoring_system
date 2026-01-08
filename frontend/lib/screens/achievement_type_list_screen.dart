@@ -4,6 +4,7 @@ import '../services/achievement_type_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_dimensions.dart';
+import '../utils/icon_helper.dart';
 import 'achievement_type_form_screen.dart';
 import 'achievement_type_details_screen.dart';
 
@@ -55,6 +56,14 @@ class _AchievementTypeListScreenState extends State<AchievementTypeListScreen> {
             itemBuilder: (context, index) {
               final type = types[index];
               return ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(IconHelper.getIcon(type.iconName), color: AppColors.primary),
+                ),
                 title: Text(type.title, style: AppTextStyles.body),
                 subtitle: Text('Баллы: ${type.points ?? 0}', style: AppTextStyles.caption),
                 onTap: () {

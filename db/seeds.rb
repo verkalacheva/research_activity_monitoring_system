@@ -3,51 +3,51 @@
 
 # Achievement Types
 achievement_types_data = [
-  { title: 'Статья', points: 9.0, fields: [
+  { title: 'Статья', points: 9.0, icon_name: 'article', fields: [
     { title: 'Полное название журнала', field_type: 'string', is_required: true },
     { title: 'Дата публикации', field_type: 'date', is_required: true },
     { title: 'Полное название статьи', field_type: 'string', is_required: true },
     { title: 'Библиографическая ссылка', field_type: 'string', is_required: false }
   ]},
-  { title: 'Грант', points: 9.0, fields: [
+  { title: 'Грант', points: 9.0, icon_name: 'grant', fields: [
     { title: 'Ссылка на конкурс грантов', field_type: 'string', is_required: true },
     { title: 'Степень участия', field_type: 'string', is_required: true }
   ]},
-  { title: 'Хакатон', points: 9.0, fields: [
+  { title: 'Хакатон', points: 9.0, icon_name: 'hackathon', fields: [
     { title: 'Полное название хакатона', field_type: 'string', is_required: true },
     { title: 'Дата окончания хакатона', field_type: 'date', is_required: true },
     { title: 'Документ подтверждающий участие/победу', field_type: 'string', is_required: false }
   ]},
-  { title: 'РИД', points: 5.0, fields: [
+  { title: 'РИД', points: 5.0, icon_name: 'rid', fields: [
     { title: 'Полное название РИД', field_type: 'string', is_required: true },
     { title: 'Номер свидетельства/патента', field_type: 'string', is_required: true }
   ]},
-  { title: 'Конференция', points: 4.0, fields: [
+  { title: 'Конференция', points: 4.0, icon_name: 'conference', fields: [
     { title: 'Полное название мероприятия', field_type: 'string', is_required: true },
     { title: 'Дата выступления', field_type: 'date', is_required: true },
     { title: 'Название темы выступления', field_type: 'string', is_required: true },
     { title: 'Библиографическая ссылка тезиса', field_type: 'string', is_required: false }
   ]},
-  { title: 'Упоминание в СМИ', points: 4.0, fields: [
+  { title: 'Упоминание в СМИ', points: 4.0, icon_name: 'media_mention', fields: [
     { title: 'Название СМИ', field_type: 'string', is_required: true },
     { title: 'Ссылка на упоминание в СМИ', field_type: 'string', is_required: true },
     { title: 'В новости есть упоминание LISA или ИТМО?', field_type: 'string', is_required: false }
   ]},
-  { title: 'Публикация в СМИ', points: 4.0, fields: [
+  { title: 'Публикация в СМИ', points: 4.0, icon_name: 'media_pub', fields: [
     { title: 'Название СМИ', field_type: 'string', is_required: true },
     { title: 'Ссылка на публикацию', field_type: 'string', is_required: true }
   ]},
-  { title: 'Наставничество/менторство', points: 3.0 },
-  { title: 'Другое', points: 3.0 },
-  { title: 'Стипендия', points: 2.0, fields: [
+  { title: 'Наставничество/менторство', points: 3.0, icon_name: 'mentoring' },
+  { title: 'Другое', points: 3.0, icon_name: 'other' },
+  { title: 'Стипендия', points: 2.0, icon_name: 'scholarship', fields: [
     { title: 'Полное название конкурса', field_type: 'string', is_required: true },
     { title: 'Дата публикации списка победителей', field_type: 'date', is_required: true }
   ]},
-  { title: 'Стажировка', points: 2.0, fields: [
+  { title: 'Стажировка', points: 2.0, icon_name: 'internship', fields: [
     { title: 'Юридическое название организации', field_type: 'string', is_required: true },
     { title: 'Дата начала стажировки', field_type: 'date', is_required: true }
   ]},
-  { title: 'Разработка', points: 10.0, fields: [
+  { title: 'Разработка', points: 10.0, icon_name: 'development', fields: [
     { title: 'Наличие программного кода', field_type: 'number', is_required: true },
     { title: 'Наличие и корректная структура README', field_type: 'number', is_required: true },
     { title: 'Структура и организация директорий', field_type: 'number', is_required: true },
@@ -63,23 +63,23 @@ achievement_types_data = [
     { title: 'Pull Request\'ы в проект', field_type: 'number', is_required: true },
     { title: 'Добавление Issue', field_type: 'number', is_required: true }
   ]},
-  { title: 'Доклады ППС', points: 4.0, fields: [
+  { title: 'Доклады ППС', points: 4.0, icon_name: 'presentation', fields: [
     { title: 'Полное название мероприятия', field_type: 'string', is_required: true },
     { title: 'Название темы выступления', field_type: 'string', is_required: true }
   ]},
-  { title: 'Доклады КМУ', points: 4.0, fields: [
+  { title: 'Доклады КМУ', points: 4.0, icon_name: 'presentation', fields: [
     { title: 'Полное название мероприятия', field_type: 'string', is_required: true },
     { title: 'Название темы выступления', field_type: 'string', is_required: true }
   ]},
-  { title: 'Студ стартап', points: 5.0, fields: [
+  { title: 'Студ стартап', points: 5.0, icon_name: 'startup', fields: [
     { title: 'Название стартапа', field_type: 'string', is_required: true },
     { title: 'Статус проекта', field_type: 'string', is_required: true }
   ]},
-  { title: 'КНВШ', points: 5.0, fields: [
+  { title: 'КНВШ', points: 5.0, icon_name: 'contest', fields: [
     { title: 'Название конкурса', field_type: 'string', is_required: true },
     { title: 'Результат участия', field_type: 'string', is_required: true }
   ]},
-  { title: 'Стипендия Президента и Правительства', points: 3.0, fields: [
+  { title: 'Стипендия Президента и Правительства', points: 3.0, icon_name: 'scholarship', fields: [
     { title: 'Название стипендии', field_type: 'string', is_required: true },
     { title: 'Год назначения', field_type: 'number', is_required: true }
   ]}
@@ -89,6 +89,8 @@ achievement_types_data.each do |data|
   type = AchievementType.find_or_create_by!(title: data[:title]) do |at|
     at.points = data[:points]
   end
+  
+  type.update!(icon_name: data[:icon_name]) if data[:icon_name]
   
   if data[:fields]
     data[:fields].each do |field_attrs|

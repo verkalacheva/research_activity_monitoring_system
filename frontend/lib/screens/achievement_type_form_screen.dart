@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../services/achievement_type_service.dart';
 import '../theme/app_dimensions.dart';
+import '../utils/icon_helper.dart';
 
 class AchievementTypeFormScreen extends StatefulWidget {
   final AchievementType? type;
@@ -18,6 +19,7 @@ class _AchievementTypeFormScreenState extends State<AchievementTypeFormScreen> {
 
   late TextEditingController _titleController;
   late TextEditingController _pointsController;
+  String? _selectedIconName;
   List<AchievementField> _fields = [];
 
   @override
@@ -25,6 +27,7 @@ class _AchievementTypeFormScreenState extends State<AchievementTypeFormScreen> {
     super.initState();
     _titleController = TextEditingController(text: widget.type?.title ?? '');
     _pointsController = TextEditingController(text: widget.type?.points?.toString() ?? '');
+    _selectedIconName = widget.type?.iconName;
     _fields = widget.type?.fields.map((f) => AchievementField(
       id: f.id,
       title: f.title,
@@ -89,6 +92,7 @@ class _AchievementTypeFormScreenState extends State<AchievementTypeFormScreen> {
         id: widget.type?.id,
         title: _titleController.text,
         points: double.tryParse(_pointsController.text),
+        iconName: _selectedIconName,
         fields: _fields,
       );
 
@@ -134,6 +138,29 @@ class _AchievementTypeFormScreenState extends State<AchievementTypeFormScreen> {
                 controller: _pointsController,
                 decoration: const InputDecoration(labelText: 'Баллы по умолчанию'),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              ),
+              const SizedBox(height: AppDimensions.paddingMedium),
+              const Text('Иконка', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: AppDimensions.paddingSmall),
+              Wrap(
+                spacing: 8,
+                children: IconHelper.icons.entries.map((entry) {
+                  final isSelected = _selectedIconName == entry.key;
+                  return GestureDetector(
+                    onTap: () => setState(() => _selectedIconName = entry.key),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isSelected ? Theme.of(context).primaryColor : Colors.grey[200],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        entry.value,
+                        color: isSelected ? Colors.white : Colors.black54,
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
               const SizedBox(height: AppDimensions.paddingExtraLarge),
               Row(

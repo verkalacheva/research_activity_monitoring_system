@@ -31,7 +31,7 @@ module Api
 
       def achievement_type_params
         params.require(:achievement_type).permit(
-          :title, :points,
+          :title, :points, :icon_name,
           achievement_fields_attributes: [:id, :title, :field_type, :is_required, :_destroy, options: []]
         )
       end

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../theme/app_dimensions.dart';
 import '../theme/app_text_styles.dart';
+import '../utils/icon_helper.dart';
 
 class AchievementTypeDetailsScreen extends StatelessWidget {
   final AchievementType type;
@@ -22,12 +23,27 @@ class AchievementTypeDetailsScreen extends StatelessWidget {
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(AppDimensions.paddingLarge),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
-                    Text(type.title, style: AppTextStyles.h1),
-                    const SizedBox(height: AppDimensions.paddingMedium),
-                    Text('Баллы по умолчанию: ${type.points ?? 0}', style: AppTextStyles.bodySecondary),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(IconHelper.getIcon(type.iconName), size: 32, color: Theme.of(context).primaryColor),
+                    ),
+                    const SizedBox(width: AppDimensions.paddingLarge),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(type.title, style: AppTextStyles.h1),
+                          const SizedBox(height: AppDimensions.paddingMedium),
+                          Text('Баллы по умолчанию: ${type.points ?? 0}', style: AppTextStyles.bodySecondary),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),

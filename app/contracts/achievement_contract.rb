@@ -11,7 +11,7 @@ class AchievementContract < BaseContract
     optional(:achievement_field_answers_attributes).array(:hash) do
       optional(:id).filled(:integer)
       required(:achievement_field_id).filled(:integer)
-      required(:value).filled(:string)
+      optional(:value).maybe(:string)
     end
   end
 end

@@ -15,6 +15,15 @@ class ResearcherService {
     }
   }
 
+  Future<Researcher> getById(int id) async {
+    final response = await http.get(Uri.parse('$baseUrl/researchers/$id'));
+    if (response.statusCode == 200) {
+      return Researcher.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Failed to load researcher profile');
+    }
+  }
+
   Future<Researcher> create(Researcher researcher) async {
     final response = await http.post(
       Uri.parse('$baseUrl/researchers'),

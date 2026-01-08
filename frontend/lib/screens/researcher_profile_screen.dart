@@ -1,13 +1,74 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../models/models.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_dimensions.dart';
+import '../services/researcher_service.dart';
+import '../services/achievement_service.dart';
+import '../utils/icon_helper.dart';
+import 'achievement_form_screen.dart';
 
-class ResearcherProfileScreen extends StatelessWidget {
+class ResearcherProfileScreen extends StatefulWidget {
   final Researcher researcher;
 
   const ResearcherProfileScreen({super.key, required this.researcher});
+
+  @override
+  State<ResearcherProfileScreen> createState() => _ResearcherProfileScreenState();
+}
+
+class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
+  final _researcherService = ResearcherService();
+  final _achievementService = AchievementService();
+  late Researcher _researcher;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _researcher = widget.researcher;
+    _refreshProfile();
+  }
+
+  Future<void> _refreshProfile() async {
+    try {
+      final updated = await _researcherService.getById(_researcher.id!);
+      setState(() {
+        _researcher = updated;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка обновления профиля: $e')));
+      }
+    }
+  }
+
+  Future<void> _deleteAchievement(int id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Удаление'),
+        content: const Text('Вы уверены, что хотите удалить это достижение?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Отмена')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Удалить', style: TextStyle(color: AppColors.error))),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await _achievementService.delete(id);
+        _refreshProfile();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка удаления: $e')));
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,92 +76,193 @@ class ResearcherProfileScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Профиль сотрудника'),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppDimensions.paddingLarge),
-        child: Center(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 800),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppDimensions.paddingLarge),
-                    child: Row(
-                      children: [
-                        const CircleAvatar(
-                          radius: AppDimensions.avatarSizeLarge,
-                          backgroundColor: AppColors.background,
-                          child: Icon(Icons.person, size: 80, color: AppColors.inactive),
-                        ),
-                        const SizedBox(width: AppDimensions.paddingLarge),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                researcher.fullName,
-                                style: AppTextStyles.h1,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${researcher.degreeLevel ?? ''} ${researcher.course != null ? '(${researcher.course} курс)' : ''}'.trim(),
-                                style: AppTextStyles.bodySecondary,
-                              ),
-                              const SizedBox(height: 16),
-                              if (researcher.subjectArea != null)
-                                Chip(
-                                  label: Text(researcher.subjectArea!),
-                                  backgroundColor: AppColors.background,
-                                  side: BorderSide.none,
-                                ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppDimensions.paddingLarge),
-                const Text(
-                  'Информация',
-                  style: AppTextStyles.h2,
-                ),
-                const SizedBox(height: AppDimensions.paddingMedium),
-                Card(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AchievementFormScreen(researcherId: _researcher.id!),
+            ),
+          );
+          if (result == true) _refreshProfile();
+        },
+        backgroundColor: AppColors.primary,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(AppDimensions.paddingLarge),
+              child: Center(
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 800),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _infoRow(Icons.school, 'Степень/Статус', researcher.degreeLevel ?? 'Не указано'),
-                      const Divider(height: 1, indent: 56),
-                      _infoRow(Icons.book, 'Область интересов', researcher.subjectArea ?? 'Не указано'),
-                      if (researcher.course != null) ...[
-                        const Divider(height: 1, indent: 56),
-                        _infoRow(Icons.timeline, 'Курс обучения', '${researcher.course} курс'),
-                      ],
+                      _buildHeader(),
+                      const SizedBox(height: AppDimensions.paddingLarge),
+                      const Text('Информация', style: AppTextStyles.h2),
+                      const SizedBox(height: AppDimensions.paddingMedium),
+                      _buildInfoCard(),
+                      const SizedBox(height: AppDimensions.paddingExtraLarge),
+                      const Text('Достижения и активность', style: AppTextStyles.h2),
+                      const SizedBox(height: AppDimensions.paddingMedium),
+                      _buildAchievementsList(),
                     ],
                   ),
                 ),
-                const SizedBox(height: AppDimensions.paddingExtraLarge),
-                const Text(
-                  'Достижения и активность',
-                  style: AppTextStyles.h2,
-                ),
-                const SizedBox(height: AppDimensions.paddingMedium),
-                const Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(AppDimensions.paddingLarge),
-                    child: Center(
-                      child: Text(
-                        'Список достижений пуст',
-                        style: AppTextStyles.bodySecondary,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppDimensions.paddingLarge),
+        child: Row(
+          children: [
+            const CircleAvatar(
+              radius: AppDimensions.avatarSizeLarge,
+              backgroundColor: AppColors.background,
+              child: Icon(Icons.person, size: 80, color: AppColors.inactive),
+            ),
+            const SizedBox(width: AppDimensions.paddingLarge),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(_researcher.fullName, style: AppTextStyles.h1),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${_researcher.degreeLevel ?? ''} ${_researcher.course != null ? '(${_researcher.course} курс)' : ''}'.trim(),
+                    style: AppTextStyles.bodySecondary,
+                  ),
+                  const SizedBox(height: 16),
+                  if (_researcher.subjectArea != null)
+                    Chip(
+                      label: Text(_researcher.subjectArea!),
+                      backgroundColor: AppColors.background,
+                      side: BorderSide.none,
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoCard() {
+    return Card(
+      child: Column(
+        children: [
+          _infoRow(Icons.school, 'Степень/Статус', _researcher.degreeLevel ?? 'Не указано'),
+          const Divider(height: 1, indent: 56),
+          _infoRow(Icons.book, 'Область интересов', _researcher.subjectArea ?? 'Не указано'),
+          if (_researcher.course != null) ...[
+            const Divider(height: 1, indent: 56),
+            _infoRow(Icons.timeline, 'Курс обучения', '${_researcher.course} курс'),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAchievementsList() {
+    if (_researcher.achievements.isEmpty) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(AppDimensions.paddingLarge),
+          child: Center(
+            child: Text('Список достижений пуст', style: AppTextStyles.bodySecondary),
           ),
         ),
+      );
+    }
+
+    return Column(
+      children: _researcher.achievements.map((achievement) {
+        return Card(
+          margin: const EdgeInsets.only(bottom: AppDimensions.paddingMedium),
+          child: ExpansionTile(
+            leading: Icon(IconHelper.getIcon(achievement.type?.iconName), color: AppColors.primary),
+            title: Text(achievement.type?.title ?? 'Достижение'),
+            subtitle: Text('${achievement.status?.title ?? ""}, ${achievement.result?.title ?? ""}, Баллы: ${achievement.points ?? 0}'),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit, size: 20, color: AppColors.primary),
+                  onPressed: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AchievementFormScreen(
+                          achievement: achievement,
+                          researcherId: _researcher.id!,
+                        ),
+                      ),
+                    );
+                    if (result == true) _refreshProfile();
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, size: 20, color: AppColors.error),
+                  onPressed: () => _deleteAchievement(achievement.id!),
+                ),
+                const Icon(Icons.expand_more),
+              ],
+            ),
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(AppDimensions.paddingMedium),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (achievement.participation != null)
+                      _achievementDetailRow('Участие', achievement.participation!.title),
+                    const Divider(),
+                    if (achievement.type?.fields != null && achievement.answers.isNotEmpty) ...[
+                      const Text('Дополнительные данные:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      ...achievement.type!.fields.map((field) {
+                        final answer = achievement.answers.firstWhere(
+                          (a) => a.achievementFieldId == field.id,
+                          orElse: () => AchievementFieldAnswer(achievementFieldId: -1, value: '—'),
+                        );
+                        String displayValue = answer.value;
+                        if (field.fieldType == 'boolean') {
+                          displayValue = displayValue == 'true' ? 'Да' : 'Нет';
+                        } else if (field.fieldType == 'date' && displayValue.isNotEmpty) {
+                          try {
+                            final date = DateTime.parse(displayValue);
+                            displayValue = DateFormat('dd.MM.yyyy').format(date);
+                          } catch (_) {}
+                        }
+                        return _achievementDetailRow(field.title, displayValue);
+                      }).toList(),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _achievementDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(width: 150, child: Text('$label:', style: const TextStyle(fontWeight: FontWeight.w500))),
+          Expanded(child: Text(value)),
+        ],
       ),
     );
   }
