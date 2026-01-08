@@ -35,3 +35,11 @@ db-migrate:
 db-setup:
 	$(DC) exec web bundle exec rails db:create db:migrate db:seed
 
+db-seed:
+	$(DC) exec web bundle exec rails db:seed
+
+db-drop:
+	$(DC) exec web bundle exec rails db:drop
+
+db-reset:
+	$(DC) exec web bundle exec rails db:drop db:create db:migrate db:seed

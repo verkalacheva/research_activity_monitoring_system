@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/models.dart';
+import '../theme/app_colors.dart';
 import '../services/achievement_service.dart';
 import '../services/achievement_type_service.dart';
 import '../services/achievement_status_service.dart';
@@ -127,6 +128,19 @@ class _AchievementFormScreenState extends State<AchievementFormScreen> {
     });
   }
 
+  double _calculatePoints() {
+    double typePoints = _selectedType?.points ?? 0;
+    double statusPoints = _selectedStatus?.points ?? 1;
+    double resultPoints = _selectedResult?.points ?? 1;
+    double participationPoints = _selectedParticipation?.points ?? 1;
+
+    if (_selectedType == null || _selectedStatus == null || _selectedResult == null || _selectedParticipation == null) {
+      return 0;
+    }
+
+    return typePoints * statusPoints * resultPoints * participationPoints;
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -238,6 +252,32 @@ class _AchievementFormScreenState extends State<AchievementFormScreen> {
                 ..._selectedType!.fields.map((field) => _buildDynamicField(field)),
               ],
               const SizedBox(height: AppDimensions.paddingExtraLarge),
+              Container(
+                padding: const EdgeInsets.all(AppDimensions.paddingMedium),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.divider),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Предварительный расчет баллов:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      _calculatePoints().toStringAsFixed(2),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppDimensions.paddingMedium),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

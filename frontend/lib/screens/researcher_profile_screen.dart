@@ -11,8 +11,13 @@ import 'achievement_form_screen.dart';
 
 class ResearcherProfileScreen extends StatefulWidget {
   final Researcher researcher;
+  final bool isEmbedded;
 
-  const ResearcherProfileScreen({super.key, required this.researcher});
+  const ResearcherProfileScreen({
+    super.key,
+    required this.researcher,
+    this.isEmbedded = false,
+  });
 
   @override
   State<ResearcherProfileScreen> createState() => _ResearcherProfileScreenState();
@@ -29,6 +34,16 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
     super.initState();
     _researcher = widget.researcher;
     _refreshProfile();
+  }
+
+  @override
+  void didUpdateWidget(ResearcherProfileScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.researcher.id != widget.researcher.id) {
+      _researcher = widget.researcher;
+      _isLoading = true;
+      _refreshProfile();
+    }
   }
 
   Future<void> _refreshProfile() async {
@@ -72,47 +87,62 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final content = _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : SingleChildScrollView(
+            padding: const EdgeInsets.all(AppDimensions.paddingLarge),
+            child: Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 800),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHeader(),
+                    const SizedBox(height: AppDimensions.paddingLarge),
+                    const Text('Информация', style: AppTextStyles.h2),
+                    const SizedBox(height: AppDimensions.paddingMedium),
+                    _buildInfoCard(),
+                    const SizedBox(height: AppDimensions.paddingExtraLarge),
+                    const Text('Достижения и активность', style: AppTextStyles.h2),
+                    const SizedBox(height: AppDimensions.paddingMedium),
+                    _buildAchievementsList(),
+                  ],
+                ),
+              ),
+            ),
+          );
+
+    if (widget.isEmbedded) {
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        floatingActionButton: _buildFab(),
+        body: content,
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Профиль сотрудника'),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AchievementFormScreen(researcherId: _researcher.id!),
-            ),
-          );
-          if (result == true) _refreshProfile();
-        },
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(AppDimensions.paddingLarge),
-              child: Center(
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 800),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildHeader(),
-                      const SizedBox(height: AppDimensions.paddingLarge),
-                      const Text('Информация', style: AppTextStyles.h2),
-                      const SizedBox(height: AppDimensions.paddingMedium),
-                      _buildInfoCard(),
-                      const SizedBox(height: AppDimensions.paddingExtraLarge),
-                      const Text('Достижения и активность', style: AppTextStyles.h2),
-                      const SizedBox(height: AppDimensions.paddingMedium),
-                      _buildAchievementsList(),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+      floatingActionButton: _buildFab(),
+      body: content,
+    );
+  }
+
+  Widget? _buildFab() {
+    return FloatingActionButton(
+      heroTag: 'add_achievement_fab',
+      onPressed: () async {
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AchievementFormScreen(researcherId: _researcher.id!),
+          ),
+        );
+        if (result == true) _refreshProfile();
+      },
+      backgroundColor: AppColors.primary,
+      child: const Icon(Icons.add, color: Colors.white),
     );
   }
 
