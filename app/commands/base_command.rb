@@ -12,6 +12,16 @@ class BaseCommand
     end
   end
 
+  def transaction
+    ActiveRecord::Base.transaction do
+      yield
+    end
+  rescue Dry::Monads::Do::Halt => e
+    raise e # Allow Dry::Monads to handle the halt
+  rescue => e
+    Failure(type: :transaction_error, message: e.message)
+  end
+
   def update_record(record, attributes)
     if record.update(attributes)
       Success(record)

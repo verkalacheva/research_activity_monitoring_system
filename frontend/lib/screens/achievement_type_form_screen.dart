@@ -175,6 +175,7 @@ class _AchievementTypeFormScreenState extends State<AchievementTypeFormScreen> {
                 ],
               ),
               const Divider(),
+              const SizedBox(height: AppDimensions.paddingSmall),
               ...List.generate(_fields.length, (index) {
                 if (_fields[index].destroy == true) return const SizedBox.shrink();
                 

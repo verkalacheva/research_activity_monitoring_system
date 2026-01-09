@@ -57,3 +57,7 @@ build-iPhoneSimulator/
 
 /тз
 /log
+
+*.csv
+*.sql
+*.lock

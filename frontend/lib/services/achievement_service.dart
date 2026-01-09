@@ -47,6 +47,37 @@ class AchievementService {
       throw Exception('Failed to delete achievement');
     }
   }
+
+  Future<Map<String, dynamic>> importAchievements({String? filePath, List<int>? bytes, String? fileName}) async {
+    return _importMultipart('$baseUrl/achievements/import', filePath: filePath, bytes: bytes, fileName: fileName);
+  }
+
+  Future<Map<String, dynamic>> importResearchers({String? filePath, List<int>? bytes, String? fileName}) async {
+    return _importMultipart('$baseUrl/researchers/import', filePath: filePath, bytes: bytes, fileName: fileName);
+  }
+
+  Future<Map<String, dynamic>> _importMultipart(String url, {String? filePath, List<int>? bytes, String? fileName}) async {
+    final request = http.MultipartRequest('POST', Uri.parse(url));
+    
+    if (filePath != null) {
+      request.files.add(await http.MultipartFile.fromPath('file', filePath));
+    } else if (bytes != null && fileName != null) {
+      request.files.add(http.MultipartFile.fromBytes('file', bytes, filename: fileName));
+    } else {
+      throw Exception('Не удалось прочитать файл');
+    }
+    
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      final error = json.decode(response.body);
+      final message = error['errors'] ?? error['message'] ?? 'Failed to import';
+      throw Exception(message);
+    }
+  }
 }
 
 

@@ -6,6 +6,7 @@ class AchievementContract < BaseContract
     required(:achievement_result_id).filled(:integer)
     required(:achievement_participation_id).filled(:integer)
     optional(:points).maybe(:float)
+    optional(:submission_date).maybe(:string)
     optional(:researcher_ids).array(:integer)
     
     optional(:achievement_field_answers_attributes).array(:hash) do

@@ -25,7 +25,11 @@ module Api
                    when :unauthorized then :unauthorized
                    else :bad_request
                    end
-          render json: { errors: failure[:errors] || failure[:message] }, status: status
+          render json: { 
+            errors: failure[:errors] || failure[:message],
+            type: failure[:type],
+            message: failure[:message]
+          }, status: status
         else
           render json: { error: failure }, status: :bad_request
         end

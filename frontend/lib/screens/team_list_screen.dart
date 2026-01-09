@@ -64,9 +64,19 @@ class _TeamListScreenState extends State<TeamListScreen> {
                   );
                 },
                 title: Text(team.title, style: AppTextStyles.body),
-                subtitle: Text(
-                  'Участников: ${team.researchers?.length ?? 0}',
-                  style: AppTextStyles.caption,
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (team.leader != null)
+                      Text(
+                        'Руководитель: ${team.leader!.fullName}',
+                        style: AppTextStyles.caption,
+                      ),
+                    Text(
+                      'Участников: ${team.researchers?.length ?? 0}',
+                      style: AppTextStyles.caption,
+                    ),
+                  ],
                 ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,

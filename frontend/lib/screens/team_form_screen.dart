@@ -21,6 +21,7 @@ class _TeamFormScreenState extends State<TeamFormScreen> {
   late TextEditingController _titleController;
   List<Researcher> _allResearchers = [];
   List<int> _selectedResearcherIds = [];
+  int? _selectedLeaderId;
   bool _isLoadingResearchers = true;
 
   @override
@@ -28,6 +29,7 @@ class _TeamFormScreenState extends State<TeamFormScreen> {
     super.initState();
     _titleController = TextEditingController(text: widget.team?.title ?? '');
     _selectedResearcherIds = widget.team?.researchers?.map((r) => r.id!).toList() ?? [];
+    _selectedLeaderId = widget.team?.leaderId;
     _loadResearchers();
   }
 
@@ -59,6 +61,7 @@ class _TeamFormScreenState extends State<TeamFormScreen> {
       final team = Team(
         id: widget.team?.id,
         title: _titleController.text,
+        leaderId: _selectedLeaderId,
         researchers: _allResearchers
             .where((r) => _selectedResearcherIds.contains(r.id))
             .toList(),
@@ -100,6 +103,20 @@ class _TeamFormScreenState extends State<TeamFormScreen> {
                       controller: _titleController,
                       decoration: const InputDecoration(labelText: 'Название проекта *'),
                       validator: (value) => value == null || value.isEmpty ? 'Введите название' : null,
+                    ),
+                    const SizedBox(height: AppDimensions.paddingMedium),
+                    DropdownButtonFormField<int>(
+                      value: _selectedLeaderId,
+                      decoration: const InputDecoration(labelText: 'Руководитель проекта'),
+                      items: _allResearchers.map((r) {
+                        return DropdownMenuItem<int>(
+                          value: r.id,
+                          child: Text(r.fullName),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() => _selectedLeaderId = value);
+                      },
                     ),
                     const SizedBox(height: AppDimensions.paddingExtraLarge),
                     const Text('Участники проекта:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),

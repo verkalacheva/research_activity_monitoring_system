@@ -190,11 +190,27 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
         children: [
           _infoRow(Icons.school, 'Степень/Статус', _researcher.degreeLevel ?? 'Не указано'),
           const Divider(height: 1, indent: 56),
-          _infoRow(Icons.book, 'Область интересов', _researcher.subjectArea ?? 'Не указано'),
+          _infoRow(Icons.business, 'Факультет', _researcher.faculty ?? 'Не указано'),
+          const Divider(height: 1, indent: 56),
+          _infoRow(Icons.book, 'Направление', _researcher.subjectArea ?? 'Не указано'),
+          const Divider(height: 1, indent: 56),
+          _infoRow(Icons.email, 'Почта', _researcher.email ?? 'Не указано'),
+          const Divider(height: 1, indent: 56),
+          _infoRow(Icons.send, 'Телеграм', _researcher.telegram ?? 'Не указано'),
+          const Divider(height: 1, indent: 56),
+          _infoRow(Icons.fingerprint, 'ИСУ', _researcher.isuNumber ?? 'Не указано'),
+          const Divider(height: 1, indent: 56),
+          _infoRow(Icons.work, 'Трудоустройство', _researcher.employmentStatus ?? 'Не указано'),
           if (_researcher.course != null) ...[
             const Divider(height: 1, indent: 56),
             _infoRow(Icons.timeline, 'Курс обучения', '${_researcher.course} курс'),
           ],
+          const Divider(height: 1, indent: 56),
+          _infoRow(
+            Icons.assignment_turned_in,
+            'Руководитель команды',
+            _researcher.isLeader ? 'Да' : 'Нет',
+          ),
         ],
       ),
     );
@@ -219,7 +235,17 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
           child: ExpansionTile(
             leading: Icon(IconHelper.getIcon(achievement.type?.iconName), color: AppColors.primary),
             title: Text(achievement.type?.title ?? 'Достижение'),
-            subtitle: Text('${achievement.status?.title ?? ""}, ${achievement.result?.title ?? ""}, Баллы: ${achievement.points ?? 0}'),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${achievement.status?.title ?? ""}, ${achievement.result?.title ?? ""}, Баллы: ${achievement.points ?? 0}'),
+                if (achievement.submissionDate != null)
+                  Text(
+                    'Загружено: ${DateFormat('dd.MM.yyyy HH:mm').format(achievement.submissionDate!)}',
+                    style: AppTextStyles.caption,
+                  ),
+              ],
+            ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -251,10 +277,9 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (achievement.participation != null)
-                      _achievementDetailRow('Участие', achievement.participation!.title),
-                    const Divider(),
-                    if (achievement.type?.fields != null && achievement.answers.isNotEmpty) ...[
+
+                    if (achievement.type?.fields != null && achievement.type!.fields.isNotEmpty) ...[
+                      const Divider(),
                       const Text('Дополнительные данные:', style: TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       ...achievement.type!.fields.map((field) {
@@ -263,9 +288,11 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
                           orElse: () => AchievementFieldAnswer(achievementFieldId: -1, value: '—'),
                         );
                         String displayValue = answer.value;
+                        if (displayValue.isEmpty) displayValue = '—';
+                        
                         if (field.fieldType == 'boolean') {
-                          displayValue = displayValue == 'true' ? 'Да' : 'Нет';
-                        } else if (field.fieldType == 'date' && displayValue.isNotEmpty) {
+                          displayValue = displayValue == 'true' ? 'Да' : (displayValue == 'false' ? 'Нет' : '—');
+                        } else if (field.fieldType == 'date' && displayValue != '—') {
                           try {
                             final date = DateTime.parse(displayValue);
                             displayValue = DateFormat('dd.MM.yyyy').format(date);

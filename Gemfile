@@ -17,6 +17,7 @@ gem 'interactor'
 
 group :development, :test do
   gem 'debug', platforms: [:mri, :mingw, :x64_mingw]
+  gem 'listen', '~> 3.3'
 end
 
 group :development do

@@ -66,11 +66,16 @@ end
 
 # Achievement Results
 achievement_results = [
-  { title: 'Участие/Без квартиля', points: 1.0 },
-  { title: 'Спецприз/Q4 (K4)', points: 1.3 },
-  { title: '3 место/Q3 (K3)', points: 1.5 },
-  { title: '2 место/Q2 (K2)', points: 1.7 },
-  { title: 'Победа/Q1 (K1 для RSCI)', points: 2.0 }
+  { title: 'Участие', points: 1.0 },
+  { title: 'Без квартиля', points: 1.0 },
+  { title: 'Спецприз', points: 1.3 },
+  { title: 'Q4 (K4)', points: 1.3 },
+  { title: '3 место', points: 1.5 },
+  { title: 'Q3 (K3)', points: 1.5 },
+  { title: '2 место', points: 1.7 },
+  { title: 'Q2 (K2)', points: 1.7 },
+  { title: 'Победа', points: 2.0 },
+  { title: 'Q1 (K1 для RSCI)', points: 2.0 }
 ]
 
 achievement_results.each do |attrs|
@@ -81,10 +86,14 @@ end
 
 # Achievement Statuses
 achievement_statuses = [
-  { title: 'Университетский/РИНЦ', points: 1.0 },
-  { title: 'Региональный/ВАК', points: 1.3 },
-  { title: 'Всероссийский/RSCI', points: 1.6 },
-  { title: 'Международный/Scopus/Web of Science', points: 2.0 }
+  { title: 'Университетский', points: 1.0 },
+  { title: 'РИНЦ', points: 1.0 },
+  { title: 'Региональный', points: 1.3 },
+  { title: 'ВАК', points: 1.3 },
+  { title: 'Всероссийский', points: 1.6 },
+  { title: 'RSCI', points: 1.6 },
+  { title: 'Международный', points: 2.0 },
+  { title: 'Scopus/Web of Science', points: 2.0 }
 ]
 
 achievement_statuses.each do |attrs|
@@ -95,8 +104,10 @@ end
 
 # Achievement Participations
 achievement_participations = [
-  { title: 'Коллективный/ИТМО', points: 1.0 },
-  { title: 'Индивидуальный/LISA', points: 1.3 },
+  { title: 'Коллективный', points: 1.0 },
+  { title: 'ИТМО', points: 1.0 },
+  { title: 'Индивидуальный', points: 1.3 },
+  { title: 'LISA', points: 1.3 },
   { title: 'Без упоминания', points: 0.5 }
 ]
 

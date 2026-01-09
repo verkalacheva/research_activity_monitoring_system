@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_01_02_140000) do
+ActiveRecord::Schema[7.0].define(version: 2026_01_09_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -72,6 +72,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_01_02_140000) do
     t.float "points"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "submission_date"
     t.index ["achievement_participation_id"], name: "index_achievements_on_achievement_participation_id"
     t.index ["achievement_result_id"], name: "index_achievements_on_achievement_result_id"
     t.index ["achievement_status_id"], name: "index_achievements_on_achievement_status_id"
@@ -96,6 +97,11 @@ ActiveRecord::Schema[7.0].define(version: 2026_01_02_140000) do
     t.text "subject_area"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "email"
+    t.text "telegram"
+    t.text "isu_number"
+    t.text "faculty"
+    t.text "employment_status"
   end
 
   create_table "researchers_teams", force: :cascade do |t|

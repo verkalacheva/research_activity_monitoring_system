@@ -36,6 +36,8 @@ class _AchievementFormScreenState extends State<AchievementFormScreen> {
   AchievementStatus? _selectedStatus;
   AchievementResult? _selectedResult;
   AchievementParticipation? _selectedParticipation;
+  DateTime _submissionDate = DateTime.now();
+  late TextEditingController _submissionDateController;
   
   final Map<int, TextEditingController> _fieldControllers = {};
   final Map<int, bool> _fieldBoolValues = {};
@@ -46,7 +48,20 @@ class _AchievementFormScreenState extends State<AchievementFormScreen> {
   @override
   void initState() {
     super.initState();
+    _submissionDate = widget.achievement?.submissionDate ?? DateTime.now();
+    _submissionDateController = TextEditingController(
+      text: DateFormat('dd.MM.yyyy HH:mm').format(_submissionDate),
+    );
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _submissionDateController.dispose();
+    for (var controller in _fieldControllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -180,6 +195,7 @@ class _AchievementFormScreenState extends State<AchievementFormScreen> {
       achievementStatusId: _selectedStatus!.id!,
       achievementResultId: _selectedResult!.id!,
       achievementParticipationId: _selectedParticipation!.id!,
+      submissionDate: _submissionDate,
       answers: answers,
     );
 
@@ -245,10 +261,22 @@ class _AchievementFormScreenState extends State<AchievementFormScreen> {
                 onChanged: (v) => setState(() => _selectedParticipation = v),
                 validator: (v) => v == null ? 'Выберите тип участия' : null,
               ),
+              const SizedBox(height: AppDimensions.paddingMedium),
+              TextFormField(
+                controller: _submissionDateController,
+                readOnly: true,
+                decoration: const InputDecoration(
+                  labelText: 'Дата загрузки (Timestamp) *',
+                  suffixIcon: Icon(Icons.calendar_today),
+                ),
+                onTap: _selectSubmissionDate,
+                validator: (v) => v == null || v.isEmpty ? 'Выберите дату' : null,
+              ),
               if (_selectedType != null && _selectedType!.fields.isNotEmpty) ...[
                 const SizedBox(height: AppDimensions.paddingLarge),
                 const Text('Дополнительные поля:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 const Divider(),
+                const SizedBox(height: AppDimensions.paddingSmall),
                 ..._selectedType!.fields.map((field) => _buildDynamicField(field)),
               ],
               const SizedBox(height: AppDimensions.paddingExtraLarge),
@@ -290,6 +318,36 @@ class _AchievementFormScreenState extends State<AchievementFormScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _selectSubmissionDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _submissionDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      locale: const Locale('ru', 'RU'),
+    );
+
+    if (picked != null) {
+      final TimeOfDay? time = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_submissionDate),
+      );
+
+      if (time != null) {
+        setState(() {
+          _submissionDate = DateTime(
+            picked.year,
+            picked.month,
+            picked.day,
+            time.hour,
+            time.minute,
+          );
+          _submissionDateController.text = DateFormat('dd.MM.yyyy HH:mm').format(_submissionDate);
+        });
+      }
+    }
   }
 
   Future<void> _selectDate(int fieldId) async {

@@ -15,6 +15,7 @@ services:
     ports:
       - "3000:3000"
     environment:
+      RAILS_ENV: development
       DATABASE_URL: postgresql://postgres:password@db:5432/research_activity_monitoring_system_development
     depends_on:
       - db
@@ -22,6 +23,10 @@ services:
   frontend:
     build:
       context: ./frontend
+      target: build-env
+    command: flutter run -d web-server --web-port 80 --web-hostname 0.0.0.0
+    volumes:
+      - ./frontend:/app
     ports:
       - "8080:80"
     depends_on:

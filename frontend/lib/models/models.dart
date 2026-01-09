@@ -6,6 +6,13 @@ class Researcher {
   final String? degreeLevel;
   final int? course;
   final String? subjectArea;
+  final String? email;
+  final String? telegram;
+  final String? isuNumber;
+  final String? faculty;
+  final String? employmentStatus;
+  final bool signatureRequired;
+  final bool isLeader;
   final List<Achievement> achievements;
 
   Researcher({
@@ -16,6 +23,13 @@ class Researcher {
     this.degreeLevel,
     this.course,
     this.subjectArea,
+    this.email,
+    this.telegram,
+    this.isuNumber,
+    this.faculty,
+    this.employmentStatus,
+    this.signatureRequired = false,
+    this.isLeader = false,
     this.achievements = const [],
   });
 
@@ -30,6 +44,13 @@ class Researcher {
       degreeLevel: json['degree_level'],
       course: json['course'],
       subjectArea: json['subject_area'],
+      email: json['email'],
+      telegram: json['telegram'],
+      isuNumber: json['isu_number'],
+      faculty: json['faculty'],
+      employmentStatus: json['employment_status'],
+      signatureRequired: json['signature_required'] ?? false,
+      isLeader: json['is_leader'] ?? false,
       achievements: (json['achievements'] as List?)
               ?.map((a) => Achievement.fromJson(a))
               .toList() ??
@@ -46,6 +67,13 @@ class Researcher {
       'degree_level': degreeLevel,
       'course': course,
       'subject_area': subjectArea,
+      'email': email,
+      'telegram': telegram,
+      'isu_number': isuNumber,
+      'faculty': faculty,
+      'employment_status': employmentStatus,
+      'signature_required': signatureRequired,
+      'is_leader': isLeader,
     };
   }
 }
@@ -85,6 +113,7 @@ class Achievement {
   final int achievementResultId;
   final int achievementParticipationId;
   final double? points;
+  final DateTime? submissionDate;
   final List<AchievementFieldAnswer> answers;
   final AchievementType? type;
   final AchievementStatus? status;
@@ -98,6 +127,7 @@ class Achievement {
     required this.achievementResultId,
     required this.achievementParticipationId,
     this.points,
+    this.submissionDate,
     this.answers = const [],
     this.type,
     this.status,
@@ -113,6 +143,7 @@ class Achievement {
       achievementResultId: json['achievement_result_id'],
       achievementParticipationId: json['achievement_participation_id'],
       points: json['points'] != null ? (json['points'] as num).toDouble() : null,
+      submissionDate: json['submission_date'] != null ? DateTime.parse(json['submission_date']) : null,
       answers: (json['achievement_field_answers'] as List?)
               ?.map((a) => AchievementFieldAnswer.fromJson(a))
               .toList() ??
@@ -132,6 +163,7 @@ class Achievement {
       'achievement_result_id': achievementResultId,
       'achievement_participation_id': achievementParticipationId,
       if (points != null) 'points': points,
+      if (submissionDate != null) 'submission_date': submissionDate!.toIso8601String(),
       'achievement_field_answers_attributes': answers.map((a) => a.toJson()).toList(),
     };
   }
@@ -141,12 +173,14 @@ class Team {
   final int? id;
   final String title;
   final int? leaderId;
+  final Researcher? leader;
   final List<Researcher>? researchers;
 
   Team({
     this.id,
     required this.title,
     this.leaderId,
+    this.leader,
     this.researchers,
   });
 
@@ -155,6 +189,7 @@ class Team {
       id: json['id'],
       title: json['title'] ?? '',
       leaderId: json['leader_id'],
+      leader: json['leader'] != null ? Researcher.fromJson(json['leader']) : null,
       researchers: json['researchers'] != null
           ? (json['researchers'] as List)
               .map((r) => Researcher.fromJson(r))

@@ -25,7 +25,47 @@ class TeamDetailsScreen extends StatelessWidget {
               team.title,
               style: AppTextStyles.h1,
             ),
+            const SizedBox(height: AppDimensions.paddingLarge),
+            const Text(
+              'Руководитель проекта:',
+              style: AppTextStyles.h2,
+            ),
             const SizedBox(height: AppDimensions.paddingMedium),
+            if (team.leader == null)
+              const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(AppDimensions.paddingLarge),
+                  child: Center(
+                    child: Text(
+                      'Руководитель не назначен',
+                      style: AppTextStyles.bodySecondary,
+                    ),
+                  ),
+                ),
+              )
+            else
+              Card(
+                child: ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: AppColors.primary,
+                    child: Icon(Icons.star, color: Colors.white),
+                  ),
+                  title: Text(team.leader!.fullName, style: AppTextStyles.body),
+                  subtitle: Text(
+                    '${team.leader!.degreeLevel ?? ''} ${team.leader!.subjectArea ?? ''}'.trim(),
+                    style: AppTextStyles.caption,
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ResearcherProfileScreen(researcher: team.leader!),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            const SizedBox(height: AppDimensions.paddingLarge),
             const Text(
               'Участники проекта:',
               style: AppTextStyles.h2,

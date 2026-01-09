@@ -20,9 +20,15 @@ class _ResearcherFormScreenState extends State<ResearcherFormScreen> {
   late TextEditingController _surnameController;
   late TextEditingController _secondNameController;
   late TextEditingController _subjectAreaController;
+  late TextEditingController _emailController;
+  late TextEditingController _telegramController;
+  late TextEditingController _isuNumberController;
+  late TextEditingController _facultyController;
+  late TextEditingController _employmentStatusController;
 
   String? _selectedDegreeLevel;
   int? _selectedCourse;
+  bool _signatureRequired = false;
 
   final List<String> _degreeLevelOptions = [
     'к.т.н.',
@@ -43,9 +49,15 @@ class _ResearcherFormScreenState extends State<ResearcherFormScreen> {
     _surnameController = TextEditingController(text: widget.researcher?.surname ?? '');
     _secondNameController = TextEditingController(text: widget.researcher?.secondName ?? '');
     _subjectAreaController = TextEditingController(text: widget.researcher?.subjectArea ?? '');
+    _emailController = TextEditingController(text: widget.researcher?.email ?? '');
+    _telegramController = TextEditingController(text: widget.researcher?.telegram ?? '');
+    _isuNumberController = TextEditingController(text: widget.researcher?.isuNumber ?? '');
+    _facultyController = TextEditingController(text: widget.researcher?.faculty ?? '');
+    _employmentStatusController = TextEditingController(text: widget.researcher?.employmentStatus ?? '');
 
     _selectedDegreeLevel = widget.researcher?.degreeLevel;
     _selectedCourse = widget.researcher?.course;
+    _signatureRequired = widget.researcher?.signatureRequired ?? false;
   }
 
   @override
@@ -54,6 +66,11 @@ class _ResearcherFormScreenState extends State<ResearcherFormScreen> {
     _surnameController.dispose();
     _secondNameController.dispose();
     _subjectAreaController.dispose();
+    _emailController.dispose();
+    _telegramController.dispose();
+    _isuNumberController.dispose();
+    _facultyController.dispose();
+    _employmentStatusController.dispose();
     super.dispose();
   }
 
@@ -67,6 +84,12 @@ class _ResearcherFormScreenState extends State<ResearcherFormScreen> {
         degreeLevel: _selectedDegreeLevel,
         course: _selectedCourse,
         subjectArea: _subjectAreaController.text.isEmpty ? null : _subjectAreaController.text,
+        email: _emailController.text.isEmpty ? null : _emailController.text,
+        telegram: _telegramController.text.isEmpty ? null : _telegramController.text,
+        isuNumber: _isuNumberController.text.isEmpty ? null : _isuNumberController.text,
+        faculty: _facultyController.text.isEmpty ? null : _facultyController.text,
+        employmentStatus: _employmentStatusController.text.isEmpty ? null : _employmentStatusController.text,
+        signatureRequired: _signatureRequired,
       );
 
       try {
@@ -145,7 +168,33 @@ class _ResearcherFormScreenState extends State<ResearcherFormScreen> {
               const SizedBox(height: AppDimensions.paddingMedium),
               TextFormField(
                 controller: _subjectAreaController,
-                decoration: const InputDecoration(labelText: 'Область исследований'),
+                decoration: const InputDecoration(labelText: 'Направление'),
+              ),
+              const SizedBox(height: AppDimensions.paddingMedium),
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(labelText: 'Почта'),
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: AppDimensions.paddingMedium),
+              TextFormField(
+                controller: _telegramController,
+                decoration: const InputDecoration(labelText: 'Телеграм (ссылка)'),
+              ),
+              const SizedBox(height: AppDimensions.paddingMedium),
+              TextFormField(
+                controller: _isuNumberController,
+                decoration: const InputDecoration(labelText: 'ИСУ'),
+              ),
+              const SizedBox(height: AppDimensions.paddingMedium),
+              TextFormField(
+                controller: _facultyController,
+                decoration: const InputDecoration(labelText: 'Факультет'),
+              ),
+              const SizedBox(height: AppDimensions.paddingMedium),
+              TextFormField(
+                controller: _employmentStatusController,
+                decoration: const InputDecoration(labelText: 'Трудоустройство (статус)'),
               ),
               const SizedBox(height: AppDimensions.paddingExtraLarge),
               ElevatedButton(

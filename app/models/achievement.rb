@@ -5,7 +5,7 @@ class Achievement < ApplicationRecord
   belongs_to :achievement_participation
   
   has_many :achievement_field_answers, dependent: :destroy
-  has_many :researcher_achievements
+  has_many :researcher_achievements, dependent: :destroy
   has_many :researchers, through: :researcher_achievements
 
   accepts_nested_attributes_for :achievement_field_answers

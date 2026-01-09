@@ -17,6 +17,15 @@ module Api
         render_result(result, status_on_success: :created)
       end
 
+      def import
+        if params[:file].present?
+          result = Achievements::ImportCommand.new.call(file_path: params[:file].path)
+          render_result(result)
+        else
+          render_failure({ type: :bad_request, message: "File is required" })
+        end
+      end
+
       def update
         result = Achievements::UpdateCommand.call(params[:id], achievement_params.to_h)
         render_result(result)
@@ -35,7 +44,7 @@ module Api
       def achievement_params
         params.require(:achievement).permit(
           :achievement_type_id, :achievement_status_id, :achievement_result_id, 
-          :achievement_participation_id, :points,
+          :achievement_participation_id, :points, :submission_date,
           researcher_ids: [],
           achievement_field_answers_attributes: [:id, :achievement_field_id, :value]
         )
