@@ -50,7 +50,19 @@ class TeamDetailsScreen extends StatelessWidget {
                     backgroundColor: AppColors.primary,
                     child: Icon(Icons.star, color: Colors.white),
                   ),
-                  title: Text(team.leader!.fullName, style: AppTextStyles.body),
+                  title: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          team.leader!.fullName,
+                          style: AppTextStyles.body,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.star, size: 16, color: Colors.amber),
+                    ],
+                  ),
                   subtitle: Text(
                     '${team.leader!.degreeLevel ?? ''} ${team.leader!.subjectArea ?? ''}'.trim(),
                     style: AppTextStyles.caption,
@@ -96,7 +108,21 @@ class TeamDetailsScreen extends StatelessWidget {
                         backgroundColor: AppColors.background,
                         child: Icon(Icons.person, color: AppColors.primary),
                       ),
-                      title: Text(researcher.fullName, style: AppTextStyles.body),
+                      title: Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              researcher.fullName,
+                              style: AppTextStyles.body,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (researcher.isLeader) ...[
+                            const SizedBox(width: 8),
+                            const Icon(Icons.star, size: 16, color: Colors.amber),
+                          ],
+                        ],
+                      ),
                       subtitle: Text(
                         '${researcher.degreeLevel ?? ''} ${researcher.subjectArea ?? ''}'.trim(),
                         style: AppTextStyles.caption,

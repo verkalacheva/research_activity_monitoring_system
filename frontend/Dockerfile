@@ -3,6 +3,9 @@ FROM ghcr.io/cirruslabs/flutter:stable AS build-env
 
 WORKDIR /app
 
+# Install Node.js and nodemon for automatic restarts in development
+RUN apt-get update && apt-get install -y nodejs npm && npm install -g nodemon
+
 # Enable web support
 RUN flutter config --enable-web
 

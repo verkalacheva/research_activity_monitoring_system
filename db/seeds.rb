@@ -42,10 +42,22 @@ achievement_types_data = [
     { title: 'Дата начала стажировки', field_type: 'date', is_required: true }
   ]},
   { title: 'РИД', points: 5.0, icon_name: 'rid', fields: [
-    { title: 'Полное название РИД', field_type: 'string', is_required: true },
-    { title: 'Номер свидетельства/патента', field_type: 'string', is_required: true }
+    { title: 'Название РИД', field_type: 'string', is_required: true },
+    { title: 'Дата регистрации РИД', field_type: 'date', is_required: true },
+    { title: 'Документ регистрации РИД', field_type: 'string', is_required: true }
   ]},
-  { title: 'Наставничество/менторство', points: 3.0, icon_name: 'mentoring' }
+  { title: 'Наставничество/менторство', points: 3.0, icon_name: 'mentoring', fields: [
+    { title: 'Название программы', field_type: 'string', is_required: true },
+    { title: 'Ссылка на сайт программы', field_type: 'string', is_required: true },
+    { title: 'Дата начала прохождения программы', field_type: 'date', is_required: true },
+    { title: 'Документ подтверждающий статус наставника/ментора', field_type: 'string', is_required: true }
+  ]},
+  { title: 'Другое', points: 3.0, icon_name: 'other', fields: [
+    { title: 'Название достижения', field_type: 'string', is_required: true },
+    { title: 'Полное описание достижения', field_type: 'string', is_required: true },
+    { title: 'Документ подтверждающий достижение', field_type: 'string', is_required: true },
+    { title: 'Дата получения достижения', field_type: 'date', is_required: true }
+  ]}
 ]
 
 achievement_types_data.each do |data|

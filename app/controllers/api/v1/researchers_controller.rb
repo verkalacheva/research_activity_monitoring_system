@@ -2,7 +2,7 @@ module Api
   module V1
     class ResearchersController < BaseController
       def index
-        render json: Researcher.all.as_json(include: {
+        render json: Researcher.all.order(:surname, :name, :second_name).as_json(include: {
           achievements: {
             include: [
               { achievement_type: { include: :achievement_fields } },

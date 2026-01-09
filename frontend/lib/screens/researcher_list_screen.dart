@@ -120,12 +120,27 @@ class _ResearcherListScreenState extends State<ResearcherListScreen> {
                   _selectedResearcher = researcher;
                 });
               },
-              title: Text(
-                researcher.fullName,
-                style: AppTextStyles.body.copyWith(
-                  color: isSelected ? AppColors.primary : null,
-                  fontWeight: isSelected ? FontWeight.bold : null,
-                ),
+              title: Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      researcher.fullName,
+                      style: AppTextStyles.body.copyWith(
+                        color: isSelected ? AppColors.primary : null,
+                        fontWeight: isSelected ? FontWeight.bold : null,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (researcher.isLeader) ...[
+                    const SizedBox(width: 8),
+                    const Icon(
+                      Icons.star,
+                      size: 16,
+                      color: Colors.amber,
+                    ),
+                  ],
+                ],
               ),
               subtitle: Text(
                 '${researcher.degreeLevel ?? ''} ${researcher.subjectArea ?? ''}'.trim(),

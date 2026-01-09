@@ -2,7 +2,7 @@ module Api
   module V1
     class AchievementTypesController < BaseController
       def index
-        render json: AchievementType.all, include: :achievement_fields
+        render json: AchievementType.all.order(:title), include: :achievement_fields
       end
 
       def show

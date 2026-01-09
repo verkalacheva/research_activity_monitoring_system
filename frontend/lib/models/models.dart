@@ -35,6 +35,14 @@ class Researcher {
 
   String get fullName => '$surname $name ${secondName ?? ''}'.trim();
 
+  static int compareByFullName(Researcher a, Researcher b) {
+    int res = a.surname.toLowerCase().compareTo(b.surname.toLowerCase());
+    if (res != 0) return res;
+    res = a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    if (res != 0) return res;
+    return (a.secondName ?? '').toLowerCase().compareTo((b.secondName ?? '').toLowerCase());
+  }
+
   factory Researcher.fromJson(Map<String, dynamic> json) {
     return Researcher(
       id: json['id'],

@@ -2,7 +2,7 @@ module Api
   module V1
     class AchievementStatusesController < BaseController
       def index
-        render json: AchievementStatus.all
+        render json: AchievementStatus.all.order(:title)
       end
 
       def show

@@ -162,7 +162,24 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(_researcher.fullName, style: AppTextStyles.h1),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          _researcher.fullName,
+                          style: AppTextStyles.h1,
+                        ),
+                      ),
+                      if (_researcher.isLeader) ...[
+                        const SizedBox(width: 8),
+                        const Icon(
+                          Icons.star,
+                          size: 28,
+                          color: Colors.amber,
+                        ),
+                      ],
+                    ],
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     '${_researcher.degreeLevel ?? ''} ${_researcher.course != null ? '(${_researcher.course} курс)' : ''}'.trim(),

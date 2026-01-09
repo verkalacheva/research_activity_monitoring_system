@@ -24,11 +24,16 @@ services:
     build:
       context: ./frontend
       target: build-env
-    command: flutter run -d web-server --web-port 80 --web-hostname 0.0.0.0
+    command: >
+      bash -c "flutter pub get &&
+               flutter create . --platforms web &&
+               nodemon --watch lib --ext dart --exec 'flutter run -d web-server --web-port 80 --web-hostname 0.0.0.0'"
     volumes:
       - ./frontend:/app
     ports:
       - "8080:80"
+    stdin_open: true
+    tty: true
     depends_on:
       - web
 

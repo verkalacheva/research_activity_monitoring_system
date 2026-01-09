@@ -2,7 +2,7 @@ module Api
   module V1
     class TeamsController < BaseController
       def index
-        render json: Team.all.as_json(include: [:researchers, :leader])
+        render json: Team.all.order(:title).as_json(include: [:researchers, :leader])
       end
 
       def show
