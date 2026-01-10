@@ -5,6 +5,19 @@ import '../models/models.dart';
 class AchievementService {
   static const String baseUrl = 'http://localhost:3000/api/v1';
 
+  Future<PaginatedResponse<Achievement>> list({int limit = 20, int offset = 0}) async {
+    final response = await http.get(Uri.parse('$baseUrl/achievements/list?limit=$limit&offset=$offset'));
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      final List itemsJson = jsonResponse['items'];
+      final items = itemsJson.map((data) => Achievement.fromJson(data)).toList();
+      final pagination = PaginationMetadata.fromJson(jsonResponse['pagination']);
+      return PaginatedResponse(items: items, pagination: pagination);
+    } else {
+      throw Exception('Failed to load achievements list');
+    }
+  }
+
   Future<Achievement> create(Achievement achievement, List<int> researcherIds) async {
     final body = achievement.toJson();
     body['researcher_ids'] = researcherIds;

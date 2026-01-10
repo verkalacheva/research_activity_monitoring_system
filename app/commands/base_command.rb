@@ -3,12 +3,32 @@ class BaseCommand
 
   protected
 
+  def success(value)
+    Success(value)
+  end
+
+  def failure(type, data)
+    case data
+    when Hash, Array
+      Failure(type: type, errors: data)
+    else
+      Failure(type: type, message: data)
+    end
+  end
+
+  def execute(error_type = :internal_error)
+    result = yield
+    result.is_a?(Dry::Monads::Result) ? result : success(result)
+  rescue => e
+    failure(error_type, e.message)
+  end
+
   def create_record(model_class, attributes)
     record = model_class.new(attributes)
     if record.save
-      Success(record)
+      success(record)
     else
-      Failure(type: :database_error, errors: record.errors.full_messages)
+      failure(:database_error, record.errors.full_messages)
     end
   end
 
@@ -19,40 +39,40 @@ class BaseCommand
   rescue Dry::Monads::Do::Halt => e
     raise e # Allow Dry::Monads to handle the halt
   rescue => e
-    Failure(type: :transaction_error, message: e.message)
+    failure(:transaction_error, e.message)
   end
 
   def update_record(record, attributes)
     if record.update(attributes)
-      Success(record)
+      success(record)
     else
-      Failure(type: :database_error, errors: record.errors.full_messages)
+      failure(:database_error, record.errors.full_messages)
     end
   end
 
   def destroy_record(record)
     if record.destroy
-      Success(record)
+      success(record)
     else
-      Failure(type: :database_error, errors: record.errors.full_messages)
+      failure(:database_error, record.errors.full_messages)
     end
   end
 
   def find_record(model_class, id)
     record = model_class.find_by(id: id)
     if record
-      Success(record)
+      success(record)
     else
-      Failure(type: :not_found, message: "#{model_class} with id #{id} not found")
+      failure(:not_found, "#{model_class} with id #{id} not found")
     end
   end
 
   def validate(contract, params)
     result = contract.new.call(params)
     if result.success?
-      Success(result.to_h)
+      success(result.to_h)
     else
-      Failure(type: :validation_error, errors: result.errors.to_h)
+      failure(:validation_error, result.errors.to_h)
     end
   end
 end

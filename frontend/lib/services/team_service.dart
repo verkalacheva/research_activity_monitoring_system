@@ -6,12 +6,26 @@ class TeamService {
   static const String baseUrl = 'http://localhost:3000/api/v1';
 
   Future<List<Team>> getAll() async {
-    final response = await http.get(Uri.parse('$baseUrl/teams'));
+    final response = await http.get(Uri.parse('$baseUrl/teams/list?limit=1000'));
     if (response.statusCode == 200) {
-      List jsonResponse = json.decode(response.body);
-      return jsonResponse.map((data) => Team.fromJson(data)).toList();
+      final jsonResponse = json.decode(response.body);
+      List itemsJson = jsonResponse['items'];
+      return itemsJson.map((data) => Team.fromJson(data)).toList();
     } else {
       throw Exception('Failed to load projects');
+    }
+  }
+
+  Future<PaginatedResponse<Team>> list({int limit = 20, int offset = 0}) async {
+    final response = await http.get(Uri.parse('$baseUrl/teams/list?limit=$limit&offset=$offset'));
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      final List itemsJson = jsonResponse['items'];
+      final items = itemsJson.map((data) => Team.fromJson(data)).toList();
+      final pagination = PaginationMetadata.fromJson(jsonResponse['pagination']);
+      return PaginatedResponse(items: items, pagination: pagination);
+    } else {
+      throw Exception('Failed to load projects list');
     }
   }
 

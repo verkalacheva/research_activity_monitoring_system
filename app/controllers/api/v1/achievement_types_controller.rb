@@ -1,12 +1,13 @@
 module Api
   module V1
     class AchievementTypesController < BaseController
-      def index
-        render json: AchievementType.all.order(:title), include: :achievement_fields
+      def list
+        result = AchievementTypes::ListCommand.call(params)
+        render_result(result)
       end
 
       def show
-        achievement_type = AchievementType.find(params[:id])
+        achievement_type = AchievementType.includes(:achievement_fields).find(params[:id])
         render json: achievement_type, include: :achievement_fields
       rescue ActiveRecord::RecordNotFound
         render_failure({ type: :not_found, message: "Achievement type not found" })

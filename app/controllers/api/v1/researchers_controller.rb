@@ -1,22 +1,22 @@
 module Api
   module V1
     class ResearchersController < BaseController
-      def index
-        render json: Researcher.all.order(:surname, :name, :second_name).as_json(include: {
-          achievements: {
-            include: [
-              { achievement_type: { include: :achievement_fields } },
-              :achievement_status,
-              :achievement_result,
-              :achievement_participation,
-              :achievement_field_answers
-            ]
-          }
-        })
+      def list
+        result = Researchers::ListCommand.call(params)
+        render_result(result)
       end
 
       def show
-        researcher = Researcher.find(params[:id])
+        researcher = Researcher.includes(
+          achievements: [
+            { achievement_type: :achievement_fields },
+            :achievement_status,
+            :achievement_result,
+            :achievement_participation,
+            :achievement_field_answers
+          ]
+        ).find(params[:id])
+
         render json: researcher.as_json(include: {
           achievements: {
             include: [

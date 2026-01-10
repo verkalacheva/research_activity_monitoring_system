@@ -16,19 +16,53 @@ class ResearcherListScreen extends StatefulWidget {
 
 class _ResearcherListScreenState extends State<ResearcherListScreen> {
   final ResearcherService _service = ResearcherService();
-  late Future<List<Researcher>> _researchersFuture;
+  final List<Researcher> _researchers = [];
+  bool _isLoading = false;
+  bool _hasMore = true;
+  int _currentOffset = 0;
+  final int _limit = 20;
   Researcher? _selectedResearcher;
 
   @override
   void initState() {
     super.initState();
-    _refreshList();
+    _loadMore();
   }
 
-  void _refreshList() {
+  Future<void> _refreshList() async {
     setState(() {
-      _researchersFuture = _service.getAll();
+      _researchers.clear();
+      _currentOffset = 0;
+      _hasMore = true;
     });
+    await _loadMore();
+  }
+
+  Future<void> _loadMore() async {
+    if (_isLoading || !_hasMore) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await _service.list(limit: _limit, offset: _currentOffset);
+      setState(() {
+        _researchers.addAll(response.items);
+        _currentOffset += _limit;
+        _hasMore = _researchers.length < response.pagination.total;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка загрузки: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -92,90 +126,93 @@ class _ResearcherListScreenState extends State<ResearcherListScreen> {
   }
 
   Widget _buildList() {
-    return FutureBuilder<List<Researcher>>(
-      future: _researchersFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Ошибка: ${snapshot.error}'));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text('Сотрудники не найдены'));
-        }
+    if (_researchers.isEmpty && _isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    } else if (_researchers.isEmpty) {
+      return const Center(child: Text('Сотрудники не найдены'));
+    }
 
-        final researchers = snapshot.data!;
-        return ListView.separated(
-          padding: const EdgeInsets.symmetric(vertical: AppDimensions.paddingMedium),
-          itemCount: researchers.length,
-          separatorBuilder: (context, index) => const Divider(height: 1),
-          itemBuilder: (context, index) {
-            final researcher = researchers[index];
-            final isSelected = _selectedResearcher?.id == researcher.id;
-
-            return ListTile(
-              selected: isSelected,
-              selectedTileColor: AppColors.primary.withOpacity(0.05),
-              onTap: () {
-                setState(() {
-                  _selectedResearcher = researcher;
-                });
-              },
-              title: Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      researcher.fullName,
-                      style: AppTextStyles.body.copyWith(
-                        color: isSelected ? AppColors.primary : null,
-                        fontWeight: isSelected ? FontWeight.bold : null,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (researcher.isLeader) ...[
-                    const SizedBox(width: 8),
-                    const Icon(
-                      Icons.star,
-                      size: 16,
-                      color: Colors.amber,
-                    ),
-                  ],
-                ],
-              ),
-              subtitle: Text(
-                '${researcher.degreeLevel ?? ''} ${researcher.subjectArea ?? ''}'.trim(),
-                style: AppTextStyles.caption,
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit, color: AppColors.primary),
-                    onPressed: () async {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ResearcherFormScreen(researcher: researcher),
-                        ),
-                      );
-                      if (result == true) {
-                        _refreshList();
-                        if (isSelected) {
-                          _refreshSelectedResearcher(researcher.id!);
-                        }
-                      }
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete, color: AppColors.error),
-                    onPressed: () => _showDeleteDialog(researcher),
-                  ),
-                ],
-              ),
+    return RefreshIndicator(
+      onRefresh: _refreshList,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(vertical: AppDimensions.paddingMedium),
+        itemCount: _researchers.length + (_hasMore ? 1 : 0),
+        separatorBuilder: (context, index) => const Divider(height: 1),
+        itemBuilder: (context, index) {
+          if (index == _researchers.length) {
+            _loadMore();
+            return const Padding(
+              padding: EdgeInsets.all(AppDimensions.paddingMedium),
+              child: Center(child: CircularProgressIndicator()),
             );
-          },
-        );
-      },
+          }
+
+          final researcher = _researchers[index];
+          final isSelected = _selectedResearcher?.id == researcher.id;
+
+          return ListTile(
+            selected: isSelected,
+            selectedTileColor: AppColors.primary.withOpacity(0.05),
+            onTap: () {
+              setState(() {
+                _selectedResearcher = researcher;
+              });
+            },
+            title: Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    researcher.fullName,
+                    style: AppTextStyles.body.copyWith(
+                      color: isSelected ? AppColors.primary : null,
+                      fontWeight: isSelected ? FontWeight.bold : null,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (researcher.isLeader) ...[
+                  const SizedBox(width: 8),
+                  const Icon(
+                    Icons.star,
+                    size: 16,
+                    color: Colors.amber,
+                  ),
+                ],
+              ],
+            ),
+            subtitle: Text(
+              '${researcher.degreeLevel ?? ''} ${researcher.subjectArea ?? ''}'.trim(),
+              style: AppTextStyles.caption,
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit, color: AppColors.primary),
+                  onPressed: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ResearcherFormScreen(researcher: researcher),
+                      ),
+                    );
+                    if (result == true) {
+                      _refreshList();
+                      if (isSelected) {
+                        _refreshSelectedResearcher(researcher.id!);
+                      }
+                    }
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: AppColors.error),
+                  onPressed: () => _showDeleteDialog(researcher),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 

@@ -1,12 +1,13 @@
 module Api
   module V1
     class TeamsController < BaseController
-      def index
-        render json: Team.all.order(:title).as_json(include: [:researchers, :leader])
+      def list
+        result = Teams::ListCommand.call(params)
+        render_result(result)
       end
 
       def show
-        team = Team.find(params[:id])
+        team = Team.includes(:researchers, :leader).find(params[:id])
         render json: team.as_json(include: [:researchers, :leader])
       rescue ActiveRecord::RecordNotFound
         render_failure({ type: :not_found, message: "Project not found" })

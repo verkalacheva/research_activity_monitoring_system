@@ -1,8 +1,9 @@
 module Api
   module V1
     class AchievementStatusesController < BaseController
-      def index
-        render json: AchievementStatus.all.order(:title)
+      def list
+        result = AchievementStatuses::ListCommand.call(params)
+        render_result(result)
       end
 
       def show

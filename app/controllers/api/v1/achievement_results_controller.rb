@@ -1,8 +1,9 @@
 module Api
   module V1
     class AchievementResultsController < BaseController
-      def index
-        render json: AchievementResult.all.order(:title)
+      def list
+        result = AchievementResults::ListCommand.call(params)
+        render_result(result)
       end
 
       def show

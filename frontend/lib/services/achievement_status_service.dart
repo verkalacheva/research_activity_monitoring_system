@@ -6,10 +6,11 @@ class AchievementStatusService {
   static const String baseUrl = 'http://localhost:3000/api/v1';
 
   Future<List<AchievementStatus>> getAll() async {
-    final response = await http.get(Uri.parse('$baseUrl/achievement_statuses'));
+    final response = await http.get(Uri.parse('$baseUrl/achievement_statuses/list?limit=100'));
     if (response.statusCode == 200) {
-      List jsonResponse = json.decode(response.body);
-      return jsonResponse.map((data) => AchievementStatus.fromJson(data)).toList();
+      final jsonResponse = json.decode(response.body);
+      List itemsJson = jsonResponse['items'];
+      return itemsJson.map((data) => AchievementStatus.fromJson(data)).toList();
     } else {
       throw Exception('Failed to load achievement statuses');
     }

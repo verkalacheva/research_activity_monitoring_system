@@ -16,18 +16,52 @@ class TeamListScreen extends StatefulWidget {
 
 class _TeamListScreenState extends State<TeamListScreen> {
   final TeamService _service = TeamService();
-  late Future<List<Team>> _teamsFuture;
+  final List<Team> _teams = [];
+  bool _isLoading = false;
+  bool _hasMore = true;
+  int _currentOffset = 0;
+  final int _limit = 20;
 
   @override
   void initState() {
     super.initState();
-    _refreshList();
+    _loadMore();
   }
 
-  void _refreshList() {
+  Future<void> _refreshList() async {
     setState(() {
-      _teamsFuture = _service.getAll();
+      _teams.clear();
+      _currentOffset = 0;
+      _hasMore = true;
     });
+    await _loadMore();
+  }
+
+  Future<void> _loadMore() async {
+    if (_isLoading || !_hasMore) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await _service.list(limit: _limit, offset: _currentOffset);
+      setState(() {
+        _teams.addAll(response.items);
+        _currentOffset += _limit;
+        _hasMore = _teams.length < response.pagination.total;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка загрузки: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -36,74 +70,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
       appBar: AppBar(
         title: const Text('Проекты'),
       ),
-      body: FutureBuilder<List<Team>>(
-        future: _teamsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Ошибка: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Проекты не найдены'));
-          }
-
-          final teams = snapshot.data!;
-          return ListView.separated(
-            padding: const EdgeInsets.symmetric(vertical: AppDimensions.paddingMedium),
-            itemCount: teams.length,
-            separatorBuilder: (context, index) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final team = teams[index];
-              return ListTile(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => TeamDetailsScreen(team: team),
-                    ),
-                  );
-                },
-                title: Text(team.title, style: AppTextStyles.body),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (team.leader != null)
-                      Text(
-                        'Руководитель: ${team.leader!.fullName}',
-                        style: AppTextStyles.caption,
-                      ),
-                    Text(
-                      'Участников: ${team.researchers?.length ?? 0}',
-                      style: AppTextStyles.caption,
-                    ),
-                  ],
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit, color: AppColors.primary),
-                      onPressed: () async {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => TeamFormScreen(team: team),
-                          ),
-                        );
-                        if (result == true) _refreshList();
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: AppColors.error),
-                      onPressed: () => _showDeleteDialog(team),
-                    ),
-                  ],
-                ),
-              );
-            },
-          );
-        },
-      ),
+      body: _buildList(),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.primary,
         onPressed: () async {
@@ -116,6 +83,80 @@ class _TeamListScreenState extends State<TeamListScreen> {
           if (result == true) _refreshList();
         },
         child: const Icon(Icons.add, color: AppColors.surface),
+      ),
+    );
+  }
+
+  Widget _buildList() {
+    if (_teams.isEmpty && _isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    } else if (_teams.isEmpty) {
+      return const Center(child: Text('Проекты не найдены'));
+    }
+
+    return RefreshIndicator(
+      onRefresh: _refreshList,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(vertical: AppDimensions.paddingMedium),
+        itemCount: _teams.length + (_hasMore ? 1 : 0),
+        separatorBuilder: (context, index) => const Divider(height: 1),
+        itemBuilder: (context, index) {
+          if (index == _teams.length) {
+            _loadMore();
+            return const Padding(
+              padding: EdgeInsets.all(AppDimensions.paddingMedium),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          final team = _teams[index];
+          return ListTile(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => TeamDetailsScreen(team: team),
+                ),
+              );
+            },
+            title: Text(team.title, style: AppTextStyles.body),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (team.leader != null)
+                  Text(
+                    'Руководитель: ${team.leader!.fullName}',
+                    style: AppTextStyles.caption,
+                  ),
+                Text(
+                  'Участников: ${team.researchers?.length ?? 0}',
+                  style: AppTextStyles.caption,
+                ),
+              ],
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit, color: AppColors.primary),
+                  onPressed: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TeamFormScreen(team: team),
+                      ),
+                    );
+                    if (result == true) _refreshList();
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: AppColors.error),
+                  onPressed: () => _showDeleteDialog(team),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

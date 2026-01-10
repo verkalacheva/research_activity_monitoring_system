@@ -6,10 +6,11 @@ class AchievementParticipationService {
   static const String baseUrl = 'http://localhost:3000/api/v1';
 
   Future<List<AchievementParticipation>> getAll() async {
-    final response = await http.get(Uri.parse('$baseUrl/achievement_participations'));
+    final response = await http.get(Uri.parse('$baseUrl/achievement_participations/list?limit=100'));
     if (response.statusCode == 200) {
-      List jsonResponse = json.decode(response.body);
-      return jsonResponse.map((data) => AchievementParticipation.fromJson(data)).toList();
+      final jsonResponse = json.decode(response.body);
+      List itemsJson = jsonResponse['items'];
+      return itemsJson.map((data) => AchievementParticipation.fromJson(data)).toList();
     } else {
       throw Exception('Failed to load participation types');
     }
