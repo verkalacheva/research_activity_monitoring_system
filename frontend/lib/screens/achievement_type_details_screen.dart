@@ -40,7 +40,7 @@ class AchievementTypeDetailsScreen extends StatelessWidget {
                         children: [
                           Text(type.title, style: AppTextStyles.h1),
                           const SizedBox(height: AppDimensions.paddingMedium),
-                          Text('Баллы по умолчанию: ${type.points ?? 0}', style: AppTextStyles.bodySecondary),
+                          Text('Баллы по умолчанию: ${type.points?.toStringAsFixed(1) ?? 0}', style: AppTextStyles.bodySecondary),
                         ],
                       ),
                     ),

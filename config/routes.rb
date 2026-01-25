@@ -24,6 +24,22 @@ Rails.application.routes.draw do
         post :import, on: :collection
         get :list, on: :collection
       end
+
+      resources :reports, only: [] do
+        collection do
+          get :selectors
+          post :generate
+        end
+      end
+
+      scope :selectors, controller: :selectors do
+        post :researchers
+        post :teams
+        post :achievement_statuses
+        post :achievement_types
+        post :achievement_results
+        post :achievement_participations
+      end
     end
   end
 end

@@ -153,7 +153,8 @@ class _AchievementFormScreenState extends State<AchievementFormScreen> {
       return 0;
     }
 
-    return typePoints * statusPoints * resultPoints * participationPoints;
+    final points = typePoints * statusPoints * resultPoints * participationPoints;
+    return (points * 10).roundToDouble() / 10;
   }
 
   Future<void> _save() async {
@@ -295,7 +296,7 @@ class _AchievementFormScreenState extends State<AchievementFormScreen> {
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     Text(
-                      _calculatePoints().toStringAsFixed(2),
+                      _calculatePoints().toStringAsFixed(1),
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,

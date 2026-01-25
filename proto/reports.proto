@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package reports;
+
+option go_package = "./pb";
+
+service AnalyticsService {
+  rpc GenerateReport(ReportRequest) returns (ReportResponse) {}
+}
+
+message Filter {
+  string field = 1;
+  string operator = 2; // e.g., "eq", "gt", "contains", "in"
+  string value = 3;
+}
+
+message Sort {
+  string field = 1;
+  bool descending = 2;
+}
+
+message ReportRequest {
+  string report_type = 1; 
+  repeated Filter filters = 2;
+  repeated Sort sorts = 3;
+  int32 limit = 4;
+  int32 offset = 5;
+  string format = 6; // "json" or "csv"
+}
+
+message ReportResponse {
+  bytes data = 1;
+  string format = 2;
+  int32 total_count = 3;
+  map<string, double> column_totals = 4;
+}
+

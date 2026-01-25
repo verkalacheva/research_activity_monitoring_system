@@ -15,6 +15,10 @@ gem 'dry-validation'
 gem 'dry-initializer'
 gem 'interactor'
 
+gem 'grpc'
+gem 'google-protobuf'
+gem 'grpc-tools'
+
 group :development, :test do
   gem 'debug', platforms: [:mri, :mingw, :x64_mingw]
   gem 'listen', '~> 3.3'

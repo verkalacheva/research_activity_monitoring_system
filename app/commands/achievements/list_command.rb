@@ -24,9 +24,9 @@ module Achievements
       [limit, offset]
     end
 
-    def build_scope
-      Achievement.includes(:achievement_field_answers, :achievement_type).order(created_at: :desc)
-    end
+  def build_scope
+    Achievement.kept.includes(:achievement_field_answers, :achievement_type).order(created_at: :desc)
+  end
 
     def count_total(scope)
       scope.count

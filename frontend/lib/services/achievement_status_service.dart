@@ -16,6 +16,19 @@ class AchievementStatusService {
     }
   }
 
+  Future<PaginatedResponse<AchievementStatus>> list({int limit = 20, int offset = 0}) async {
+    final response = await http.get(Uri.parse('$baseUrl/achievement_statuses/list?limit=$limit&offset=$offset'));
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      final List itemsJson = jsonResponse['items'];
+      final items = itemsJson.map((data) => AchievementStatus.fromJson(data)).toList();
+      final pagination = PaginationMetadata.fromJson(jsonResponse['pagination']);
+      return PaginatedResponse(items: items, pagination: pagination);
+    } else {
+      throw Exception('Failed to load achievement statuses list');
+    }
+  }
+
   Future<AchievementStatus> create(AchievementStatus status) async {
     final response = await http.post(
       Uri.parse('$baseUrl/achievement_statuses'),

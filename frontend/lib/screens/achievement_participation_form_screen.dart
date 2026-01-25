@@ -38,7 +38,7 @@ class _AchievementParticipationFormScreenState extends State<AchievementParticip
       final participation = AchievementParticipation(
         id: widget.participation?.id,
         title: _titleController.text,
-        points: double.tryParse(_pointsController.text),
+        points: double.tryParse(_pointsController.text) != null ? (double.parse(_pointsController.text) * 10).roundToDouble() / 10 : null,
       );
 
       try {

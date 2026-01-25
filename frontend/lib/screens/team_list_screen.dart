@@ -16,6 +16,7 @@ class TeamListScreen extends StatefulWidget {
 
 class _TeamListScreenState extends State<TeamListScreen> {
   final TeamService _service = TeamService();
+  final ScrollController _scrollController = ScrollController();
   final List<Team> _teams = [];
   bool _isLoading = false;
   bool _hasMore = true;
@@ -26,6 +27,19 @@ class _TeamListScreenState extends State<TeamListScreen> {
   void initState() {
     super.initState();
     _loadMore();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      _loadMore();
+    }
   }
 
   Future<void> _refreshList() async {
@@ -97,12 +111,12 @@ class _TeamListScreenState extends State<TeamListScreen> {
     return RefreshIndicator(
       onRefresh: _refreshList,
       child: ListView.separated(
+        controller: _scrollController,
         padding: const EdgeInsets.symmetric(vertical: AppDimensions.paddingMedium),
         itemCount: _teams.length + (_hasMore ? 1 : 0),
         separatorBuilder: (context, index) => const Divider(height: 1),
         itemBuilder: (context, index) {
           if (index == _teams.length) {
-            _loadMore();
             return const Padding(
               padding: EdgeInsets.all(AppDimensions.paddingMedium),
               child: Center(child: CircularProgressIndicator()),

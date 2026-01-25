@@ -26,14 +26,14 @@ module Researchers
 
     def build_scope
       # Optimized scope with subquery for is_leader to avoid N+1 queries
-      Researcher.select(
+      Researcher.kept.select(
         :id, :surname, :name, :second_name, :degree_level, :subject_area,
         "(EXISTS (SELECT 1 FROM teams WHERE teams.leader_id = researchers.id)) AS is_leader"
       ).order(:surname, :name, :second_name)
     end
 
     def count_total(scope)
-      Researcher.count
+      Researcher.kept.count
     end
 
     def fetch_items(scope, limit, offset)

@@ -1,4 +1,6 @@
 class Researcher < ApplicationRecord
+  include SoftDeletable
+
   has_many :researchers_teams, dependent: :destroy
   has_many :teams, through: :researchers_teams
   has_many :led_teams, class_name: 'Team', foreign_key: 'leader_id', dependent: :nullify

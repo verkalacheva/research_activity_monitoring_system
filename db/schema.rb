@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_01_09_130000) do
+ActiveRecord::Schema[7.0].define(version: 2026_01_10_163000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -20,8 +20,10 @@ ActiveRecord::Schema[7.0].define(version: 2026_01_09_130000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "achievement_id", null: false
+    t.datetime "deleted_at"
     t.index ["achievement_field_id"], name: "index_achievement_field_answers_on_achievement_field_id"
     t.index ["achievement_id"], name: "index_achievement_field_answers_on_achievement_id"
+    t.index ["deleted_at"], name: "index_achievement_field_answers_on_deleted_at"
   end
 
   create_table "achievement_fields", force: :cascade do |t|
@@ -32,7 +34,9 @@ ActiveRecord::Schema[7.0].define(version: 2026_01_09_130000) do
     t.boolean "is_required", default: false
     t.bigint "achievement_type_id"
     t.jsonb "options", default: []
+    t.datetime "deleted_at"
     t.index ["achievement_type_id"], name: "index_achievement_fields_on_achievement_type_id"
+    t.index ["deleted_at"], name: "index_achievement_fields_on_deleted_at"
   end
 
   create_table "achievement_participations", force: :cascade do |t|
@@ -40,6 +44,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_01_09_130000) do
     t.float "points"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_achievement_participations_on_deleted_at"
   end
 
   create_table "achievement_results", force: :cascade do |t|
@@ -47,6 +53,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_01_09_130000) do
     t.float "points"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_achievement_results_on_deleted_at"
   end
 
   create_table "achievement_statuses", force: :cascade do |t|
@@ -54,6 +62,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_01_09_130000) do
     t.float "points"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_achievement_statuses_on_deleted_at"
   end
 
   create_table "achievement_types", force: :cascade do |t|
@@ -62,6 +72,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_01_09_130000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "icon_name"
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_achievement_types_on_deleted_at"
   end
 
   create_table "achievements", force: :cascade do |t|
@@ -73,10 +85,12 @@ ActiveRecord::Schema[7.0].define(version: 2026_01_09_130000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "submission_date"
+    t.datetime "deleted_at"
     t.index ["achievement_participation_id"], name: "index_achievements_on_achievement_participation_id"
     t.index ["achievement_result_id"], name: "index_achievements_on_achievement_result_id"
     t.index ["achievement_status_id"], name: "index_achievements_on_achievement_status_id"
     t.index ["achievement_type_id"], name: "index_achievements_on_achievement_type_id"
+    t.index ["deleted_at"], name: "index_achievements_on_deleted_at"
   end
 
   create_table "researcher_achievements", force: :cascade do |t|
@@ -102,6 +116,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_01_09_130000) do
     t.text "isu_number"
     t.text "faculty"
     t.text "employment_status"
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_researchers_on_deleted_at"
   end
 
   create_table "researchers_teams", force: :cascade do |t|
@@ -118,6 +134,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_01_09_130000) do
     t.bigint "leader_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_teams_on_deleted_at"
     t.index ["leader_id"], name: "index_teams_on_leader_id"
   end
 

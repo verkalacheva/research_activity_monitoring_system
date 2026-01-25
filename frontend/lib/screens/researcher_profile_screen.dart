@@ -255,7 +255,7 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${achievement.status?.title ?? ""}, ${achievement.result?.title ?? ""}, Баллы: ${achievement.points ?? 0}'),
+                Text('${achievement.status?.title ?? ""}, ${achievement.result?.title ?? ""}, Баллы: ${achievement.points?.toStringAsFixed(1) ?? 0}'),
                 if (achievement.submissionDate != null)
                   Text(
                     'Загружено: ${DateFormat('dd.MM.yyyy HH:mm').format(achievement.submissionDate!)}',

@@ -38,7 +38,7 @@ class _AchievementStatusFormScreenState extends State<AchievementStatusFormScree
       final status = AchievementStatus(
         id: widget.status?.id,
         title: _titleController.text,
-        points: double.tryParse(_pointsController.text),
+        points: double.tryParse(_pointsController.text) != null ? (double.parse(_pointsController.text) * 10).roundToDouble() / 10 : null,
       );
 
       try {

@@ -7,7 +7,7 @@ module Api
       end
 
       def show
-        team = Team.includes(:researchers, :leader).find(params[:id])
+        team = Team.find(params[:id])
         render json: team.as_json(include: [:researchers, :leader])
       rescue ActiveRecord::RecordNotFound
         render_failure({ type: :not_found, message: "Project not found" })

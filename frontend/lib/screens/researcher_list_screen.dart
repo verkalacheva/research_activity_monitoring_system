@@ -16,6 +16,7 @@ class ResearcherListScreen extends StatefulWidget {
 
 class _ResearcherListScreenState extends State<ResearcherListScreen> {
   final ResearcherService _service = ResearcherService();
+  final ScrollController _scrollController = ScrollController();
   final List<Researcher> _researchers = [];
   bool _isLoading = false;
   bool _hasMore = true;
@@ -27,6 +28,19 @@ class _ResearcherListScreenState extends State<ResearcherListScreen> {
   void initState() {
     super.initState();
     _loadMore();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      _loadMore();
+    }
   }
 
   Future<void> _refreshList() async {
@@ -135,12 +149,12 @@ class _ResearcherListScreenState extends State<ResearcherListScreen> {
     return RefreshIndicator(
       onRefresh: _refreshList,
       child: ListView.separated(
+        controller: _scrollController,
         padding: const EdgeInsets.symmetric(vertical: AppDimensions.paddingMedium),
         itemCount: _researchers.length + (_hasMore ? 1 : 0),
         separatorBuilder: (context, index) => const Divider(height: 1),
         itemBuilder: (context, index) {
           if (index == _researchers.length) {
-            _loadMore();
             return const Padding(
               padding: EdgeInsets.all(AppDimensions.paddingMedium),
               child: Center(child: CircularProgressIndicator()),

@@ -16,6 +16,19 @@ class AchievementParticipationService {
     }
   }
 
+  Future<PaginatedResponse<AchievementParticipation>> list({int limit = 20, int offset = 0}) async {
+    final response = await http.get(Uri.parse('$baseUrl/achievement_participations/list?limit=$limit&offset=$offset'));
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      final List itemsJson = jsonResponse['items'];
+      final items = itemsJson.map((data) => AchievementParticipation.fromJson(data)).toList();
+      final pagination = PaginationMetadata.fromJson(jsonResponse['pagination']);
+      return PaginatedResponse(items: items, pagination: pagination);
+    } else {
+      throw Exception('Failed to load participation types list');
+    }
+  }
+
   Future<AchievementParticipation> create(AchievementParticipation participation) async {
     final response = await http.post(
       Uri.parse('$baseUrl/achievement_participations'),
