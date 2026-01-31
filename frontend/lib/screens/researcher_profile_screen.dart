@@ -135,6 +135,7 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
             achievements: updated.achievements.isEmpty ? _researcher.achievements : updated.achievements,
           );
           _isEditing = false;
+          _initControllers(); // Обновляем контроллеры новыми данными
         });
         widget.onResearcherUpdated?.call(_researcher);
       } catch (e) {
@@ -190,16 +191,6 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text('Информация', style: AppTextStyles.h2),
-                          if (widget.isEmbedded)
-                            IconButton(
-                              icon: Icon(_isEditing ? Icons.close : Icons.edit, color: AppColors.primary),
-                              onPressed: () {
-                                setState(() {
-                                  _initControllers(); // Инициализируем контроллеры актуальными данными
-                                  _isEditing = !_isEditing;
-                                });
-                              },
-                            ),
                         ],
                       ),
                       const SizedBox(height: AppDimensions.paddingMedium),
@@ -263,6 +254,7 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
       child: Padding(
         padding: const EdgeInsets.all(AppDimensions.paddingLarge),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const CircleAvatar(
               radius: AppDimensions.avatarSizeLarge,
@@ -271,70 +263,106 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
             ),
             const SizedBox(width: AppDimensions.paddingLarge),
             Expanded(
-              child: Column(
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (_isEditing) ...[
-                    TextFormField(
-                      controller: _surnameController,
-                      decoration: const InputDecoration(labelText: 'Фамилия *', isDense: true),
-                      validator: (v) => v?.isEmpty ?? true ? 'Обязательно' : null,
-                    ),
-                    const SizedBox(height: AppDimensions.paddingMedium),
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: const InputDecoration(labelText: 'Имя *', isDense: true),
-                      validator: (v) => v?.isEmpty ?? true ? 'Обязательно' : null,
-                    ),
-                    const SizedBox(height: AppDimensions.paddingMedium),
-                    TextFormField(
-                      controller: _secondNameController,
-                      decoration: const InputDecoration(labelText: 'Отчество', isDense: true),
-                    ),
-                  ] else
-                    Row(
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Flexible(
-                          child: Text(
-                            _researcher.fullName,
-                            style: AppTextStyles.h1,
+                        if (_isEditing) ...[
+                          TextFormField(
+                            controller: _surnameController,
+                            decoration: const InputDecoration(labelText: 'Фамилия *', isDense: true),
+                            validator: (v) => v?.isEmpty ?? true ? 'Обязательно' : null,
                           ),
-                        ),
-                        if (_researcher.isLeader) ...[
-                          const SizedBox(width: 8),
-                          const Icon(
-                            Icons.star,
-                            size: 28,
-                            color: Colors.amber,
+                          const SizedBox(height: AppDimensions.paddingMedium),
+                          TextFormField(
+                            controller: _nameController,
+                            decoration: const InputDecoration(labelText: 'Имя *', isDense: true),
+                            validator: (v) => v?.isEmpty ?? true ? 'Обязательно' : null,
                           ),
-                        ],
+                          const SizedBox(height: AppDimensions.paddingMedium),
+                          TextFormField(
+                            controller: _secondNameController,
+                            decoration: const InputDecoration(labelText: 'Отчество', isDense: true),
+                          ),
+                        ] else
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  _researcher.fullName,
+                                  style: AppTextStyles.h1,
+                                ),
+                              ),
+                              if (_researcher.isLeader) ...[
+                                const SizedBox(width: 8),
+                                const Icon(
+                                  Icons.star,
+                                  size: 28,
+                                  color: Colors.amber,
+                                ),
+                              ],
+                              if (widget.isEmbedded) ...[
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  icon: Icon(_isEditing ? Icons.close : Icons.edit, color: AppColors.primary),
+                                  onPressed: () {
+                                    setState(() {
+                                      _initControllers();
+                                      _isEditing = !_isEditing;
+                                    });
+                                  },
+                                  tooltip: _isEditing ? 'Отмена' : 'Редактировать',
+                                ),
+                              ],
+                            ],
+                          ),
+                        const SizedBox(height: AppDimensions.paddingMedium),
+                        if (_isEditing)
+                          DropdownButtonFormField<int>(
+                            value: _selectedCourse,
+                            decoration: const InputDecoration(labelText: 'Курс', isDense: true),
+                            items: [1, 2, 3, 4, 5, 6].map((c) => DropdownMenuItem(value: c, child: Text('$c курс'))).toList(),
+                            onChanged: (v) => setState(() => _selectedCourse = v),
+                          )
+                        else
+                          Text(
+                            '${_researcher.degreeLevel ?? ''} ${_researcher.course != null ? '(${_researcher.course} курс)' : ''}'.trim(),
+                            style: AppTextStyles.bodySecondary,
+                          ),
+                        const SizedBox(height: 16),
+                        if (_isEditing)
+                          TextFormField(
+                            controller: _subjectAreaController,
+                            decoration: const InputDecoration(labelText: 'Направление', isDense: true),
+                          )
+                        else if (_researcher.subjectArea != null)
+                          Chip(
+                            label: Text(_researcher.subjectArea!),
+                            backgroundColor: AppColors.background,
+                            side: BorderSide.none,
+                          ),
                       ],
                     ),
-                  const SizedBox(height: AppDimensions.paddingMedium),
-                  if (_isEditing)
-                    DropdownButtonFormField<int>(
-                      value: _selectedCourse,
-                      decoration: const InputDecoration(labelText: 'Курс', isDense: true),
-                      items: [1, 2, 3, 4, 5, 6].map((c) => DropdownMenuItem(value: c, child: Text('$c курс'))).toList(),
-                      onChanged: (v) => setState(() => _selectedCourse = v),
-                    )
-                  else
-                    Text(
-                      '${_researcher.degreeLevel ?? ''} ${_researcher.course != null ? '(${_researcher.course} курс)' : ''}'.trim(),
-                      style: AppTextStyles.bodySecondary,
+                  ),
+                  if (widget.isEmbedded && _isEditing) ...[
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: AppColors.primary),
+                      onPressed: () {
+                        setState(() {
+                          _initControllers();
+                          _isEditing = false;
+                        });
+                      },
+                      tooltip: 'Отмена',
                     ),
-                  const SizedBox(height: 16),
-                  if (_isEditing)
-                    TextFormField(
-                      controller: _subjectAreaController,
-                      decoration: const InputDecoration(labelText: 'Направление', isDense: true),
-                    )
-                  else if (_researcher.subjectArea != null)
-                    Chip(
-                      label: Text(_researcher.subjectArea!),
-                      backgroundColor: AppColors.background,
-                      side: BorderSide.none,
-                    ),
+                    const SizedBox(width: 40),
+                  ] else if (widget.isEmbedded) ...[
+                    const SizedBox(width: 40),
+                  ],
                 ],
               ),
             ),

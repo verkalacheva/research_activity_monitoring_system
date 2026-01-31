@@ -4,6 +4,7 @@ import '../services/achievement_result_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_dimensions.dart';
+import '../utils/clipboard_helper.dart';
 import 'achievement_result_form_screen.dart';
 
 class AchievementResultListScreen extends StatefulWidget {
@@ -21,6 +22,7 @@ class _AchievementResultListScreenState extends State<AchievementResultListScree
   bool _hasMore = true;
   int _currentOffset = 0;
   final int _limit = 20;
+  AchievementResult? _selectedResult;
 
   @override
   void initState() {
@@ -83,19 +85,64 @@ class _AchievementResultListScreenState extends State<AchievementResultListScree
       appBar: AppBar(
         title: const Text('Результаты достижений'),
       ),
-      body: _buildList(),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.primary,
-        onPressed: () async {
-          final res = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const AchievementResultFormScreen(),
+      body: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Scaffold(
+              backgroundColor: Colors.transparent,
+              body: _buildList(),
+              floatingActionButton: FloatingActionButton(
+                heroTag: 'add_achievement_result_fab',
+                backgroundColor: AppColors.primary,
+                onPressed: () async {
+                  final res = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AchievementResultFormScreen(),
+                    ),
+                  );
+                  if (res == true) _refreshList();
+                },
+                child: const Icon(Icons.add, color: AppColors.surface),
+              ),
             ),
-          );
-          if (res == true) _refreshList();
-        },
-        child: const Icon(Icons.add, color: AppColors.surface),
+          ),
+          if (_selectedResult != null) ...[
+            const VerticalDivider(width: 1),
+            Expanded(
+              flex: 3,
+              child: Stack(
+                children: [
+                  AchievementResultFormScreen(
+                    result: _selectedResult,
+                    isEmbedded: true,
+                    onResultUpdated: (updated) {
+                      setState(() {
+                        _selectedResult = updated;
+                      });
+                      _refreshList();
+                    },
+                  ),
+                  Positioned(
+                    top: AppDimensions.paddingMedium,
+                    right: AppDimensions.paddingMedium,
+                    child: IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => setState(() {
+                        _selectedResult = null;
+                      }),
+                      style: IconButton.styleFrom(
+                        backgroundColor: AppColors.surface,
+                        elevation: 2,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -123,23 +170,31 @@ class _AchievementResultListScreenState extends State<AchievementResultListScree
           }
 
           final result = _results[index];
+          final isSelected = _selectedResult?.id == result.id;
+
           return ListTile(
-            title: Text(result.title, style: AppTextStyles.body),
+            selected: isSelected,
+            selectedTileColor: AppColors.primary.withOpacity(0.05),
+            onTap: () {
+              setState(() {
+                _selectedResult = result;
+              });
+            },
+            title: Text(
+              result.title,
+              style: AppTextStyles.body.copyWith(
+                color: isSelected ? AppColors.primary : null,
+                fontWeight: isSelected ? FontWeight.bold : null,
+              ),
+            ),
             subtitle: Text('Баллы: ${result.points ?? 0}', style: AppTextStyles.caption),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.edit, color: AppColors.primary),
-                  onPressed: () async {
-                    final res = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AchievementResultFormScreen(result: result),
-                      ),
-                    );
-                    if (res == true) _refreshList();
-                  },
+                  icon: const Icon(Icons.copy, size: 20, color: AppColors.inactive),
+                  onPressed: () => ClipboardHelper.copyToClipboard(context, result.title),
+                  tooltip: 'Копировать название результата',
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete, color: AppColors.error),
@@ -169,6 +224,9 @@ class _AchievementResultListScreenState extends State<AchievementResultListScree
               await _service.delete(result.id!);
               if (mounted) {
                 Navigator.pop(context);
+                if (_selectedResult?.id == result.id) {
+                  setState(() => _selectedResult = null);
+                }
                 _refreshList();
               }
             },

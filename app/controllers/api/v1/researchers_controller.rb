@@ -34,12 +34,20 @@ module Api
 
       def create
         result = Researchers::CreateCommand.call(researcher_params.to_h)
-        render_result(result, status_on_success: :created)
+        if result.success?
+          render json: researcher_json(result.value!), status: :created
+        else
+          render_result(result)
+        end
       end
 
       def update
         result = Researchers::UpdateCommand.call(params[:id], researcher_params.to_h)
-        render_result(result)
+        if result.success?
+          render json: researcher_json(result.value!)
+        else
+          render_result(result)
+        end
       end
 
       def destroy
@@ -57,6 +65,20 @@ module Api
       end
 
       private
+
+      def researcher_json(researcher)
+        researcher.as_json(include: {
+          achievements: {
+            include: [
+              { achievement_type: { include: :achievement_fields } },
+              :achievement_status,
+              :achievement_result,
+              :achievement_participation,
+              :achievement_field_answers
+            ]
+          }
+        })
+      end
 
       def researcher_params
         params.require(:researcher).permit(

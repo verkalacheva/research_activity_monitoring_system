@@ -4,6 +4,7 @@ import '../services/team_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_dimensions.dart';
+import '../utils/clipboard_helper.dart';
 import 'team_details_screen.dart';
 import 'team_form_screen.dart';
 
@@ -22,6 +23,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
   bool _hasMore = true;
   int _currentOffset = 0;
   final int _limit = 20;
+  Team? _selectedTeam;
 
   @override
   void initState() {
@@ -84,19 +86,64 @@ class _TeamListScreenState extends State<TeamListScreen> {
       appBar: AppBar(
         title: const Text('Проекты'),
       ),
-      body: _buildList(),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.primary,
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const TeamFormScreen(),
+      body: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Scaffold(
+              backgroundColor: Colors.transparent,
+              body: _buildList(),
+              floatingActionButton: FloatingActionButton(
+                heroTag: 'add_team_fab',
+                backgroundColor: AppColors.primary,
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const TeamFormScreen(),
+                    ),
+                  );
+                  if (result == true) _refreshList();
+                },
+                child: const Icon(Icons.add, color: AppColors.surface),
+              ),
             ),
-          );
-          if (result == true) _refreshList();
-        },
-        child: const Icon(Icons.add, color: AppColors.surface),
+          ),
+          if (_selectedTeam != null) ...[
+            const VerticalDivider(width: 1),
+            Expanded(
+              flex: 3,
+              child: Stack(
+                children: [
+                  TeamDetailsScreen(
+                    team: _selectedTeam!,
+                    isEmbedded: true,
+                    onTeamUpdated: (updated) {
+                      setState(() {
+                        _selectedTeam = updated;
+                      });
+                      _refreshList();
+                    },
+                  ),
+                  Positioned(
+                    top: AppDimensions.paddingMedium,
+                    right: AppDimensions.paddingMedium,
+                    child: IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => setState(() {
+                        _selectedTeam = null;
+                      }),
+                      style: IconButton.styleFrom(
+                        backgroundColor: AppColors.surface,
+                        elevation: 2,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -124,16 +171,23 @@ class _TeamListScreenState extends State<TeamListScreen> {
           }
 
           final team = _teams[index];
+          final isSelected = _selectedTeam?.id == team.id;
+
           return ListTile(
+            selected: isSelected,
+            selectedTileColor: AppColors.primary.withOpacity(0.05),
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => TeamDetailsScreen(team: team),
-                ),
-              );
+              setState(() {
+                _selectedTeam = team;
+              });
             },
-            title: Text(team.title, style: AppTextStyles.body),
+            title: Text(
+              team.title,
+              style: AppTextStyles.body.copyWith(
+                color: isSelected ? AppColors.primary : null,
+                fontWeight: isSelected ? FontWeight.bold : null,
+              ),
+            ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -152,16 +206,9 @@ class _TeamListScreenState extends State<TeamListScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.edit, color: AppColors.primary),
-                  onPressed: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => TeamFormScreen(team: team),
-                      ),
-                    );
-                    if (result == true) _refreshList();
-                  },
+                  icon: const Icon(Icons.copy, size: 20, color: AppColors.inactive),
+                  onPressed: () => ClipboardHelper.copyToClipboard(context, team.title),
+                  tooltip: 'Копировать название проекта',
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete, color: AppColors.error),
@@ -191,6 +238,9 @@ class _TeamListScreenState extends State<TeamListScreen> {
               await _service.delete(team.id!);
               if (mounted) {
                 Navigator.pop(context);
+                if (_selectedTeam?.id == team.id) {
+                  setState(() => _selectedTeam = null);
+                }
                 _refreshList();
               }
             },

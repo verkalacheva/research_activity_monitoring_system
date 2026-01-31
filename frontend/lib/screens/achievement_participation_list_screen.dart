@@ -4,6 +4,7 @@ import '../services/achievement_participation_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_dimensions.dart';
+import '../utils/clipboard_helper.dart';
 import 'achievement_participation_form_screen.dart';
 
 class AchievementParticipationListScreen extends StatefulWidget {
@@ -21,6 +22,7 @@ class _AchievementParticipationListScreenState extends State<AchievementParticip
   bool _hasMore = true;
   int _currentOffset = 0;
   final int _limit = 20;
+  AchievementParticipation? _selectedParticipation;
 
   @override
   void initState() {
@@ -83,19 +85,64 @@ class _AchievementParticipationListScreenState extends State<AchievementParticip
       appBar: AppBar(
         title: const Text('Типы участия'),
       ),
-      body: _buildList(),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.primary,
-        onPressed: () async {
-          final res = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const AchievementParticipationFormScreen(),
+      body: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Scaffold(
+              backgroundColor: Colors.transparent,
+              body: _buildList(),
+              floatingActionButton: FloatingActionButton(
+                heroTag: 'add_participation_fab',
+                backgroundColor: AppColors.primary,
+                onPressed: () async {
+                  final res = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AchievementParticipationFormScreen(),
+                    ),
+                  );
+                  if (res == true) _refreshList();
+                },
+                child: const Icon(Icons.add, color: AppColors.surface),
+              ),
             ),
-          );
-          if (res == true) _refreshList();
-        },
-        child: const Icon(Icons.add, color: AppColors.surface),
+          ),
+          if (_selectedParticipation != null) ...[
+            const VerticalDivider(width: 1),
+            Expanded(
+              flex: 3,
+              child: Stack(
+                children: [
+                  AchievementParticipationFormScreen(
+                    participation: _selectedParticipation,
+                    isEmbedded: true,
+                    onParticipationUpdated: (updated) {
+                      setState(() {
+                        _selectedParticipation = updated;
+                      });
+                      _refreshList();
+                    },
+                  ),
+                  Positioned(
+                    top: AppDimensions.paddingMedium,
+                    right: AppDimensions.paddingMedium,
+                    child: IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => setState(() {
+                        _selectedParticipation = null;
+                      }),
+                      style: IconButton.styleFrom(
+                        backgroundColor: AppColors.surface,
+                        elevation: 2,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -123,23 +170,31 @@ class _AchievementParticipationListScreenState extends State<AchievementParticip
           }
 
           final participation = _participations[index];
+          final isSelected = _selectedParticipation?.id == participation.id;
+
           return ListTile(
-            title: Text(participation.title, style: AppTextStyles.body),
+            selected: isSelected,
+            selectedTileColor: AppColors.primary.withOpacity(0.05),
+            onTap: () {
+              setState(() {
+                _selectedParticipation = participation;
+              });
+            },
+            title: Text(
+              participation.title,
+              style: AppTextStyles.body.copyWith(
+                color: isSelected ? AppColors.primary : null,
+                fontWeight: isSelected ? FontWeight.bold : null,
+              ),
+            ),
             subtitle: Text('Баллы: ${participation.points ?? 0}', style: AppTextStyles.caption),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.edit, color: AppColors.primary),
-                  onPressed: () async {
-                    final res = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AchievementParticipationFormScreen(participation: participation),
-                      ),
-                    );
-                    if (res == true) _refreshList();
-                  },
+                  icon: const Icon(Icons.copy, size: 20, color: AppColors.inactive),
+                  onPressed: () => ClipboardHelper.copyToClipboard(context, participation.title),
+                  tooltip: 'Копировать название участия',
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete, color: AppColors.error),
@@ -169,6 +224,9 @@ class _AchievementParticipationListScreenState extends State<AchievementParticip
               await _service.delete(participation.id!);
               if (mounted) {
                 Navigator.pop(context);
+                if (_selectedParticipation?.id == participation.id) {
+                  setState(() => _selectedParticipation = null);
+                }
                 _refreshList();
               }
             },

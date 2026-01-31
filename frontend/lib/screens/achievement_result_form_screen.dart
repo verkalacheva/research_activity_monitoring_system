@@ -1,12 +1,21 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../services/achievement_result_service.dart';
+import '../theme/app_colors.dart';
 import '../theme/app_dimensions.dart';
+import '../theme/app_text_styles.dart';
 
 class AchievementResultFormScreen extends StatefulWidget {
   final AchievementResult? result;
+  final bool isEmbedded;
+  final Function(AchievementResult)? onResultUpdated;
 
-  const AchievementResultFormScreen({super.key, this.result});
+  const AchievementResultFormScreen({
+    super.key,
+    this.result,
+    this.isEmbedded = false,
+    this.onResultUpdated,
+  });
 
   @override
   State<AchievementResultFormScreen> createState() => _AchievementResultFormScreenState();
@@ -18,12 +27,23 @@ class _AchievementResultFormScreenState extends State<AchievementResultFormScree
 
   late TextEditingController _titleController;
   late TextEditingController _pointsController;
+  bool _isLoading = false;
+  bool _isEditing = false;
+  late AchievementResult? _currentResult;
 
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.result?.title ?? '');
-    _pointsController = TextEditingController(text: widget.result?.points?.toString() ?? '');
+    _currentResult = widget.result;
+    _isEditing = widget.result == null || !widget.isEmbedded;
+    _titleController = TextEditingController();
+    _pointsController = TextEditingController();
+    _initControllers();
+  }
+
+  void _initControllers() {
+    _titleController.text = _currentResult?.title ?? '';
+    _pointsController.text = _currentResult?.points?.toString() ?? '';
   }
 
   @override
@@ -33,22 +53,48 @@ class _AchievementResultFormScreenState extends State<AchievementResultFormScree
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(AchievementResultFormScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.result != widget.result) {
+      setState(() {
+        _currentResult = widget.result;
+        _isEditing = _currentResult == null || !widget.isEmbedded;
+        _initControllers();
+      });
+    }
+  }
+
   void _save() async {
     if (_formKey.currentState!.validate()) {
+      setState(() => _isLoading = true);
       final result = AchievementResult(
-        id: widget.result?.id,
+        id: _currentResult?.id,
         title: _titleController.text,
         points: double.tryParse(_pointsController.text) != null ? (double.parse(_pointsController.text) * 10).roundToDouble() / 10 : null,
       );
 
       try {
-        if (widget.result == null) {
-          await _service.create(result);
+        AchievementResult savedResult;
+        if (_currentResult == null) {
+          savedResult = await _service.create(result);
         } else {
-          await _service.update(widget.result!.id!, result);
+          savedResult = await _service.update(_currentResult!.id!, result);
         }
-        if (mounted) Navigator.pop(context, true);
+
+        if (widget.isEmbedded) {
+          setState(() {
+            _currentResult = savedResult;
+            _isEditing = false;
+            _isLoading = false;
+            _initControllers();
+          });
+          widget.onResultUpdated?.call(savedResult);
+        } else {
+          if (mounted) Navigator.pop(context, true);
+        }
       } catch (e) {
+        setState(() => _isLoading = false);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Ошибка сохранения: $e')),
@@ -60,37 +106,92 @@ class _AchievementResultFormScreenState extends State<AchievementResultFormScree
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.result == null ? 'Новый результат' : 'Редактирование'),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppDimensions.paddingLarge),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
+    final content = SingleChildScrollView(
+      padding: const EdgeInsets.all(AppDimensions.paddingLarge),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (widget.isEmbedded)
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(_isEditing ? (_currentResult == null ? 'Новый результат' : 'Редактирование') : 'Информация о результате', style: AppTextStyles.h2),
+                  ),
+                  if (_currentResult != null) ...[
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: Icon(_isEditing ? Icons.close : Icons.edit, color: AppColors.primary),
+                      onPressed: () {
+                        setState(() {
+                          if (_isEditing) _initControllers();
+                          _isEditing = !_isEditing;
+                        });
+                      },
+                    ),
+                  ],
+                  const SizedBox(width: 40),
+                ],
+              ),
+            const SizedBox(height: AppDimensions.paddingMedium),
+            if (!_isEditing && _currentResult != null) ...[
+              _buildInfoRow('Название', _currentResult!.title),
+              const Divider(),
+              _buildInfoRow('Баллы по умолчанию', _currentResult!.points?.toStringAsFixed(1) ?? '0'),
+            ] else ...[
               TextFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(labelText: 'Название *'),
+                decoration: const InputDecoration(labelText: 'Название *', border: OutlineInputBorder()),
                 validator: (value) => value == null || value.isEmpty ? 'Введите название' : null,
               ),
               const SizedBox(height: AppDimensions.paddingMedium),
               TextFormField(
                 controller: _pointsController,
-                decoration: const InputDecoration(labelText: 'Баллы по умолчанию'),
+                decoration: const InputDecoration(labelText: 'Баллы по умолчанию', border: OutlineInputBorder()),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
               ),
               const SizedBox(height: AppDimensions.paddingExtraLarge),
-              ElevatedButton(
-                onPressed: _save,
-                child: const Text('Сохранить'),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _save,
+                  child: _isLoading 
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('Сохранить'),
+                ),
               ),
             ],
-          ),
+          ],
         ),
+      ),
+    );
+
+    if (widget.isEmbedded) {
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: content,
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_currentResult == null ? 'Новый результат' : 'Редактирование'),
+      ),
+      body: content,
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppDimensions.paddingSmall),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: AppTextStyles.caption),
+          Text(value, style: AppTextStyles.body),
+        ],
       ),
     );
   }
 }
-

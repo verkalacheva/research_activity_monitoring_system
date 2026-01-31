@@ -15,12 +15,20 @@ module Api
 
       def create
         result = AchievementTypes::CreateCommand.call(achievement_type_params.to_h)
-        render_result(result, status_on_success: :created)
+        if result.success?
+          render json: result.value!, include: :achievement_fields, status: :created
+        else
+          render_result(result)
+        end
       end
 
       def update
         result = AchievementTypes::UpdateCommand.call(params[:id], achievement_type_params.to_h)
-        render_result(result)
+        if result.success?
+          render json: result.value!, include: :achievement_fields
+        else
+          render_result(result)
+        end
       end
 
       def destroy

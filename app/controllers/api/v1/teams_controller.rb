@@ -15,12 +15,20 @@ module Api
 
       def create
         result = Teams::CreateCommand.call(team_params.to_h)
-        render_result(result, status_on_success: :created)
+        if result.success?
+          render json: result.value!.as_json(include: [:researchers, :leader]), status: :created
+        else
+          render_result(result)
+        end
       end
 
       def update
         result = Teams::UpdateCommand.call(params[:id], team_params.to_h)
-        render_result(result)
+        if result.success?
+          render json: result.value!.as_json(include: [:researchers, :leader])
+        else
+          render_result(result)
+        end
       end
 
       def destroy

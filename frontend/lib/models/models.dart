@@ -221,16 +221,18 @@ class Team {
   });
 
   factory Team.fromJson(Map<String, dynamic> json) {
+    final researchersJson = json['researchers'] as List?;
+    final List<Researcher>? researchers = researchersJson != null
+        ? researchersJson.map((r) => Researcher.fromJson(r)).toList()
+        : null;
+    researchers?.sort(Researcher.compareByFullName);
+
     return Team(
       id: json['id'],
       title: json['title'] ?? '',
       leaderId: json['leader_id'],
       leader: json['leader'] != null ? Researcher.fromJson(json['leader']) : null,
-      researchers: json['researchers'] != null
-          ? (json['researchers'] as List)
-              .map((r) => Researcher.fromJson(r))
-              .toList()
-          : null,
+      researchers: researchers,
     );
   }
 
@@ -281,6 +283,24 @@ class AchievementField {
       'options': options,
       if (destroy != null) '_destroy': destroy,
     };
+  }
+
+  AchievementField copyWith({
+    int? id,
+    String? title,
+    String? fieldType,
+    bool? isRequired,
+    List<String>? options,
+    bool? destroy,
+  }) {
+    return AchievementField(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      fieldType: fieldType ?? this.fieldType,
+      isRequired: isRequired ?? this.isRequired,
+      options: options ?? this.options,
+      destroy: destroy ?? this.destroy,
+    );
   }
 }
 

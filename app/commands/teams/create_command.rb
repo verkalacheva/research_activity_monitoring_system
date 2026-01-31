@@ -9,7 +9,7 @@ module Teams
       
       if team.save
         team.researcher_ids = researcher_ids if researcher_ids
-        Success(team)
+        Success(team.reload)
       else
         Failure(type: :database_error, errors: team.errors.full_messages)
       end

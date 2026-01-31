@@ -5,6 +5,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_dimensions.dart';
 import '../utils/icon_helper.dart';
+import '../utils/clipboard_helper.dart';
 import 'achievement_type_form_screen.dart';
 import 'achievement_type_details_screen.dart';
 
@@ -23,6 +24,7 @@ class _AchievementTypeListScreenState extends State<AchievementTypeListScreen> {
   bool _hasMore = true;
   int _currentOffset = 0;
   final int _limit = 20;
+  AchievementType? _selectedType;
 
   @override
   void initState() {
@@ -85,19 +87,64 @@ class _AchievementTypeListScreenState extends State<AchievementTypeListScreen> {
       appBar: AppBar(
         title: const Text('Типы достижений'),
       ),
-      body: _buildList(),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.primary,
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const AchievementTypeFormScreen(),
+      body: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Scaffold(
+              backgroundColor: Colors.transparent,
+              body: _buildList(),
+              floatingActionButton: FloatingActionButton(
+                heroTag: 'add_achievement_type_fab',
+                backgroundColor: AppColors.primary,
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AchievementTypeFormScreen(),
+                    ),
+                  );
+                  if (result == true) _refreshList();
+                },
+                child: const Icon(Icons.add, color: AppColors.surface),
+              ),
             ),
-          );
-          if (result == true) _refreshList();
-        },
-        child: const Icon(Icons.add, color: AppColors.surface),
+          ),
+          if (_selectedType != null) ...[
+            const VerticalDivider(width: 1),
+            Expanded(
+              flex: 3,
+              child: Stack(
+                children: [
+                  AchievementTypeDetailsScreen(
+                    type: _selectedType!,
+                    isEmbedded: true,
+                    onTypeUpdated: (updated) {
+                      setState(() {
+                        _selectedType = updated;
+                      });
+                      _refreshList();
+                    },
+                  ),
+                  Positioned(
+                    top: AppDimensions.paddingMedium,
+                    right: AppDimensions.paddingMedium,
+                    child: IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => setState(() {
+                        _selectedType = null;
+                      }),
+                      style: IconButton.styleFrom(
+                        backgroundColor: AppColors.surface,
+                        elevation: 2,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -125,39 +172,42 @@ class _AchievementTypeListScreenState extends State<AchievementTypeListScreen> {
           }
 
           final type = _types[index];
+          final isSelected = _selectedType?.id == type.id;
+
           return ListTile(
+            selected: isSelected,
+            selectedTileColor: AppColors.primary.withOpacity(0.05),
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: AppColors.background,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(IconHelper.getIcon(type.iconName), color: AppColors.primary),
+              child: Icon(
+                IconHelper.getIcon(type.iconName),
+                color: isSelected ? AppColors.primary : AppColors.primary.withOpacity(0.7),
+              ),
             ),
-            title: Text(type.title, style: AppTextStyles.body),
+            title: Text(
+              type.title,
+              style: AppTextStyles.body.copyWith(
+                color: isSelected ? AppColors.primary : null,
+                fontWeight: isSelected ? FontWeight.bold : null,
+              ),
+            ),
             subtitle: Text('Баллы: ${type.points?.toStringAsFixed(1) ?? 0}', style: AppTextStyles.caption),
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AchievementTypeDetailsScreen(type: type),
-                ),
-              );
+              setState(() {
+                _selectedType = type;
+              });
             },
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.edit, color: AppColors.primary),
-                  onPressed: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AchievementTypeFormScreen(type: type),
-                      ),
-                    );
-                    if (result == true) _refreshList();
-                  },
+                  icon: const Icon(Icons.copy, size: 20, color: AppColors.inactive),
+                  onPressed: () => ClipboardHelper.copyToClipboard(context, type.title),
+                  tooltip: 'Копировать название типа',
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete, color: AppColors.error),
@@ -187,6 +237,9 @@ class _AchievementTypeListScreenState extends State<AchievementTypeListScreen> {
               await _service.delete(type.id!);
               if (mounted) {
                 Navigator.pop(context);
+                if (_selectedType?.id == type.id) {
+                  setState(() => _selectedType = null);
+                }
                 _refreshList();
               }
             },
