@@ -5,8 +5,17 @@ import '../theme/app_dimensions.dart';
 
 class ResearcherFormScreen extends StatefulWidget {
   final Researcher? researcher;
+  final bool isEmbedded;
+  final VoidCallback? onSave;
+  final VoidCallback? onCancel;
 
-  const ResearcherFormScreen({super.key, this.researcher});
+  const ResearcherFormScreen({
+    super.key,
+    this.researcher,
+    this.isEmbedded = false,
+    this.onSave,
+    this.onCancel,
+  });
 
   @override
   State<ResearcherFormScreen> createState() => _ResearcherFormScreenState();
@@ -28,7 +37,6 @@ class _ResearcherFormScreenState extends State<ResearcherFormScreen> {
 
   String? _selectedDegreeLevel;
   int? _selectedCourse;
-  bool _signatureRequired = false;
 
   final List<String> _degreeLevelOptions = [
     'к.т.н.',
@@ -57,7 +65,6 @@ class _ResearcherFormScreenState extends State<ResearcherFormScreen> {
 
     _selectedDegreeLevel = widget.researcher?.degreeLevel;
     _selectedCourse = widget.researcher?.course;
-    _signatureRequired = widget.researcher?.signatureRequired ?? false;
   }
 
   @override
@@ -89,7 +96,6 @@ class _ResearcherFormScreenState extends State<ResearcherFormScreen> {
         isuNumber: _isuNumberController.text.isEmpty ? null : _isuNumberController.text,
         faculty: _facultyController.text.isEmpty ? null : _facultyController.text,
         employmentStatus: _employmentStatusController.text.isEmpty ? null : _employmentStatusController.text,
-        signatureRequired: _signatureRequired,
       );
 
       try {
@@ -98,7 +104,13 @@ class _ResearcherFormScreenState extends State<ResearcherFormScreen> {
         } else {
           await _service.update(widget.researcher!.id!, researcher);
         }
-        if (mounted) Navigator.pop(context, true);
+        if (mounted) {
+          if (widget.onSave != null) {
+            widget.onSave!();
+          } else {
+            Navigator.pop(context, true);
+          }
+        }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -111,100 +123,121 @@ class _ResearcherFormScreenState extends State<ResearcherFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final content = SingleChildScrollView(
+      padding: const EdgeInsets.all(AppDimensions.paddingLarge),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            TextFormField(
+              controller: _surnameController,
+              decoration: const InputDecoration(labelText: 'Фамилия *'),
+              validator: (value) => value == null || value.isEmpty ? 'Введите фамилию' : null,
+            ),
+            const SizedBox(height: AppDimensions.paddingMedium),
+            TextFormField(
+              controller: _nameController,
+              decoration: const InputDecoration(labelText: 'Имя *'),
+              validator: (value) => value == null || value.isEmpty ? 'Введите имя' : null,
+            ),
+            const SizedBox(height: AppDimensions.paddingMedium),
+            TextFormField(
+              controller: _secondNameController,
+              decoration: const InputDecoration(labelText: 'Отчество'),
+            ),
+            const SizedBox(height: AppDimensions.paddingMedium),
+            DropdownButtonFormField<String>(
+              value: _selectedDegreeLevel,
+              decoration: const InputDecoration(labelText: 'Ученая степень'),
+              items: _degreeLevelOptions.map((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+              onChanged: (newValue) {
+                setState(() => _selectedDegreeLevel = newValue);
+              },
+            ),
+            const SizedBox(height: AppDimensions.paddingMedium),
+            DropdownButtonFormField<int>(
+              value: _selectedCourse,
+              decoration: const InputDecoration(labelText: 'Курс (для студентов/аспирантов)'),
+              items: _courseOptions.map((int value) {
+                return DropdownMenuItem<int>(
+                  value: value,
+                  child: Text(value.toString()),
+                );
+              }).toList(),
+              onChanged: (newValue) {
+                setState(() => _selectedCourse = newValue);
+              },
+            ),
+            const SizedBox(height: AppDimensions.paddingMedium),
+            TextFormField(
+              controller: _subjectAreaController,
+              decoration: const InputDecoration(labelText: 'Направление'),
+            ),
+            const SizedBox(height: AppDimensions.paddingMedium),
+            TextFormField(
+              controller: _emailController,
+              decoration: const InputDecoration(labelText: 'Почта'),
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: AppDimensions.paddingMedium),
+            TextFormField(
+              controller: _telegramController,
+              decoration: const InputDecoration(labelText: 'Телеграм (ссылка)'),
+            ),
+            const SizedBox(height: AppDimensions.paddingMedium),
+            TextFormField(
+              controller: _isuNumberController,
+              decoration: const InputDecoration(labelText: 'ИСУ'),
+            ),
+            const SizedBox(height: AppDimensions.paddingMedium),
+            TextFormField(
+              controller: _facultyController,
+              decoration: const InputDecoration(labelText: 'Факультет'),
+            ),
+            const SizedBox(height: AppDimensions.paddingMedium),
+            TextFormField(
+              controller: _employmentStatusController,
+              decoration: const InputDecoration(labelText: 'Трудоустройство (статус)'),
+            ),
+            const SizedBox(height: AppDimensions.paddingExtraLarge),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (widget.isEmbedded) ...[
+                  OutlinedButton(
+                    onPressed: widget.onCancel ?? () => Navigator.pop(context),
+                    child: const Text('Отмена'),
+                  ),
+                  const SizedBox(width: AppDimensions.paddingMedium),
+                ],
+                ElevatedButton(
+                  onPressed: _save,
+                  child: const Text('Сохранить'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (widget.isEmbedded) {
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: content,
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.researcher == null ? 'Новый сотрудник' : 'Редактирование'),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppDimensions.paddingLarge),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                controller: _surnameController,
-                decoration: const InputDecoration(labelText: 'Фамилия *'),
-                validator: (value) => value == null || value.isEmpty ? 'Введите фамилию' : null,
-              ),
-              const SizedBox(height: AppDimensions.paddingMedium),
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Имя *'),
-                validator: (value) => value == null || value.isEmpty ? 'Введите имя' : null,
-              ),
-              const SizedBox(height: AppDimensions.paddingMedium),
-              TextFormField(
-                controller: _secondNameController,
-                decoration: const InputDecoration(labelText: 'Отчество'),
-              ),
-              const SizedBox(height: AppDimensions.paddingMedium),
-              DropdownButtonFormField<String>(
-                value: _selectedDegreeLevel,
-                decoration: const InputDecoration(labelText: 'Ученая степень'),
-                items: _degreeLevelOptions.map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (newValue) {
-                  setState(() => _selectedDegreeLevel = newValue);
-                },
-              ),
-              const SizedBox(height: AppDimensions.paddingMedium),
-              DropdownButtonFormField<int>(
-                value: _selectedCourse,
-                decoration: const InputDecoration(labelText: 'Курс (для студентов/аспирантов)'),
-                items: _courseOptions.map((int value) {
-                  return DropdownMenuItem<int>(
-                    value: value,
-                    child: Text(value.toString()),
-                  );
-                }).toList(),
-                onChanged: (newValue) {
-                  setState(() => _selectedCourse = newValue);
-                },
-              ),
-              const SizedBox(height: AppDimensions.paddingMedium),
-              TextFormField(
-                controller: _subjectAreaController,
-                decoration: const InputDecoration(labelText: 'Направление'),
-              ),
-              const SizedBox(height: AppDimensions.paddingMedium),
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Почта'),
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: AppDimensions.paddingMedium),
-              TextFormField(
-                controller: _telegramController,
-                decoration: const InputDecoration(labelText: 'Телеграм (ссылка)'),
-              ),
-              const SizedBox(height: AppDimensions.paddingMedium),
-              TextFormField(
-                controller: _isuNumberController,
-                decoration: const InputDecoration(labelText: 'ИСУ'),
-              ),
-              const SizedBox(height: AppDimensions.paddingMedium),
-              TextFormField(
-                controller: _facultyController,
-                decoration: const InputDecoration(labelText: 'Факультет'),
-              ),
-              const SizedBox(height: AppDimensions.paddingMedium),
-              TextFormField(
-                controller: _employmentStatusController,
-                decoration: const InputDecoration(labelText: 'Трудоустройство (статус)'),
-              ),
-              const SizedBox(height: AppDimensions.paddingExtraLarge),
-              ElevatedButton(
-                onPressed: _save,
-                child: const Text('Сохранить'),
-              ),
-            ],
-          ),
-        ),
-      ),
+      body: content,
     );
   }
 }

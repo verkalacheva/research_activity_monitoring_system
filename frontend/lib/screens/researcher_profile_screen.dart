@@ -12,11 +12,13 @@ import 'achievement_form_screen.dart';
 class ResearcherProfileScreen extends StatefulWidget {
   final Researcher researcher;
   final bool isEmbedded;
+  final Function(Researcher)? onResearcherUpdated;
 
   const ResearcherProfileScreen({
     super.key,
     required this.researcher,
     this.isEmbedded = false,
+    this.onResearcherUpdated,
   });
 
   @override
@@ -26,14 +28,59 @@ class ResearcherProfileScreen extends StatefulWidget {
 class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
   final _researcherService = ResearcherService();
   final _achievementService = AchievementService();
+  final _formKey = GlobalKey<FormState>();
+  
   late Researcher _researcher;
   bool _isLoading = true;
+  bool _isEditing = false;
+
+  // Контроллеры для редактирования
+  late TextEditingController _nameController;
+  late TextEditingController _surnameController;
+  late TextEditingController _secondNameController;
+  late TextEditingController _subjectAreaController;
+  late TextEditingController _emailController;
+  late TextEditingController _telegramController;
+  late TextEditingController _isuNumberController;
+  late TextEditingController _facultyController;
+  late TextEditingController _employmentStatusController;
+  String? _selectedDegreeLevel;
+  int? _selectedCourse;
 
   @override
   void initState() {
     super.initState();
     _researcher = widget.researcher;
+    _initControllers();
     _refreshProfile();
+  }
+
+  void _initControllers() {
+    _nameController = TextEditingController(text: _researcher.name);
+    _surnameController = TextEditingController(text: _researcher.surname);
+    _secondNameController = TextEditingController(text: _researcher.secondName ?? '');
+    _subjectAreaController = TextEditingController(text: _researcher.subjectArea ?? '');
+    _emailController = TextEditingController(text: _researcher.email ?? '');
+    _telegramController = TextEditingController(text: _researcher.telegram ?? '');
+    _isuNumberController = TextEditingController(text: _researcher.isuNumber ?? '');
+    _facultyController = TextEditingController(text: _researcher.faculty ?? '');
+    _employmentStatusController = TextEditingController(text: _researcher.employmentStatus ?? '');
+    _selectedDegreeLevel = _researcher.degreeLevel;
+    _selectedCourse = _researcher.course;
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _surnameController.dispose();
+    _secondNameController.dispose();
+    _subjectAreaController.dispose();
+    _emailController.dispose();
+    _telegramController.dispose();
+    _isuNumberController.dispose();
+    _facultyController.dispose();
+    _employmentStatusController.dispose();
+    super.dispose();
   }
 
   @override
@@ -42,6 +89,8 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
     if (oldWidget.researcher.id != widget.researcher.id) {
       _researcher = widget.researcher;
       _isLoading = true;
+      _isEditing = false;
+      _initControllers();
       _refreshProfile();
     }
   }
@@ -56,6 +105,40 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка обновления профиля: $e')));
+      }
+    }
+  }
+
+  Future<void> _saveProfile() async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        final updatedResearcher = Researcher(
+          id: _researcher.id,
+          name: _nameController.text,
+          surname: _surnameController.text,
+          secondName: _secondNameController.text.isEmpty ? null : _secondNameController.text,
+          degreeLevel: _selectedDegreeLevel,
+          course: _selectedCourse,
+          subjectArea: _subjectAreaController.text.isEmpty ? null : _subjectAreaController.text,
+          email: _emailController.text.isEmpty ? null : _emailController.text,
+          telegram: _telegramController.text.isEmpty ? null : _telegramController.text,
+          isuNumber: _isuNumberController.text.isEmpty ? null : _isuNumberController.text,
+          faculty: _facultyController.text.isEmpty ? null : _facultyController.text,
+          employmentStatus: _employmentStatusController.text.isEmpty ? null : _employmentStatusController.text,
+        );
+
+        final updated = await _researcherService.update(_researcher.id!, updatedResearcher);
+        setState(() {
+          _researcher = updated.copyWith(
+            achievements: updated.achievements.isEmpty ? _researcher.achievements : updated.achievements,
+          );
+          _isEditing = false;
+        });
+        widget.onResearcherUpdated?.call(_researcher);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка сохранения: $e')));
+        }
       }
     }
   }
@@ -94,19 +177,46 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
             child: Center(
               child: Container(
                 constraints: const BoxConstraints(maxWidth: 800),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHeader(),
-                    const SizedBox(height: AppDimensions.paddingLarge),
-                    const Text('Информация', style: AppTextStyles.h2),
-                    const SizedBox(height: AppDimensions.paddingMedium),
-                    _buildInfoCard(),
-                    const SizedBox(height: AppDimensions.paddingExtraLarge),
-                    const Text('Достижения и активность', style: AppTextStyles.h2),
-                    const SizedBox(height: AppDimensions.paddingMedium),
-                    _buildAchievementsList(),
-                  ],
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeader(),
+                      const SizedBox(height: AppDimensions.paddingLarge),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Информация', style: AppTextStyles.h2),
+                          if (widget.isEmbedded)
+                            IconButton(
+                              icon: Icon(_isEditing ? Icons.close : Icons.edit, color: AppColors.primary),
+                              onPressed: () {
+                                setState(() {
+                                  _initControllers(); // Инициализируем контроллеры актуальными данными
+                                  _isEditing = !_isEditing;
+                                });
+                              },
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: AppDimensions.paddingMedium),
+                      _buildInfoCard(),
+                      if (_isEditing) ...[
+                        const SizedBox(height: AppDimensions.paddingLarge),
+                        Center(
+                          child: ElevatedButton(
+                            onPressed: _saveProfile,
+                            child: const Text('Сохранить изменения'),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: AppDimensions.paddingExtraLarge),
+                      const Text('Достижения и активность', style: AppTextStyles.h2),
+                      const SizedBox(height: AppDimensions.paddingMedium),
+                      _buildAchievementsList(),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -162,31 +272,62 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          _researcher.fullName,
-                          style: AppTextStyles.h1,
+                  if (_isEditing) ...[
+                    TextFormField(
+                      controller: _surnameController,
+                      decoration: const InputDecoration(labelText: 'Фамилия *', isDense: true),
+                      validator: (v) => v?.isEmpty ?? true ? 'Обязательно' : null,
+                    ),
+                    const SizedBox(height: AppDimensions.paddingMedium),
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: const InputDecoration(labelText: 'Имя *', isDense: true),
+                      validator: (v) => v?.isEmpty ?? true ? 'Обязательно' : null,
+                    ),
+                    const SizedBox(height: AppDimensions.paddingMedium),
+                    TextFormField(
+                      controller: _secondNameController,
+                      decoration: const InputDecoration(labelText: 'Отчество', isDense: true),
+                    ),
+                  ] else
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            _researcher.fullName,
+                            style: AppTextStyles.h1,
+                          ),
                         ),
-                      ),
-                      if (_researcher.isLeader) ...[
-                        const SizedBox(width: 8),
-                        const Icon(
-                          Icons.star,
-                          size: 28,
-                          color: Colors.amber,
-                        ),
+                        if (_researcher.isLeader) ...[
+                          const SizedBox(width: 8),
+                          const Icon(
+                            Icons.star,
+                            size: 28,
+                            color: Colors.amber,
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${_researcher.degreeLevel ?? ''} ${_researcher.course != null ? '(${_researcher.course} курс)' : ''}'.trim(),
-                    style: AppTextStyles.bodySecondary,
-                  ),
+                    ),
+                  const SizedBox(height: AppDimensions.paddingMedium),
+                  if (_isEditing)
+                    DropdownButtonFormField<int>(
+                      value: _selectedCourse,
+                      decoration: const InputDecoration(labelText: 'Курс', isDense: true),
+                      items: [1, 2, 3, 4, 5, 6].map((c) => DropdownMenuItem(value: c, child: Text('$c курс'))).toList(),
+                      onChanged: (v) => setState(() => _selectedCourse = v),
+                    )
+                  else
+                    Text(
+                      '${_researcher.degreeLevel ?? ''} ${_researcher.course != null ? '(${_researcher.course} курс)' : ''}'.trim(),
+                      style: AppTextStyles.bodySecondary,
+                    ),
                   const SizedBox(height: 16),
-                  if (_researcher.subjectArea != null)
+                  if (_isEditing)
+                    TextFormField(
+                      controller: _subjectAreaController,
+                      decoration: const InputDecoration(labelText: 'Направление', isDense: true),
+                    )
+                  else if (_researcher.subjectArea != null)
                     Chip(
                       label: Text(_researcher.subjectArea!),
                       backgroundColor: AppColors.background,
@@ -205,20 +346,20 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
     return Card(
       child: Column(
         children: [
-          _infoRow(Icons.school, 'Степень/Статус', _researcher.degreeLevel ?? 'Не указано'),
+          _infoRow(Icons.school, 'Степень/Статус', _researcher.degreeLevel ?? 'Не указано', field: _buildDegreeDropdown()),
           const Divider(height: 1, indent: 56),
-          _infoRow(Icons.business, 'Факультет', _researcher.faculty ?? 'Не указано'),
+          _infoRow(Icons.business, 'Факультет', _researcher.faculty ?? 'Не указано', controller: _facultyController),
           const Divider(height: 1, indent: 56),
-          _infoRow(Icons.book, 'Направление', _researcher.subjectArea ?? 'Не указано'),
+          _infoRow(Icons.book, 'Направление', _researcher.subjectArea ?? 'Не указано', controller: _subjectAreaController),
           const Divider(height: 1, indent: 56),
-          _infoRow(Icons.email, 'Почта', _researcher.email ?? 'Не указано'),
+          _infoRow(Icons.email, 'Почта', _researcher.email ?? 'Не указано', controller: _emailController),
           const Divider(height: 1, indent: 56),
-          _infoRow(Icons.send, 'Телеграм', _researcher.telegram ?? 'Не указано'),
+          _infoRow(Icons.send, 'Телеграм', _researcher.telegram ?? 'Не указано', controller: _telegramController),
           const Divider(height: 1, indent: 56),
-          _infoRow(Icons.fingerprint, 'ИСУ', _researcher.isuNumber ?? 'Не указано'),
+          _infoRow(Icons.fingerprint, 'ИСУ', _researcher.isuNumber ?? 'Не указано', controller: _isuNumberController),
           const Divider(height: 1, indent: 56),
-          _infoRow(Icons.work, 'Трудоустройство', _researcher.employmentStatus ?? 'Не указано'),
-          if (_researcher.course != null) ...[
+          _infoRow(Icons.work, 'Трудоустройство', _researcher.employmentStatus ?? 'Не указано', controller: _employmentStatusController),
+          if (!_isEditing && _researcher.course != null) ...[
             const Divider(height: 1, indent: 56),
             _infoRow(Icons.timeline, 'Курс обучения', '${_researcher.course} курс'),
           ],
@@ -230,6 +371,16 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildDegreeDropdown() {
+    final options = ['к.т.н.', 'д.т.н.', 'к.ф.-м.н.', 'д.ф.-м.н.', 'аспирант', 'бакалавр', 'магистрант'];
+    return DropdownButtonFormField<String>(
+      value: _selectedDegreeLevel,
+      decoration: const InputDecoration(isDense: true, border: InputBorder.none),
+      items: options.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+      onChanged: (v) => setState(() => _selectedDegreeLevel = v),
     );
   }
 
@@ -341,7 +492,7 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
     );
   }
 
-  Widget _infoRow(IconData icon, String label, String value) {
+  Widget _infoRow(IconData icon, String label, String value, {TextEditingController? controller, Widget? field}) {
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.paddingMedium,
@@ -358,12 +509,21 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
             child: Icon(icon, color: AppColors.primary, size: 20),
           ),
           const SizedBox(width: AppDimensions.paddingMedium),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: AppTextStyles.caption),
-              Text(value, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w500)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: AppTextStyles.caption),
+                if (_isEditing && (controller != null || field != null))
+                  field ?? TextFormField(
+                    controller: controller,
+                    decoration: const InputDecoration(isDense: true, border: InputBorder.none),
+                    style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w500),
+                  )
+                else
+                  Text(value, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w500)),
+              ],
+            ),
           ),
         ],
       ),

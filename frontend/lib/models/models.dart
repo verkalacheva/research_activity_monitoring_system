@@ -11,7 +11,6 @@ class Researcher {
   final String? isuNumber;
   final String? faculty;
   final String? employmentStatus;
-  final bool signatureRequired;
   final bool isLeader;
   final List<Achievement> achievements;
 
@@ -28,7 +27,6 @@ class Researcher {
     this.isuNumber,
     this.faculty,
     this.employmentStatus,
-    this.signatureRequired = false,
     this.isLeader = false,
     this.achievements = const [],
   });
@@ -57,7 +55,6 @@ class Researcher {
       isuNumber: json['isu_number'],
       faculty: json['faculty'],
       employmentStatus: json['employment_status'],
-      signatureRequired: json['signature_required'] ?? false,
       isLeader: json['is_leader'] ?? false,
       achievements: (json['achievements'] as List?)
               ?.map((a) => Achievement.fromJson(a))
@@ -68,7 +65,6 @@ class Researcher {
 
   Map<String, dynamic> toJson() {
     return {
-      if (id != null) 'id': id,
       'name': name,
       'surname': surname,
       'second_name': secondName,
@@ -80,9 +76,41 @@ class Researcher {
       'isu_number': isuNumber,
       'faculty': faculty,
       'employment_status': employmentStatus,
-      'signature_required': signatureRequired,
-      'is_leader': isLeader,
     };
+  }
+
+  Researcher copyWith({
+    int? id,
+    String? name,
+    String? surname,
+    String? secondName,
+    String? degreeLevel,
+    int? course,
+    String? subjectArea,
+    String? email,
+    String? telegram,
+    String? isuNumber,
+    String? faculty,
+    String? employmentStatus,
+    bool? isLeader,
+    List<Achievement>? achievements,
+  }) {
+    return Researcher(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      surname: surname ?? this.surname,
+      secondName: secondName ?? this.secondName,
+      degreeLevel: degreeLevel ?? this.degreeLevel,
+      course: course ?? this.course,
+      subjectArea: subjectArea ?? this.subjectArea,
+      email: email ?? this.email,
+      telegram: telegram ?? this.telegram,
+      isuNumber: isuNumber ?? this.isuNumber,
+      faculty: faculty ?? this.faculty,
+      employmentStatus: employmentStatus ?? this.employmentStatus,
+      isLeader: isLeader ?? this.isLeader,
+      achievements: achievements ?? this.achievements,
+    );
   }
 }
 
@@ -396,7 +424,3 @@ class PaginatedResponse<T> {
     required this.pagination,
   });
 }
-
-// ... other models can be added similarly
-
-

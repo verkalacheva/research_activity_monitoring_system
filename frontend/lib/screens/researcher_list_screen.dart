@@ -117,13 +117,21 @@ class _ResearcherListScreenState extends State<ResearcherListScreen> {
                   ResearcherProfileScreen(
                     researcher: _selectedResearcher!,
                     isEmbedded: true,
+                    onResearcherUpdated: (updated) {
+                      setState(() {
+                        _selectedResearcher = updated;
+                      });
+                      _refreshList();
+                    },
                   ),
                   Positioned(
                     top: AppDimensions.paddingMedium,
                     right: AppDimensions.paddingMedium,
                     child: IconButton(
                       icon: const Icon(Icons.close),
-                      onPressed: () => setState(() => _selectedResearcher = null),
+                      onPressed: () => setState(() {
+                        _selectedResearcher = null;
+                      }),
                       style: IconButton.styleFrom(
                         backgroundColor: AppColors.surface,
                         elevation: 2,
@@ -201,23 +209,6 @@ class _ResearcherListScreenState extends State<ResearcherListScreen> {
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                IconButton(
-                  icon: const Icon(Icons.edit, color: AppColors.primary),
-                  onPressed: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ResearcherFormScreen(researcher: researcher),
-                      ),
-                    );
-                    if (result == true) {
-                      _refreshList();
-                      if (isSelected) {
-                        _refreshSelectedResearcher(researcher.id!);
-                      }
-                    }
-                  },
-                ),
                 IconButton(
                   icon: const Icon(Icons.delete, color: AppColors.error),
                   onPressed: () => _showDeleteDialog(researcher),

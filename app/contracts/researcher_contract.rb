@@ -7,6 +7,11 @@ class ResearcherContract < BaseContract
     optional(:degree_level).maybe(:string)
     optional(:course).maybe(:integer)
     optional(:subject_area).maybe(:string)
+    optional(:email).maybe(:string)
+    optional(:telegram).maybe(:string)
+    optional(:isu_number).maybe(:string)
+    optional(:faculty).maybe(:string)
+    optional(:employment_status).maybe(:string)
   end
 end
 
