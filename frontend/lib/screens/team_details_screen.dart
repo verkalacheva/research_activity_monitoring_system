@@ -3,6 +3,7 @@ import '../models/models.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_dimensions.dart';
+import '../utils/clipboard_helper.dart';
 import 'researcher_profile_screen.dart';
 
 class TeamDetailsScreen extends StatelessWidget {
@@ -21,9 +22,20 @@ class TeamDetailsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              team.title,
-              style: AppTextStyles.h1,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    team.title,
+                    style: AppTextStyles.h1,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.copy, size: 24, color: AppColors.inactive),
+                  onPressed: () => ClipboardHelper.copyToClipboard(context, team.title),
+                  tooltip: 'Копировать название проекта',
+                ),
+              ],
             ),
             const SizedBox(height: AppDimensions.paddingLarge),
             const Text(
@@ -61,6 +73,12 @@ class TeamDetailsScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       const Icon(Icons.star, size: 16, color: Colors.amber),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.copy, size: 20, color: AppColors.inactive),
+                        onPressed: () => ClipboardHelper.copyToClipboard(context, team.leader!.fullName),
+                        tooltip: 'Копировать ФИО',
+                      ),
                     ],
                   ),
                   subtitle: Text(
@@ -121,6 +139,12 @@ class TeamDetailsScreen extends StatelessWidget {
                             const SizedBox(width: 8),
                             const Icon(Icons.star, size: 16, color: Colors.amber),
                           ],
+                          const Spacer(),
+                          IconButton(
+                            icon: const Icon(Icons.copy, size: 20, color: AppColors.inactive),
+                            onPressed: () => ClipboardHelper.copyToClipboard(context, researcher.fullName),
+                            tooltip: 'Копировать ФИО',
+                          ),
                         ],
                       ),
                       subtitle: Text(

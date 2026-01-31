@@ -3,6 +3,7 @@ import '../models/models.dart';
 import '../theme/app_dimensions.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/icon_helper.dart';
+import '../utils/clipboard_helper.dart';
 
 class AchievementTypeDetailsScreen extends StatelessWidget {
   final AchievementType type;
@@ -38,7 +39,16 @@ class AchievementTypeDetailsScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(type.title, style: AppTextStyles.h1),
+                          Row(
+                            children: [
+                              Expanded(child: Text(type.title, style: AppTextStyles.h1)),
+                              IconButton(
+                                icon: const Icon(Icons.copy, size: 20, color: Colors.grey),
+                                onPressed: () => ClipboardHelper.copyToClipboard(context, type.title),
+                                tooltip: 'Копировать название',
+                              ),
+                            ],
+                          ),
                           const SizedBox(height: AppDimensions.paddingMedium),
                           Text('Баллы по умолчанию: ${type.points?.toStringAsFixed(1) ?? 0}', style: AppTextStyles.bodySecondary),
                         ],
@@ -63,6 +73,11 @@ class AchievementTypeDetailsScreen extends StatelessWidget {
                   title: Text(field.title),
                   subtitle: Text(
                     'Тип: ${_fieldTypeName(field.fieldType)} | Обязательно: ${field.isRequired ? "Да" : "Нет"}${field.options.isNotEmpty ? "\nВарианты: ${field.options.join(", ")}" : ""}'
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.copy, size: 20, color: Colors.grey),
+                    onPressed: () => ClipboardHelper.copyToClipboard(context, field.title),
+                    tooltip: 'Копировать название поля',
                   ),
                 ),
               )).toList(),

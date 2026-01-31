@@ -4,6 +4,7 @@ import '../services/researcher_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_dimensions.dart';
+import '../utils/clipboard_helper.dart';
 import 'researcher_form_screen.dart';
 import 'researcher_profile_screen.dart';
 
@@ -209,6 +210,11 @@ class _ResearcherListScreenState extends State<ResearcherListScreen> {
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                IconButton(
+                  icon: const Icon(Icons.copy, size: 20, color: AppColors.inactive),
+                  onPressed: () => ClipboardHelper.copyToClipboard(context, researcher.fullName),
+                  tooltip: 'Копировать ФИО',
+                ),
                 IconButton(
                   icon: const Icon(Icons.delete, color: AppColors.error),
                   onPressed: () => _showDeleteDialog(researcher),

@@ -7,6 +7,7 @@ import '../theme/app_dimensions.dart';
 import '../services/researcher_service.dart';
 import '../services/achievement_service.dart';
 import '../utils/icon_helper.dart';
+import '../utils/clipboard_helper.dart';
 import 'achievement_form_screen.dart';
 
 class ResearcherProfileScreen extends StatefulWidget {
@@ -346,25 +347,26 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
     return Card(
       child: Column(
         children: [
-          _infoRow(Icons.school, 'Степень/Статус', _researcher.degreeLevel ?? 'Не указано', field: _buildDegreeDropdown()),
+          _infoRow(context, Icons.school, 'Степень/Статус', _researcher.degreeLevel ?? 'Не указано', field: _buildDegreeDropdown()),
           const Divider(height: 1, indent: 56),
-          _infoRow(Icons.business, 'Факультет', _researcher.faculty ?? 'Не указано', controller: _facultyController),
+          _infoRow(context, Icons.business, 'Факультет', _researcher.faculty ?? 'Не указано', controller: _facultyController),
           const Divider(height: 1, indent: 56),
-          _infoRow(Icons.book, 'Направление', _researcher.subjectArea ?? 'Не указано', controller: _subjectAreaController),
+          _infoRow(context, Icons.book, 'Направление', _researcher.subjectArea ?? 'Не указано', controller: _subjectAreaController),
           const Divider(height: 1, indent: 56),
-          _infoRow(Icons.email, 'Почта', _researcher.email ?? 'Не указано', controller: _emailController),
+          _infoRow(context, Icons.email, 'Почта', _researcher.email ?? 'Не указано', controller: _emailController),
           const Divider(height: 1, indent: 56),
-          _infoRow(Icons.send, 'Телеграм', _researcher.telegram ?? 'Не указано', controller: _telegramController),
+          _infoRow(context, Icons.send, 'Телеграм', _researcher.telegram ?? 'Не указано', controller: _telegramController),
           const Divider(height: 1, indent: 56),
-          _infoRow(Icons.fingerprint, 'ИСУ', _researcher.isuNumber ?? 'Не указано', controller: _isuNumberController),
+          _infoRow(context, Icons.fingerprint, 'ИСУ', _researcher.isuNumber ?? 'Не указано', controller: _isuNumberController),
           const Divider(height: 1, indent: 56),
-          _infoRow(Icons.work, 'Трудоустройство', _researcher.employmentStatus ?? 'Не указано', controller: _employmentStatusController),
+          _infoRow(context, Icons.work, 'Трудоустройство', _researcher.employmentStatus ?? 'Не указано', controller: _employmentStatusController),
           if (!_isEditing && _researcher.course != null) ...[
             const Divider(height: 1, indent: 56),
-            _infoRow(Icons.timeline, 'Курс обучения', '${_researcher.course} курс'),
+            _infoRow(context, Icons.timeline, 'Курс обучения', '${_researcher.course} курс'),
           ],
           const Divider(height: 1, indent: 56),
           _infoRow(
+            context,
             Icons.assignment_turned_in,
             'Руководитель команды',
             _researcher.isLeader ? 'Да' : 'Нет',
@@ -466,7 +468,7 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
                             displayValue = DateFormat('dd.MM.yyyy').format(date);
                           } catch (_) {}
                         }
-                        return _achievementDetailRow(field.title, displayValue);
+                        return _achievementDetailRow(context, field.title, displayValue);
                       }).toList(),
                     ],
                   ],
@@ -479,7 +481,7 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
     );
   }
 
-  Widget _achievementDetailRow(String label, String value) {
+  Widget _achievementDetailRow(BuildContext context, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -487,12 +489,20 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
         children: [
           SizedBox(width: 150, child: Text('$label:', style: const TextStyle(fontWeight: FontWeight.w500))),
           Expanded(child: Text(value)),
+          if (value != '—')
+            IconButton(
+              icon: const Icon(Icons.copy, size: 16, color: AppColors.inactive),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              onPressed: () => ClipboardHelper.copyToClipboard(context, value),
+              tooltip: 'Копировать',
+            ),
         ],
       ),
     );
   }
 
-  Widget _infoRow(IconData icon, String label, String value, {TextEditingController? controller, Widget? field}) {
+  Widget _infoRow(BuildContext context, IconData icon, String label, String value, {TextEditingController? controller, Widget? field}) {
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.paddingMedium,
@@ -525,6 +535,12 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
               ],
             ),
           ),
+          if (!_isEditing && value != 'Не указано' && value != 'Да' && value != 'Нет')
+            IconButton(
+              icon: const Icon(Icons.copy, size: 20, color: AppColors.inactive),
+              onPressed: () => ClipboardHelper.copyToClipboard(context, value),
+              tooltip: 'Копировать',
+            ),
         ],
       ),
     );

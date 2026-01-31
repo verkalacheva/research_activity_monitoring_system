@@ -14,6 +14,7 @@ import '../theme/app_text_styles.dart';
 import '../theme/app_dimensions.dart';
 import '../widgets/custom_nav_button.dart';
 import '../services/achievement_service.dart';
+import '../utils/clipboard_helper.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -350,9 +351,20 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Иванов Иван Иванович',
-                              style: AppTextStyles.h1,
+                            Row(
+                              children: [
+                                const Expanded(
+                                  child: Text(
+                                    'Иванов Иван Иванович',
+                                    style: AppTextStyles.h1,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.copy, size: 20, color: AppColors.inactive),
+                                  onPressed: () => ClipboardHelper.copyToClipboard(context, 'Иванов Иван Иванович'),
+                                  tooltip: 'Копировать ФИО',
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 4),
                             const Text(
@@ -441,12 +453,19 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Icon(icon, color: AppColors.primary, size: 20),
           ),
           const SizedBox(width: AppDimensions.paddingMedium),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: AppTextStyles.caption),
-              Text(value, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w500)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: AppTextStyles.caption),
+                Text(value, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w500)),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.copy, size: 20, color: AppColors.inactive),
+            onPressed: () => ClipboardHelper.copyToClipboard(context, value),
+            tooltip: 'Копировать',
           ),
         ],
       ),

@@ -7,6 +7,7 @@ import '../services/socket_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_dimensions.dart';
 import '../theme/app_text_styles.dart';
+import '../utils/clipboard_helper.dart';
 import 'dart:convert';
 
 class ReportScreen extends StatefulWidget {
@@ -1130,6 +1131,14 @@ class _ReportScreenState extends State<ReportScreen> {
               Expanded(
                 child: Text(item['name'], style: const TextStyle(fontWeight: FontWeight.w500)),
               ),
+              IconButton(
+                icon: const Icon(Icons.copy, size: 16, color: AppColors.inactive),
+                onPressed: () => ClipboardHelper.copyToClipboard(context, item['name']),
+                tooltip: 'Копировать ФИО',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+              const SizedBox(width: 8),
               Text('${(item['points'] as num).toDouble().toStringAsFixed(1)} б.', 
                 style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
             ],
