@@ -8,6 +8,7 @@ import '../services/researcher_service.dart';
 import '../services/achievement_service.dart';
 import '../utils/icon_helper.dart';
 import '../utils/clipboard_helper.dart';
+import '../utils/url_helper.dart';
 import 'achievement_form_screen.dart';
 
 class ResearcherProfileScreen extends StatefulWidget {
@@ -488,21 +489,21 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(width: 150, child: Text('$label:', style: const TextStyle(fontWeight: FontWeight.w500))),
-          Expanded(child: Text(value)),
-          if (value != '—')
-            IconButton(
-              icon: const Icon(Icons.copy, size: 16, color: AppColors.inactive),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              onPressed: () => ClipboardHelper.copyToClipboard(context, value),
-              tooltip: 'Копировать',
-            ),
+          Expanded(child: UrlHelper.buildClickableText(context, value)),
+          IconButton(
+            icon: const Icon(Icons.copy, size: 16, color: AppColors.inactive),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            onPressed: () => ClipboardHelper.copyToClipboard(context, value),
+            tooltip: 'Копировать',
+          ),
         ],
       ),
     );
   }
 
   Widget _infoRow(BuildContext context, IconData icon, String label, String value, {TextEditingController? controller, Widget? field}) {
+    final bool isIsu = label == 'ИСУ';
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.paddingMedium,
@@ -531,11 +532,16 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
                     style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w500),
                   )
                 else
-                  Text(value, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w500)),
+                  UrlHelper.buildClickableText(
+                    context, 
+                    value, 
+                    enabled: !isIsu,
+                    style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w500)
+                  ),
               ],
             ),
           ),
-          if (!_isEditing && value != 'Не указано' && value != 'Да' && value != 'Нет')
+          if (!_isEditing)
             IconButton(
               icon: const Icon(Icons.copy, size: 20, color: AppColors.inactive),
               onPressed: () => ClipboardHelper.copyToClipboard(context, value),

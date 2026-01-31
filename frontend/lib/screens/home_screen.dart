@@ -15,6 +15,7 @@ import '../theme/app_dimensions.dart';
 import '../widgets/custom_nav_button.dart';
 import '../services/achievement_service.dart';
 import '../utils/clipboard_helper.dart';
+import '../utils/url_helper.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -458,7 +459,11 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(label, style: AppTextStyles.caption),
-                Text(value, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w500)),
+                UrlHelper.buildClickableText(
+                  context, 
+                  value, 
+                  style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w500)
+                ),
               ],
             ),
           ),

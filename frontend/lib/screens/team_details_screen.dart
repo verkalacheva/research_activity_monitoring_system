@@ -73,13 +73,12 @@ class TeamDetailsScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       const Icon(Icons.star, size: 16, color: Colors.amber),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.copy, size: 20, color: AppColors.inactive),
-                        onPressed: () => ClipboardHelper.copyToClipboard(context, team.leader!.fullName),
-                        tooltip: 'Копировать ФИО',
-                      ),
                     ],
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.copy, size: 20, color: AppColors.inactive),
+                    onPressed: () => ClipboardHelper.copyToClipboard(context, team.leader!.fullName),
+                    tooltip: 'Копировать ФИО',
                   ),
                   subtitle: Text(
                     '${team.leader!.degreeLevel ?? ''} ${team.leader!.subjectArea ?? ''}'.trim(),
@@ -139,13 +138,12 @@ class TeamDetailsScreen extends StatelessWidget {
                             const SizedBox(width: 8),
                             const Icon(Icons.star, size: 16, color: Colors.amber),
                           ],
-                          const Spacer(),
-                          IconButton(
-                            icon: const Icon(Icons.copy, size: 20, color: AppColors.inactive),
-                            onPressed: () => ClipboardHelper.copyToClipboard(context, researcher.fullName),
-                            tooltip: 'Копировать ФИО',
-                          ),
                         ],
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.copy, size: 20, color: AppColors.inactive),
+                        onPressed: () => ClipboardHelper.copyToClipboard(context, researcher.fullName),
+                        tooltip: 'Копировать ФИО',
                       ),
                       subtitle: Text(
                         '${researcher.degreeLevel ?? ''} ${researcher.subjectArea ?? ''}'.trim(),
