@@ -7,3 +7,5 @@ class SimpleEntitySerializer < BaseSerializer
   end
 end
 
+
+

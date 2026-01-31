@@ -66,7 +66,7 @@ func (r *Repository) FetchData(req *pb.ReportRequest) (*DashboardData, error) {
 
 	// 1. Type Distribution
 	typeRows, err := r.db.Query(fmt.Sprintf(`
-		SELECT COALESCE(at.title, ''), ROUND(COALESCE(SUM(a.points), 0)::numeric, 1)
+		SELECT COALESCE(at.title, ''), COUNT(a.id)::float8
 		FROM achievements a
 		JOIN achievement_types at ON a.achievement_type_id = at.id
 		WHERE a.deleted_at IS NULL AND at.deleted_at IS NULL

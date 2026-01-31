@@ -12,3 +12,5 @@ class ResearcherSerializer < BaseSerializer
   end
 end
 
+
+

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'dart:js' as js;
 import '../services/report_service.dart';
 import '../services/socket_service.dart';
 import '../theme/app_colors.dart';
@@ -264,10 +265,30 @@ class _ReportScreenState extends State<ReportScreen> {
               appBar: AppBar(
                 title: Text(_reportTitles[reportId] ?? 'Отчет'),
                 actions: [
-                  TextButton.icon(
+                  ElevatedButton.icon(
+                    onPressed: () => _handlePrint(),
+                    icon: const Icon(Icons.print, size: 18),
+                    label: const Text('ПЕЧАТЬ'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      minimumSize: const Size(120, 40),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton.icon(
                     onPressed: () => _exportReport('csv'),
-                    icon: const Icon(Icons.download, color: Colors.white),
-                    label: const Text('ЭКСПОРТ CSV', style: TextStyle(color: Colors.white)),
+                    icon: const Icon(Icons.download, size: 18),
+                    label: const Text('ЭКСПОРТ'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      minimumSize: const Size(120, 40),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                    ),
                   ),
                   const SizedBox(width: 16),
                 ],
@@ -322,26 +343,249 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
+  Future<void> _handlePrint() async {
+    if (_selectedReportId == null) return;
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Подготовка данных для печати...'), duration: Duration(seconds: 1)),
+    );
+
+    try {
+      final nonPagedFilters = _activeFilters
+          .where((f) => f['value'] != null && f['value'].toString().trim().isNotEmpty)
+          .map((f) => {
+                'field': f['field'],
+                'operator': f['operator'],
+                'value': f['value'].toString(),
+              })
+          .toList();
+
+      final params = {
+        'report_type': _selectedReportId,
+        'report_format': 'json',
+        'filters': nonPagedFilters,
+        'sorts': [
+          {'field': _sortField, 'descending': _sortDescending}
+        ],
+        'limit': 10000,
+        'offset': 0,
+      };
+      
+      final result = await _reportService.generateReport(params);
+      if (mounted) {
+        _printNative(result);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка подготовки данных: $e'), backgroundColor: AppColors.error),
+        );
+      }
+    }
+  }
+
+  void _printNative(Map<String, dynamic> reportData) {
+    final reportType = _selectedReportId;
+    final data = reportData['data'] as List? ?? [];
+    final totals = reportData['column_totals'] as Map? ?? {};
+    final title = _reportTitles[reportType] ?? 'Отчет';
+
+    List<String> headers = [];
+    List<List<String>> rows = [];
+
+    if (reportType == 'teams') {
+      headers = ['ID', 'Название команды', 'Лидер', 'Кол-во участников', 'Всего баллов'];
+      for (var item in data) {
+        rows.add([
+          item['id'].toString(),
+          (item['title'] ?? '').toString(),
+          (item['leader_name'] ?? '').toString(),
+          (item['members_count']?.toString() ?? '0'),
+          (item['total_points'] as num?)?.toDouble().toStringAsFixed(1) ?? '0.0',
+        ]);
+      }
+      if (totals.isNotEmpty) {
+        rows.add([
+          'ИТОГО',
+          '',
+          '',
+          (totals['members_count']?.toString() ?? ''),
+          (totals['total_points'] as num?)?.toDouble().toStringAsFixed(1) ?? '',
+        ]);
+      }
+    } else {
+      headers = ['ID', 'Исследователь', 'Достижение', 'Баллы', 'Статус', 'Результат', 'Роль'];
+      
+      if (reportType == 'researchers_report') {
+        int? lastResearcherId;
+        double researcherSubtotal = 0;
+        
+        for (var item in data) {
+          final researcherId = item['researcher_id'];
+          final points = (item['points'] as num?)?.toDouble() ?? 0.0;
+
+          if (lastResearcherId != null && lastResearcherId != researcherId) {
+            rows.add(['', 'Итого по сотруднику', '', researcherSubtotal.toStringAsFixed(1), '', '', '']);
+            researcherSubtotal = 0;
+          }
+
+          rows.add([
+            item['id'].toString(),
+            (lastResearcherId == researcherId ? '' : (item['researcher_name'] ?? item['researcher'] ?? '')).toString(),
+            (item['achievement'] ?? '').toString(),
+            points.toStringAsFixed(1),
+            (item['status'] ?? '').toString(),
+            (item['result'] ?? '').toString(),
+            (item['participation'] ?? '').toString(),
+          ]);
+
+          lastResearcherId = researcherId;
+          researcherSubtotal += points;
+        }
+        
+        if (lastResearcherId != null) {
+          rows.add(['', 'Итого по сотруднику', '', researcherSubtotal.toStringAsFixed(1), '', '', '']);
+        }
+      } else {
+        for (var item in data) {
+          rows.add([
+            item['id'].toString(),
+            (item['researcher_name'] ?? item['researcher'] ?? '').toString(),
+            (item['achievement'] ?? '').toString(),
+            (item['points'] as num?)?.toDouble().toStringAsFixed(1) ?? '0.0',
+            (item['status'] ?? '').toString(),
+            (item['result'] ?? '').toString(),
+            (item['participation'] ?? '').toString(),
+          ]);
+        }
+      }
+
+      if (totals.isNotEmpty && totals.containsKey('points')) {
+        rows.add([
+          'ИТОГО',
+          '',
+          '',
+          (totals['points'] as num?)?.toDouble().toStringAsFixed(1) ?? '',
+          '',
+          '',
+          '',
+        ]);
+      }
+    }
+
+    if (kIsWeb) {
+      js.context.callMethod('eval', ["""
+        (function(title, headers, rows) {
+          var win = window.open('', '_blank');
+          var html = '<html><head><title>' + title + '</title>';
+          html += '<style>';
+          html += 'body { font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; padding: 20px; color: #333; }';
+          html += 'table { width: 100%; border-collapse: collapse; table-layout: auto; }';
+          html += 'th, td { border: 1px solid #000; padding: 8px; text-align: left; font-size: 11px; word-wrap: break-word; }';
+          html += 'th { background-color: #f5f5f5; font-weight: bold; }';
+          html += '@media print { body { padding: 0; } .no-print { display: none; } }';
+          html += '</style></head><body>';
+          
+          html += '<table><thead><tr>';
+          headers.forEach(function(h) { html += '<th>' + h + '</th>'; });
+          html += '</tr></thead><tbody>';
+          
+          rows.forEach(function(row) {
+            var isTotal = row[0] === 'ИТОГО' || row[1] === 'Итого по сотруднику';
+            html += '<tr' + (isTotal ? ' style=\"font-weight: bold; background-color: #f9f9f9;\"' : '') + '>';
+            row.forEach(function(cell) { html += '<td>' + (cell || '') + '</td>'; });
+            html += '</tr>';
+          });
+          
+          html += '</tbody></table>';
+          html += '<script>window.onload = function() { window.print(); setTimeout(function() { window.close(); }, 100); };</script>';
+          html += '</body></html>';
+          
+          win.document.write(html);
+          win.document.close();
+        })(${jsonEncode(title)}, ${jsonEncode(headers)}, ${jsonEncode(rows)})
+      """]);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Печать доступна только в веб-версии')),
+      );
+    }
+  }
+
+  void _showPrintPreview(Map<String, dynamic> reportData) {
+    // This function is no longer used but kept for backward compatibility or can be removed
+  }
+
+  Widget _buildPrintTableCell(String text, {bool isHeader = false}) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+    );
+  }
+
   void _exportReport(String format) async {
     try {
+      final nonPagedFilters = _activeFilters
+          .where((f) => f['value'] != null && f['value'].toString().trim().isNotEmpty)
+          .map((f) => {
+                'field': f['field'],
+                'operator': f['operator'],
+                'value': f['value'].toString(),
+              })
+          .toList();
+
       final params = {
         'report_type': _selectedReportId,
         'report_format': format,
-        'filters': _activeFilters,
-        'limit': 1000,
+        'filters': nonPagedFilters,
+        'limit': 10000,
         'offset': 0,
       };
+      
       final result = await _reportService.generateReport(params);
-      // In real app: save file
+      
       if (mounted) {
+        if (format == 'csv' && result['data'] != null) {
+          final String csvData = result['data'].toString();
+          if (kIsWeb) {
+            // Триггерим скачивание CSV через JS
+            final base64Data = base64Encode(utf8.encode(csvData));
+            final filename = 'report_${_selectedReportId}_${DateTime.now().millisecondsSinceEpoch}.csv';
+            
+            js.context.callMethod('eval', ["""
+              (function(base64, filename) {
+                var element = document.createElement('a');
+                element.setAttribute('href', 'data:text/csv;base64,' + base64);
+                element.setAttribute('download', filename);
+                element.style.display = 'none';
+                document.body.appendChild(element);
+                element.click();
+                document.body.removeChild(element);
+              })('$base64Data', '$filename')
+            """]);
+          }
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Отчет успешно экспортирован')),
+          SnackBar(
+            content: Text('Отчет успешно экспортирован в формате $format'),
+            backgroundColor: AppColors.success,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка экспорта: $e')),
+          SnackBar(
+            content: Text('Ошибка экспорта: $e'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     }
@@ -746,7 +990,7 @@ class _ReportScreenState extends State<ReportScreen> {
                   return _buildLegendItem(
                     colors[index % colors.length],
                     item['name'],
-                    val.toStringAsFixed(1),
+                    val.toInt().toString(),
                     percentage,
                   );
                 }).toList(),

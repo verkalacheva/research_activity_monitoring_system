@@ -18,7 +18,7 @@ module Reports
         Rails.logger.info "Calling Analytics Service for #{input[:report_type]}"
         response = Reports::Client.generate(grpc_params)
         
-        data_content = response.data.to_s
+        data_content = response.data.to_s.dup.force_encoding('UTF-8')
         parsed_data = if response.format == 'json'
                         data_content.strip.empty? ? {} : JSON.parse(data_content)
                       else
