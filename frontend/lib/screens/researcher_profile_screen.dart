@@ -46,6 +46,7 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
   late TextEditingController _isuNumberController;
   late TextEditingController _facultyController;
   late TextEditingController _employmentStatusController;
+  late TextEditingController _orcidIdController;
   String? _selectedDegreeLevel;
   int? _selectedCourse;
 
@@ -67,6 +68,7 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
     _isuNumberController = TextEditingController(text: _researcher.isuNumber ?? '');
     _facultyController = TextEditingController(text: _researcher.faculty ?? '');
     _employmentStatusController = TextEditingController(text: _researcher.employmentStatus ?? '');
+    _orcidIdController = TextEditingController(text: _researcher.orcidId ?? '');
     _selectedDegreeLevel = _researcher.degreeLevel;
     _selectedCourse = _researcher.course;
   }
@@ -82,18 +84,23 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
     _isuNumberController.dispose();
     _facultyController.dispose();
     _employmentStatusController.dispose();
+    _orcidIdController.dispose();
     super.dispose();
   }
 
   @override
   void didUpdateWidget(ResearcherProfileScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.researcher.id != widget.researcher.id) {
-      _researcher = widget.researcher;
-      _isLoading = true;
-      _isEditing = false;
-      _initControllers();
-      _refreshProfile();
+    if (oldWidget.researcher != widget.researcher) {
+      setState(() {
+        _researcher = widget.researcher;
+        _initControllers();
+      });
+      if (oldWidget.researcher.id != widget.researcher.id) {
+        _isLoading = true;
+        _isEditing = false;
+        _refreshProfile();
+      }
     }
   }
 
@@ -127,6 +134,7 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
           isuNumber: _isuNumberController.text.isEmpty ? null : _isuNumberController.text,
           faculty: _facultyController.text.isEmpty ? null : _facultyController.text,
           employmentStatus: _employmentStatusController.text.isEmpty ? null : _employmentStatusController.text,
+          orcidId: _orcidIdController.text.isEmpty ? null : _orcidIdController.text,
         );
 
         final updated = await _researcherService.update(_researcher.id!, updatedResearcher);
@@ -389,6 +397,8 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
           _infoRow(context, Icons.fingerprint, 'ИСУ', _researcher.isuNumber ?? 'Не указано', controller: _isuNumberController),
           const Divider(height: 1, indent: 56),
           _infoRow(context, Icons.work, 'Трудоустройство', _researcher.employmentStatus ?? 'Не указано', controller: _employmentStatusController),
+          const Divider(height: 1, indent: 56),
+          _infoRow(context, Icons.link, 'ORCID ID', _researcher.orcidId ?? 'Не указано', controller: _orcidIdController),
           if (!_isEditing && _researcher.course != null) ...[
             const Divider(height: 1, indent: 56),
             _infoRow(context, Icons.timeline, 'Курс обучения', '${_researcher.course} курс'),

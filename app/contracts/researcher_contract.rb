@@ -12,6 +12,7 @@ class ResearcherContract < BaseContract
     optional(:isu_number).maybe(:string)
     optional(:faculty).maybe(:string)
     optional(:employment_status).maybe(:string)
+    optional(:orcid_id).maybe(:string)
   end
 end
 

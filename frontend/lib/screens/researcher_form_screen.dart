@@ -34,6 +34,7 @@ class _ResearcherFormScreenState extends State<ResearcherFormScreen> {
   late TextEditingController _isuNumberController;
   late TextEditingController _facultyController;
   late TextEditingController _employmentStatusController;
+  late TextEditingController _orcidIdController;
 
   String? _selectedDegreeLevel;
   int? _selectedCourse;
@@ -62,6 +63,7 @@ class _ResearcherFormScreenState extends State<ResearcherFormScreen> {
     _isuNumberController = TextEditingController(text: widget.researcher?.isuNumber ?? '');
     _facultyController = TextEditingController(text: widget.researcher?.faculty ?? '');
     _employmentStatusController = TextEditingController(text: widget.researcher?.employmentStatus ?? '');
+    _orcidIdController = TextEditingController(text: widget.researcher?.orcidId ?? '');
 
     _selectedDegreeLevel = widget.researcher?.degreeLevel;
     _selectedCourse = widget.researcher?.course;
@@ -78,6 +80,7 @@ class _ResearcherFormScreenState extends State<ResearcherFormScreen> {
     _isuNumberController.dispose();
     _facultyController.dispose();
     _employmentStatusController.dispose();
+    _orcidIdController.dispose();
     super.dispose();
   }
 
@@ -96,6 +99,7 @@ class _ResearcherFormScreenState extends State<ResearcherFormScreen> {
         isuNumber: _isuNumberController.text.isEmpty ? null : _isuNumberController.text,
         faculty: _facultyController.text.isEmpty ? null : _facultyController.text,
         employmentStatus: _employmentStatusController.text.isEmpty ? null : _employmentStatusController.text,
+        orcidId: _orcidIdController.text.isEmpty ? null : _orcidIdController.text,
       );
 
       try {
@@ -203,6 +207,11 @@ class _ResearcherFormScreenState extends State<ResearcherFormScreen> {
             TextFormField(
               controller: _employmentStatusController,
               decoration: const InputDecoration(labelText: 'Трудоустройство (статус)'),
+            ),
+            const SizedBox(height: AppDimensions.paddingMedium),
+            TextFormField(
+              controller: _orcidIdController,
+              decoration: const InputDecoration(labelText: 'ORCID ID (напр. 0000-0001-2345-6789)'),
             ),
             const SizedBox(height: AppDimensions.paddingExtraLarge),
             Row(

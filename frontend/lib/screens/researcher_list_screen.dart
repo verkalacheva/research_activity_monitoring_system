@@ -5,6 +5,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_dimensions.dart';
 import '../utils/clipboard_helper.dart';
+import '../widgets/sync_preview_dialog.dart';
 import 'researcher_form_screen.dart';
 import 'researcher_profile_screen.dart';
 
@@ -85,6 +86,25 @@ class _ResearcherListScreenState extends State<ResearcherListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Сотрудники'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.sync),
+            tooltip: 'Синхронизировать с ORCID',
+            onPressed: () async {
+              final result = await showDialog(
+                context: context,
+                builder: (context) => const SyncPreviewDialog(),
+              );
+              if (result == true) {
+                _refreshList();
+                if (_selectedResearcher != null) {
+                  _refreshSelectedResearcher(_selectedResearcher!.id!);
+                }
+              }
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Row(
         children: [

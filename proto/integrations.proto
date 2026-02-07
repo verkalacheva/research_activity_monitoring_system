@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package integrations;
+
+option go_package = "./pb";
+
+service IntegrationService {
+  rpc FetchOrcidAchievements(OrcidRequest) returns (OrcidResponse) {}
+  rpc SyncAllAchievements(SyncRequest) returns (SyncResponse) {}
+}
+
+message SyncRequest {
+  string provider = 1; // e.g., "orcid"
+}
+
+message SyncResponse {
+  repeated ResearcherAchievements results = 1;
+}
+
+message ResearcherAchievements {
+  int64 researcher_id = 1;
+  string orcid_id = 2;
+  repeated Achievement achievements = 3;
+}
+
+message OrcidRequest {
+  string orcid_id = 1;
+}
+
+message Achievement {
+  string title = 1;
+  string type = 2;
+  string external_id = 3;
+  string url = 4;
+  string date = 5;
+  string description = 6;
+  int32 author_count = 7;
+  string journal_title = 8;
+}
+
+message OrcidResponse {
+  repeated Achievement achievements = 1;
+}
+

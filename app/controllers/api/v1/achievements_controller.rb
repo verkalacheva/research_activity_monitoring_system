@@ -32,11 +32,11 @@ module Api
         render_result(result)
       end
 
-    def destroy
-      achievement = Achievement.find(params[:id])
-      achievement.destroy
-      head :no_content
-    rescue ActiveRecord::RecordNotFound
+      def destroy
+        achievement = Achievement.find(params[:id])
+        achievement.destroy
+        head :no_content
+      rescue ActiveRecord::RecordNotFound
         render_failure({ type: :not_found, message: "Achievement not found" })
       end
 

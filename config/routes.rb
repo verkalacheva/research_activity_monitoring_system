@@ -32,6 +32,13 @@ Rails.application.routes.draw do
         end
       end
 
+      resources :integrations, only: [] do
+        collection do
+          get :sync_preview
+          post :save_achievements
+        end
+      end
+
       scope :selectors, controller: :selectors do
         post :researchers
         post :teams

@@ -11,6 +11,7 @@ class Researcher {
   final String? isuNumber;
   final String? faculty;
   final String? employmentStatus;
+  final String? orcidId;
   final bool isLeader;
   final List<Achievement> achievements;
 
@@ -27,6 +28,7 @@ class Researcher {
     this.isuNumber,
     this.faculty,
     this.employmentStatus,
+    this.orcidId,
     this.isLeader = false,
     this.achievements = const [],
   });
@@ -55,6 +57,7 @@ class Researcher {
       isuNumber: json['isu_number'],
       faculty: json['faculty'],
       employmentStatus: json['employment_status'],
+      orcidId: json['orcid_id'],
       isLeader: json['is_leader'] ?? false,
       achievements: (json['achievements'] as List?)
               ?.map((a) => Achievement.fromJson(a))
@@ -76,6 +79,7 @@ class Researcher {
       'isu_number': isuNumber,
       'faculty': faculty,
       'employment_status': employmentStatus,
+      'orcid_id': orcidId,
     };
   }
 
@@ -92,6 +96,7 @@ class Researcher {
     String? isuNumber,
     String? faculty,
     String? employmentStatus,
+    String? orcidId,
     bool? isLeader,
     List<Achievement>? achievements,
   }) {
@@ -108,6 +113,7 @@ class Researcher {
       isuNumber: isuNumber ?? this.isuNumber,
       faculty: faculty ?? this.faculty,
       employmentStatus: employmentStatus ?? this.employmentStatus,
+      orcidId: orcidId ?? this.orcidId,
       isLeader: isLeader ?? this.isLeader,
       achievements: achievements ?? this.achievements,
     );

@@ -18,9 +18,11 @@ services:
       RAILS_ENV: development
       DATABASE_URL: postgresql://postgres:password@db:5432/research_activity_monitoring_system_development
       ANALYTICS_SERVICE_HOST: analytics:50051
+      INTEGRATION_SERVICE_HOST: integration:50052
     depends_on:
       - db
       - analytics
+      - integration
 
   analytics:
     build:
@@ -28,6 +30,17 @@ services:
     environment:
       DATABASE_URL: postgres://postgres:password@db:5432/research_activity_monitoring_system_development?sslmode=disable
       PORT: 50051
+    depends_on:
+      - db
+
+  integration:
+    build:
+      context: ./integration_service
+    environment:
+      DATABASE_URL: postgres://postgres:password@db:5432/research_activity_monitoring_system_development?sslmode=disable
+      PORT: 50052
+    ports:
+      - "50052:50052"
     depends_on:
       - db
 

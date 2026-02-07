@@ -9,6 +9,7 @@ class UrlHelper {
   
   static final RegExp _telegramRegExp = RegExp(r'^@[a-zA-Z0-9_]{5,32}$');
   static final RegExp _telegramUrlRegExp = RegExp(r'^https?://t\.me/([a-zA-Z0-9_]{5,32})/?$');
+  static final RegExp _orcidRegExp = RegExp(r'^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$');
 
   static Future<void> launchURL(BuildContext context, String text) async {
     Uri? url;
@@ -20,6 +21,8 @@ class UrlHelper {
       url = Uri.parse('https://t.me/$username');
     } else if (_telegramUrlRegExp.hasMatch(text)) {
       url = Uri.parse(text);
+    } else if (_orcidRegExp.hasMatch(text)) {
+      url = Uri.parse('https://orcid.org/$text');
     }
 
     if (url == null) {
@@ -52,7 +55,8 @@ class UrlHelper {
     if (text.isEmpty || text == '—' || text == 'Не указано') return false;
     return _emailRegExp.hasMatch(text) || 
            _telegramRegExp.hasMatch(text) || 
-           _telegramUrlRegExp.hasMatch(text);
+           _telegramUrlRegExp.hasMatch(text) ||
+           _orcidRegExp.hasMatch(text);
   }
 
   static Widget buildClickableText(BuildContext context, String text, {TextStyle? style, bool enabled = true}) {

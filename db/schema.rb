@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_01_10_163000) do
+ActiveRecord::Schema[7.0].define(version: 2026_01_31_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -117,7 +117,9 @@ ActiveRecord::Schema[7.0].define(version: 2026_01_10_163000) do
     t.text "faculty"
     t.text "employment_status"
     t.datetime "deleted_at"
+    t.text "orcid_id"
     t.index ["deleted_at"], name: "index_researchers_on_deleted_at"
+    t.index ["orcid_id"], name: "index_researchers_on_orcid_id", unique: true
   end
 
   create_table "researchers_teams", force: :cascade do |t|
