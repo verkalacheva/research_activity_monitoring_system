@@ -264,34 +264,38 @@ class _ReportScreenState extends State<ReportScreen> {
           return Dialog.fullscreen(
             child: Scaffold(
               appBar: AppBar(
-                title: Text(_reportTitles[reportId] ?? 'Отчет'),
+                title: Text(_reportTitles[reportId] ?? 'Отчет', overflow: TextOverflow.ellipsis),
                 actions: [
-                  ElevatedButton.icon(
-                    onPressed: () => _handlePrint(),
-                    icon: const Icon(Icons.print, size: 18),
-                    label: const Text('ПЕЧАТЬ'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      minimumSize: const Size(120, 40),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                    ),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isNarrow = MediaQuery.of(context).size.width < 700;
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: () => _handlePrint(),
+                            icon: const Icon(Icons.print, size: 18),
+                            label: isNarrow ? const SizedBox.shrink() : const Text('ПЕЧАТЬ'),
+                            style: OutlinedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(horizontal: isNarrow ? 8 : 16),
+                              minimumSize: isNarrow ? Size.zero : const Size(120, 40),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          OutlinedButton.icon(
+                            onPressed: () => _exportReport('csv'),
+                            icon: const Icon(Icons.download, size: 18),
+                            label: isNarrow ? const SizedBox.shrink() : const Text('ЭКСПОРТ'),
+                            style: OutlinedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(horizontal: isNarrow ? 8 : 16),
+                              minimumSize: isNarrow ? Size.zero : const Size(120, 40),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                        ],
+                      );
+                    },
                   ),
-                  const SizedBox(width: 12),
-                  ElevatedButton.icon(
-                    onPressed: () => _exportReport('csv'),
-                    icon: const Icon(Icons.download, size: 18),
-                    label: const Text('ЭКСПОРТ'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      minimumSize: const Size(120, 40),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
                 ],
               ),
               body: Row(
@@ -300,8 +304,8 @@ class _ReportScreenState extends State<ReportScreen> {
                   Container(
                     width: 300,
                     decoration: BoxDecoration(
-                      border: Border(right: BorderSide(color: Colors.grey[300]!)),
-                      color: Colors.grey[50],
+                      border: Border(right: BorderSide(color: AppColors.border)),
+                      color: AppColors.surfaceSecondary,
                     ),
                     child: ListView(
                       padding: const EdgeInsets.all(16),
@@ -599,82 +603,112 @@ class _ReportScreenState extends State<ReportScreen> {
         // LEFT SIDE: LIST OF REPORTS
         Container(
           width: 280,
-          decoration: BoxDecoration(
-            border: Border(right: BorderSide(color: Colors.grey[300]!)),
+          decoration: const BoxDecoration(
+            border: Border(right: BorderSide(color: AppColors.primary, width: 1)),
           ),
-          child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : ListView(
-                  padding: EdgeInsets.zero,
-                  children: [
-                    const Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Text('Доступные отчеты', style: AppTextStyles.h2),
-                    ),
-                    ...((_selectors?['report_types'] as List?) ?? []).map((report) {
-                      final reportId = report['id'];
-                      return ListTile(
-                        leading: const Icon(Icons.analytics_outlined, color: AppColors.primary),
-                        title: Text(_reportTitles[reportId] ?? reportId),
-                        trailing: const Icon(Icons.chevron_right, size: 16),
-                        onTap: () => _openReportDetail(reportId),
-                      );
-                    }).toList(),
-                  ],
+          child: Column(
+            children: [
+              Container(
+                height: 64,
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: const BoxDecoration(
+                  color: AppColors.surface,
+                  border: Border(bottom: BorderSide(color: AppColors.primary, width: 1)),
                 ),
+                alignment: Alignment.centerLeft,
+                child: const Text('Отчеты', style: AppTextStyles.h2),
+              ),
+              Expanded(
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ListView(
+                        padding: EdgeInsets.zero,
+                        children: [
+                          ...((_selectors?['report_types'] as List?) ?? []).map((report) {
+                            final reportId = report['id'];
+                            return ListTile(
+                              leading: const Icon(Icons.analytics_outlined, color: AppColors.primary),
+                              title: Text(_reportTitles[reportId] ?? reportId),
+                              trailing: const Icon(Icons.chevron_right, size: 16),
+                              onTap: () => _openReportDetail(reportId),
+                            );
+                          }).toList(),
+                        ],
+                      ),
+              ),
+            ],
+          ),
         ),
         // RIGHT SIDE: DASHBOARD CHARTS
         Expanded(
-          child: Container(
-            color: Colors.grey[50],
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Обзор активности', style: AppTextStyles.h1),
-                    _buildDashboardPeriodSelector(),
-                  ],
+          child: Column(
+            children: [
+              Container(
+                height: 64,
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                decoration: const BoxDecoration(
+                  color: AppColors.surface,
+                  border: Border(bottom: BorderSide(color: AppColors.primary, width: 1)),
                 ),
-                const SizedBox(height: 24),
-                Expanded(
-                  child: GridView.count(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 20,
-                    mainAxisSpacing: 24,
-                    childAspectRatio: 1.4,
-                    children: [
-                      _buildDashboardChart(
-                        'Распределение по типам', 
-                        Icons.pie_chart,
-                        _buildTypeDistributionChart(),
-                      ),
-                      _buildDashboardChart(
-                        _dashboardStartDate != null || _dashboardEndDate != null 
-                            ? 'Динамика достижений' 
-                            : 'Динамика достижений (год)', 
-                        Icons.show_chart,
-                        _buildDynamicsChart(),
-                      ),
-                      _buildDashboardChart(
-                        _dashboardStartDate != null || _dashboardEndDate != null 
-                            ? 'Топ исследователей' 
-                            : 'Топ исследователей (3 мес.)', 
-                        Icons.leaderboard,
-                        _buildTopResearchersList(),
-                      ),
-                      _buildDashboardChart(
-                        'Распределение по статусам', 
-                        Icons.donut_large,
-                        _buildStatusDistributionChart(),
-                      ),
-                    ],
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Flexible(
+                  child: Text(
+                    'Обзор активности', 
+                    style: AppTextStyles.h2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                Flexible(child: _buildDashboardPeriodSelector()),
               ],
             ),
+              ),
+              Expanded(
+                child: Container(
+                  color: AppColors.surfaceSecondary,
+                  padding: const EdgeInsets.all(24),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final crossAxisCount = constraints.maxWidth < 1000 ? 1 : 2;
+              return GridView.count(
+                crossAxisCount: crossAxisCount,
+                crossAxisSpacing: 20,
+                mainAxisSpacing: 24,
+                childAspectRatio: crossAxisCount == 1 ? 1.8 : 1.4,
+                children: [
+                  _buildDashboardChart(
+                    'Распределение по типам', 
+                    Icons.pie_chart,
+                    _buildTypeDistributionChart(),
+                  ),
+                  _buildDashboardChart(
+                    _dashboardStartDate != null || _dashboardEndDate != null 
+                        ? 'Динамика достижений' 
+                        : 'Динамика достижений (год)', 
+                    Icons.show_chart,
+                    _buildDynamicsChart(),
+                  ),
+                  _buildDashboardChart(
+                    _dashboardStartDate != null || _dashboardEndDate != null 
+                        ? 'Топ исследователей' 
+                        : 'Топ исследователей (3 мес.)', 
+                    Icons.leaderboard,
+                    _buildTopResearchersList(),
+                  ),
+                  _buildDashboardChart(
+                    'Распределение по статусам', 
+                    Icons.donut_large,
+                    _buildStatusDistributionChart(),
+                  ),
+                ],
+              );
+            },
+          ),
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -684,7 +718,7 @@ class _ReportScreenState extends State<ReportScreen> {
   Widget _buildDashboardChart(String title, IconData icon, Widget chart) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -694,7 +728,13 @@ class _ReportScreenState extends State<ReportScreen> {
               children: [
                 Icon(icon, color: AppColors.primary, size: 20),
                 const SizedBox(width: 8),
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Expanded(
+                  child: Text(
+                    title, 
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -702,7 +742,7 @@ class _ReportScreenState extends State<ReportScreen> {
               child: _isLoadingDashboard 
                 ? const Center(child: CircularProgressIndicator())
                 : _dashboardData == null
-                  ? Center(child: Icon(icon, size: 80, color: Colors.grey[200]))
+                  ? Center(child: Icon(icon, size: 80, color: AppColors.divider))
                   : chart,
             ),
           ],
@@ -719,7 +759,7 @@ class _ReportScreenState extends State<ReportScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: IconButton(
-              icon: const Icon(Icons.clear, size: 20, color: Colors.red),
+              icon: const Icon(Icons.clear, size: 20, color: AppColors.error),
               onPressed: () {
                 setState(() {
                   _dashboardStartDate = null;
@@ -796,14 +836,14 @@ class _ReportScreenState extends State<ReportScreen> {
                 offset: Offset(0, showAbove ? -8 : 8),
                 child: Material(
                   elevation: 16,
-                  borderRadius: BorderRadius.circular(4),
-                  shadowColor: Colors.black.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(16),
+                  shadowColor: AppColors.textPrimary.withOpacity(0.3),
                   child: Container(
                     width: showCalendar ? 300 : (button.size.width > 220 ? button.size.width : 220),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.purple[100]!),
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.primary.withOpacity(0.1)),
                     ),
                     child: showCalendar 
                       ? Column(
@@ -847,7 +887,7 @@ class _ReportScreenState extends State<ReportScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 if (isCustom) 
-                                  Divider(height: 1, color: Colors.purple[50]),
+                                  Divider(height: 1, color: AppColors.divider),
                                 ListTile(
                                   dense: true,
                                   visualDensity: VisualDensity.compact,
@@ -856,7 +896,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: isCustom ? FontWeight.bold : FontWeight.normal,
-                                      color: isCustom ? AppColors.primary : Colors.black87,
+                                      color: isCustom ? AppColors.primary : AppColors.textPrimary,
                                     ),
                                   ),
                                   onTap: () {
@@ -868,7 +908,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                       _handleDashboardPeriodSelection(item['id']!);
                                     }
                                   },
-                                  hoverColor: Colors.purple[50],
+                                  hoverColor: AppColors.primaryLight,
                                 ),
                               ],
                             );
@@ -949,57 +989,110 @@ class _ReportScreenState extends State<ReportScreen> {
       Colors.brown, Colors.blueGrey, Colors.deepOrange, Colors.lightGreen
     ];
 
-    return Row(
-      children: [
-        Expanded(
-          flex: 3,
-          child: PieChart(
-            PieChartData(
-              sectionsSpace: 2,
-              centerSpaceRadius: 45,
-              sections: data.asMap().entries.map((entry) {
-                final index = entry.key;
-                final item = entry.value;
-                final val = (item['value'] as num).toDouble();
-                final percentage = (val / total * 100).toStringAsFixed(0);
-                return PieChartSectionData(
-                  color: colors[index % colors.length],
-                  value: val,
-                  title: '$percentage%',
-                  showTitle: val / total > 0.05,
-                  radius: 80,
-                  titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
-                );
-              }).toList(),
-            ),
-          ),
-        ),
-        const SizedBox(width: 24),
-        Expanded(
-          flex: 2,
-          child: Padding(
-            padding: const EdgeInsets.only(right: 72.0),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: data.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final item = entry.value;
-                  final val = (item['value'] as num).toDouble();
-                  final percentage = (val / total * 100).toStringAsFixed(1);
-                  return _buildLegendItem(
-                    colors[index % colors.length],
-                    item['name'],
-                    val.toInt().toString(),
-                    percentage,
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final useColumn = constraints.maxWidth < 450;
+        return useColumn 
+          ? Column(
+              children: [
+                Expanded(
+                  child: PieChart(
+                    PieChartData(
+                      sectionsSpace: 2,
+                      centerSpaceRadius: 35,
+                      sections: data.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final item = entry.value;
+                        final val = (item['value'] as num).toDouble();
+                        final percentage = (val / total * 100).toStringAsFixed(0);
+                        return PieChartSectionData(
+                          color: colors[index % colors.length],
+                          value: val,
+                          title: '$percentage%',
+                          showTitle: val / total > 0.05,
+                          radius: 70,
+                          titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: data.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final item = entry.value;
+                        final val = (item['value'] as num).toDouble();
+                        final percentage = (val / total * 100).toStringAsFixed(1);
+                        return _buildLegendItem(
+                          colors[index % colors.length],
+                          item['name'],
+                          val.toInt().toString(),
+                          percentage,
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: PieChart(
+                    PieChartData(
+                      sectionsSpace: 2,
+                      centerSpaceRadius: 45,
+                      sections: data.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final item = entry.value;
+                        final val = (item['value'] as num).toDouble();
+                        final percentage = (val / total * 100).toStringAsFixed(0);
+                        return PieChartSectionData(
+                          color: colors[index % colors.length],
+                          value: val,
+                          title: '$percentage%',
+                          showTitle: val / total > 0.05,
+                          radius: 80,
+                          titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 24),
+                Expanded(
+                  flex: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 16.0),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: data.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final item = entry.value;
+                          final val = (item['value'] as num).toDouble();
+                          final percentage = (val / total * 100).toStringAsFixed(1);
+                          return _buildLegendItem(
+                            colors[index % colors.length],
+                            item['name'],
+                            val.toInt().toString(),
+                            percentage,
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+      }
     );
   }
 
@@ -1018,57 +1111,110 @@ class _ReportScreenState extends State<ReportScreen> {
       Colors.indigoAccent, Colors.pinkAccent, Colors.tealAccent, Colors.purpleAccent
     ];
 
-    return Row(
-      children: [
-        Expanded(
-          flex: 3,
-          child: PieChart(
-            PieChartData(
-              sectionsSpace: 2,
-              centerSpaceRadius: 40,
-              sections: data.asMap().entries.map((entry) {
-                final index = entry.key;
-                final item = entry.value;
-                final val = (item['value'] as num).toDouble();
-                final percentage = (val / total * 100).toStringAsFixed(0);
-                return PieChartSectionData(
-                  color: colors[index % colors.length],
-                  value: val,
-                  title: '$percentage%',
-                  showTitle: val / total > 0.05,
-                  radius: 85,
-                  titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
-                );
-              }).toList(),
-            ),
-          ),
-        ),
-        const SizedBox(width: 24),
-        Expanded(
-          flex: 2,
-          child: Padding(
-            padding: const EdgeInsets.only(right: 72.0),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: data.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final item = entry.value;
-                  final val = (item['value'] as num).toDouble();
-                  final percentage = (val / total * 100).toStringAsFixed(1);
-                  return _buildLegendItem(
-                    colors[index % colors.length],
-                    item['name'],
-                    val.toInt().toString(),
-                    percentage,
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final useColumn = constraints.maxWidth < 450;
+        return useColumn
+          ? Column(
+              children: [
+                Expanded(
+                  child: PieChart(
+                    PieChartData(
+                      sectionsSpace: 2,
+                      centerSpaceRadius: 30,
+                      sections: data.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final item = entry.value;
+                        final val = (item['value'] as num).toDouble();
+                        final percentage = (val / total * 100).toStringAsFixed(0);
+                        return PieChartSectionData(
+                          color: colors[index % colors.length],
+                          value: val,
+                          title: '$percentage%',
+                          showTitle: val / total > 0.05,
+                          radius: 75,
+                          titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: data.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final item = entry.value;
+                        final val = (item['value'] as num).toDouble();
+                        final percentage = (val / total * 100).toStringAsFixed(1);
+                        return _buildLegendItem(
+                          colors[index % colors.length],
+                          item['name'],
+                          val.toInt().toString(),
+                          percentage,
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: PieChart(
+                    PieChartData(
+                      sectionsSpace: 2,
+                      centerSpaceRadius: 40,
+                      sections: data.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final item = entry.value;
+                        final val = (item['value'] as num).toDouble();
+                        final percentage = (val / total * 100).toStringAsFixed(0);
+                        return PieChartSectionData(
+                          color: colors[index % colors.length],
+                          value: val,
+                          title: '$percentage%',
+                          showTitle: val / total > 0.05,
+                          radius: 85,
+                          titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 24),
+                Expanded(
+                  flex: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 16.0),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: data.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final item = entry.value;
+                          final val = (item['value'] as num).toDouble();
+                          final percentage = (val / total * 100).toStringAsFixed(1);
+                          return _buildLegendItem(
+                            colors[index % colors.length],
+                            item['name'],
+                            val.toInt().toString(),
+                            percentage,
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+      }
     );
   }
 
@@ -1078,8 +1224,8 @@ class _ReportScreenState extends State<ReportScreen> {
       child: Row(
         children: [
           Container(
-            width: 12,
-            height: 12,
+            width: 16,
+            height: 16,
             decoration: BoxDecoration(
               color: color,
               shape: BoxShape.circle,
@@ -1113,21 +1259,21 @@ class _ReportScreenState extends State<ReportScreen> {
         final item = data[index];
         return Container(
           margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey[200]!),
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.divider),
           ),
           child: Row(
             children: [
               CircleAvatar(
-                radius: 12,
+                radius: 16,
                 backgroundColor: AppColors.primary.withOpacity(0.1),
                 child: Text('${index + 1}', 
                   style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary)),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               Expanded(
                 child: Text(item['name'], style: const TextStyle(fontWeight: FontWeight.w500)),
               ),
@@ -1168,7 +1314,7 @@ class _ReportScreenState extends State<ReportScreen> {
               return BarTooltipItem(
                 rod.toY.toInt().toString(),
                 const TextStyle(
-                  color: Colors.white,
+                  color: AppColors.textOnPrimary,
                   fontWeight: FontWeight.bold,
                 ),
               );
@@ -1185,7 +1331,7 @@ class _ReportScreenState extends State<ReportScreen> {
                 toY: (item['value'] as num).toDouble(),
                 color: AppColors.primary,
                 width: 16,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
               ),
             ],
           );
@@ -1224,7 +1370,7 @@ class _ReportScreenState extends State<ReportScreen> {
           rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
         gridData: const FlGridData(show: true, drawVerticalLine: false),
-        borderData: FlBorderData(show: true, border: Border.all(color: Colors.grey[300]!)),
+        borderData: FlBorderData(show: true, border: Border.all(color: AppColors.divider)),
       ),
     );
   }
@@ -1349,8 +1495,8 @@ class _ReportScreenState extends State<ReportScreen> {
                             offset: Offset(0, showAbove ? -8 : 8),
                             child: Material(
                               elevation: 16,
-                              borderRadius: BorderRadius.circular(4),
-                              shadowColor: Colors.black.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(16),
+                              shadowColor: AppColors.textPrimary.withOpacity(0.3),
                               child: Container(
                                 constraints: BoxConstraints(
                                   maxHeight: showAbove 
@@ -1360,9 +1506,9 @@ class _ReportScreenState extends State<ReportScreen> {
                                   minWidth: button.size.width,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(4),
-                                  border: Border.all(color: Colors.purple[100]!),
+                                  color: AppColors.textOnPrimary,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: AppColors.primaryLight),
                                 ),
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
@@ -1385,7 +1531,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                                 overlayEntry = null;
                                               },
                                               selected: filter['value'] == '',
-                                              selectedTileColor: Colors.purple[50],
+                                              selectedTileColor: AppColors.primaryLight,
                                             );
                                           }
                                           final opt = filter['options'][index - 1];
@@ -1402,7 +1548,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                               overlayEntry = null;
                                             },
                                             selected: filter['value'] == opt['id'].toString(),
-                                            selectedTileColor: Colors.purple[50],
+                                            selectedTileColor: AppColors.primaryLight,
                                           );
                                         },
                                       ),
@@ -1431,10 +1577,10 @@ class _ReportScreenState extends State<ReportScreen> {
                   },
                   child: InputDecorator(
                     decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                       border: const OutlineInputBorder(),
                       suffixIcon: filter['isLoadingOptions'] == true 
-                        ? const SizedBox(width: 20, height: 20, child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2)))
+                        ? const SizedBox(width: 20, height: 20, child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator(strokeWidth: 2)))
                         : const Icon(Icons.arrow_drop_down),
                     ),
                     child: Text(_getFilterDisplayValue(filter), style: const TextStyle(fontSize: 14)),
@@ -1448,7 +1594,7 @@ class _ReportScreenState extends State<ReportScreen> {
             TextField(
               decoration: const InputDecoration(
                 hintText: 'Введите значение...', 
-                contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                contentPadding: EdgeInsets.symmetric(horizontal: 16),
                 border: OutlineInputBorder(),
               ),
               onChanged: (val) => filter['value'] = val,
@@ -1506,14 +1652,14 @@ class _ReportScreenState extends State<ReportScreen> {
             child: ConstrainedBox(
               constraints: BoxConstraints(minWidth: constraints.maxWidth),
               child: DataTable(
-                headingRowColor: MaterialStateProperty.all(AppColors.primaryDark),
-                headingTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                headingRowColor: MaterialStateProperty.all(AppColors.primaryLight),
+                headingTextStyle: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
                 columnSpacing: 24,
-                horizontalMargin: 12,
+                horizontalMargin: 16,
                 border: TableBorder(
-                  verticalInside: BorderSide(color: Colors.grey[300]!, width: 1),
-                  horizontalInside: BorderSide(color: Colors.grey[300]!, width: 1),
-                  bottom: BorderSide(color: Colors.grey[300]!, width: 1),
+                  verticalInside: BorderSide(color: AppColors.divider, width: 1),
+                  horizontalInside: BorderSide(color: AppColors.divider, width: 1),
+                  bottom: BorderSide(color: AppColors.divider, width: 1),
                 ),
                 columns: [
                   _buildSortableColumn('ID', 'id', setModalState),
@@ -1573,7 +1719,7 @@ class _ReportScreenState extends State<ReportScreen> {
       if (lastResearcherId != null && lastResearcherId != researcherId) {
         // Add subtotal row
         rows.add(DataRow(
-          color: MaterialStateProperty.all(Colors.purple.withOpacity(0.05)),
+          color: MaterialStateProperty.all(AppColors.primary.withOpacity(0.05)),
           cells: [
             const DataCell(Text('')),
             const DataCell(Text('Итого по сотруднику', style: TextStyle(fontWeight: FontWeight.bold, fontStyle: FontStyle.italic))),
@@ -1594,7 +1740,7 @@ class _ReportScreenState extends State<ReportScreen> {
             Text(
               researcherName, 
               style: TextStyle(
-                color: lastResearcherId == researcherId ? Colors.transparent : Colors.purple[900],
+                color: lastResearcherId == researcherId ? Colors.transparent : AppColors.primaryDark,
                 fontWeight: FontWeight.bold,
               )
             )
@@ -1615,7 +1761,7 @@ class _ReportScreenState extends State<ReportScreen> {
     // Last subtotal
     if (lastResearcherId != null) {
       rows.add(DataRow(
-        color: MaterialStateProperty.all(Colors.purple.withOpacity(0.05)),
+        color: MaterialStateProperty.all(AppColors.primary.withOpacity(0.05)),
         cells: [
           const DataCell(Text('')),
           const DataCell(Text('Итого по сотруднику', style: TextStyle(fontWeight: FontWeight.bold, fontStyle: FontStyle.italic))),
@@ -1653,14 +1799,14 @@ class _ReportScreenState extends State<ReportScreen> {
             child: ConstrainedBox(
               constraints: BoxConstraints(minWidth: constraints.maxWidth),
               child: DataTable(
-                headingRowColor: MaterialStateProperty.all(AppColors.primaryDark),
-                headingTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                headingRowColor: MaterialStateProperty.all(AppColors.primaryLight),
+                headingTextStyle: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
                 columnSpacing: 24,
-                horizontalMargin: 12,
+                horizontalMargin: 16,
                 border: TableBorder(
-                  verticalInside: BorderSide(color: Colors.grey[300]!, width: 1),
-                  horizontalInside: BorderSide(color: Colors.grey[300]!, width: 1),
-                  bottom: BorderSide(color: Colors.grey[300]!, width: 1),
+                  verticalInside: BorderSide(color: AppColors.divider, width: 1),
+                  horizontalInside: BorderSide(color: AppColors.divider, width: 1),
+                  bottom: BorderSide(color: AppColors.divider, width: 1),
                 ),
                 columns: [
                   _buildSortableColumn('ID', 'id', setModalState),
@@ -1690,14 +1836,14 @@ class _ReportScreenState extends State<ReportScreen> {
             child: ConstrainedBox(
               constraints: BoxConstraints(minWidth: constraints.maxWidth),
               child: DataTable(
-                headingRowColor: MaterialStateProperty.all(AppColors.primaryDark),
-                headingTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                headingRowColor: MaterialStateProperty.all(AppColors.primaryLight),
+                headingTextStyle: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
                 columnSpacing: 24,
-                horizontalMargin: 12,
+                horizontalMargin: 16,
                 border: TableBorder(
-                  verticalInside: BorderSide(color: Colors.grey[300]!, width: 1),
-                  horizontalInside: BorderSide(color: Colors.grey[300]!, width: 1),
-                  bottom: BorderSide(color: Colors.grey[300]!, width: 1),
+                  verticalInside: BorderSide(color: AppColors.divider, width: 1),
+                  horizontalInside: BorderSide(color: AppColors.divider, width: 1),
+                  bottom: BorderSide(color: AppColors.divider, width: 1),
                 ),
                 columns: [
                   _buildSortableColumn('ID', 'id', setModalState),
@@ -1741,7 +1887,7 @@ class _ReportScreenState extends State<ReportScreen> {
       label: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label),
+          Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
           const SizedBox(width: 4),
           InkWell(
             onTap: () {
@@ -1760,7 +1906,7 @@ class _ReportScreenState extends State<ReportScreen> {
                 ? (_sortDescending ? Icons.arrow_downward : Icons.arrow_upward)
                 : Icons.sort,
               size: 16,
-              color: _sortField == field ? Colors.white : Colors.white70,
+              color: _sortField == field ? AppColors.primary : AppColors.primary.withOpacity(0.5),
             ),
           ),
         ],
@@ -1785,11 +1931,11 @@ class _ReportScreenState extends State<ReportScreen> {
     const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: isDashboard ? null : Border.all(color: Colors.grey[300]!),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: isDashboard ? null : Border.all(color: AppColors.divider),
       ),
       child: Column(
         children: [
@@ -1843,7 +1989,7 @@ class _ReportScreenState extends State<ReportScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           // Month/Year Picker Header
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1891,7 +2037,7 @@ class _ReportScreenState extends State<ReportScreen> {
             childAspectRatio: 1,
             physics: const NeverScrollableScrollPhysics(),
             children: [
-              ...weekDays.map((d) => Center(child: Text(d, style: const TextStyle(fontSize: 10, color: Colors.grey)))),
+              ...weekDays.map((d) => Center(child: Text(d, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)))),
               for (int i = 1; i < firstWeekday; i++) const SizedBox(),
               for (int day = 1; day <= daysInMonth; day++) 
                 (() {
@@ -1926,7 +2072,7 @@ class _ReportScreenState extends State<ReportScreen> {
                           '$day', 
                           style: TextStyle(
                             fontSize: 11, 
-                            color: (isStart || isEnd) ? Colors.white : Colors.black,
+                            color: (isStart || isEnd) ? AppColors.textOnPrimary : AppColors.textPrimary,
                             fontWeight: (isStart || isEnd) ? FontWeight.bold : FontWeight.normal,
                           )
                         ),
@@ -1938,12 +2084,12 @@ class _ReportScreenState extends State<ReportScreen> {
           ),
           if (isDashboard)
             Padding(
-              padding: const EdgeInsets.only(top: 12.0),
+              padding: const EdgeInsets.only(top: 16.0),
               child: ElevatedButton(
                 onPressed: (start != null && end != null) ? () => onApply?.call(start, end) : null,
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 36),
-                  textStyle: const TextStyle(fontSize: 12),
+                  textStyle: const TextStyle(fontSize: 16),
                 ),
                 child: const Text('Применить'),
               ),
@@ -1960,7 +2106,7 @@ class _ReportScreenState extends State<ReportScreen> {
                       TextButton(
                         onPressed: () => setModalState(() => filter['value'] = ''),
                         style: TextButton.styleFrom(visualDensity: VisualDensity.compact, padding: EdgeInsets.zero),
-                        child: const Text('Сбросить', style: TextStyle(fontSize: 10, color: Colors.red)),
+                        child: const Text('Сбросить', style: TextStyle(fontSize: 10, color: AppColors.error)),
                       ),
                     ],
                   ),
@@ -1980,8 +2126,8 @@ class _ReportScreenState extends State<ReportScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey[200]!)),
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.divider)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,

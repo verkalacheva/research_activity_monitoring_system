@@ -152,7 +152,7 @@ class _AchievementTypeFormScreenState extends State<AchievementTypeFormScreen> {
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: isSelected ? Theme.of(context).primaryColor : Colors.grey[200],
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: Icon(
                         entry.value,

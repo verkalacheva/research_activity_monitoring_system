@@ -238,7 +238,7 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
       child: ListTile(
         leading: const CircleAvatar(
           backgroundColor: AppColors.primary,
-          child: Icon(Icons.star, color: Colors.white),
+          child: Icon(Icons.star, color: AppColors.textOnPrimary),
         ),
         title: Row(
           children: [
@@ -250,7 +250,7 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
               ),
             ),
             const SizedBox(width: 8),
-            const Icon(Icons.star, size: 16, color: Colors.amber),
+            const Icon(Icons.star, size: 16, color: AppColors.warning),
           ],
         ),
         trailing: IconButton(
@@ -311,7 +311,7 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
                 ),
                 if (researcher.isLeader) ...[
                   const SizedBox(width: 8),
-                  const Icon(Icons.star, size: 16, color: Colors.amber),
+                  const Icon(Icons.star, size: 16, color: AppColors.warning),
                 ],
               ],
             ),

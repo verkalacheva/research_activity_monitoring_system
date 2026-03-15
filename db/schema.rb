@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_01_31_100000) do
+ActiveRecord::Schema[7.0].define(version: 2026_03_15_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -118,7 +118,9 @@ ActiveRecord::Schema[7.0].define(version: 2026_01_31_100000) do
     t.text "employment_status"
     t.datetime "deleted_at"
     t.text "orcid_id"
+    t.text "openalex_id"
     t.index ["deleted_at"], name: "index_researchers_on_deleted_at"
+    t.index ["openalex_id"], name: "index_researchers_on_openalex_id"
     t.index ["orcid_id"], name: "index_researchers_on_orcid_id", unique: true
   end
 

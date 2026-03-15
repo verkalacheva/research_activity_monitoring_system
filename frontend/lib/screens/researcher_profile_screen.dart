@@ -47,6 +47,7 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
   late TextEditingController _facultyController;
   late TextEditingController _employmentStatusController;
   late TextEditingController _orcidIdController;
+  late TextEditingController _openalexIdController;
   String? _selectedDegreeLevel;
   int? _selectedCourse;
 
@@ -69,6 +70,7 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
     _facultyController = TextEditingController(text: _researcher.faculty ?? '');
     _employmentStatusController = TextEditingController(text: _researcher.employmentStatus ?? '');
     _orcidIdController = TextEditingController(text: _researcher.orcidId ?? '');
+    _openalexIdController = TextEditingController(text: _researcher.openalexId ?? '');
     _selectedDegreeLevel = _researcher.degreeLevel;
     _selectedCourse = _researcher.course;
   }
@@ -85,6 +87,7 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
     _facultyController.dispose();
     _employmentStatusController.dispose();
     _orcidIdController.dispose();
+    _openalexIdController.dispose();
     super.dispose();
   }
 
@@ -135,6 +138,7 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
           faculty: _facultyController.text.isEmpty ? null : _facultyController.text,
           employmentStatus: _employmentStatusController.text.isEmpty ? null : _employmentStatusController.text,
           orcidId: _orcidIdController.text.isEmpty ? null : _orcidIdController.text,
+          openalexId: _openalexIdController.text.isEmpty ? null : _openalexIdController.text,
         );
 
         final updated = await _researcherService.update(_researcher.id!, updatedResearcher);
@@ -253,7 +257,7 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
         if (result == true) _refreshProfile();
       },
       backgroundColor: AppColors.primary,
-      child: const Icon(Icons.add, color: Colors.white),
+      child: const Icon(Icons.add, color: AppColors.textOnPrimary),
     );
   }
 
@@ -309,7 +313,7 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
                                 const Icon(
                                   Icons.star,
                                   size: 28,
-                                  color: Colors.amber,
+                                  color: AppColors.warning,
                                 ),
                               ],
                               if (widget.isEmbedded) ...[
@@ -399,6 +403,8 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
           _infoRow(context, Icons.work, 'Трудоустройство', _researcher.employmentStatus ?? 'Не указано', controller: _employmentStatusController),
           const Divider(height: 1, indent: 56),
           _infoRow(context, Icons.link, 'ORCID ID', _researcher.orcidId ?? 'Не указано', controller: _orcidIdController),
+          const Divider(height: 1, indent: 56),
+          _infoRow(context, Icons.link, 'OpenAlex ID', _researcher.openalexId ?? 'Не указано', controller: _openalexIdController),
           if (!_isEditing && _researcher.course != null) ...[
             const Divider(height: 1, indent: 56),
             _infoRow(context, Icons.timeline, 'Курс обучения', '${_researcher.course} курс'),
@@ -553,7 +559,7 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: AppColors.background,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(icon, color: AppColors.primary, size: 20),
           ),

@@ -28,6 +28,7 @@ module Api
           {
             researcher_id: res.researcher_id,
             orcid_id: res.orcid_id,
+            openalex_id: res.openalex_id,
             researcher_name: researcher.fullName,
             achievements: new_achievements.map do |a|
               {
@@ -118,7 +119,7 @@ module Api
         elsif text.include?('rsci')
           AchievementStatus.find_by(title: 'RSCI')
         else
-          AchievementStatus.find_by(title: 'Университетский') || AchievementStatus.first
+          AchievementStatus.find_by(title: 'Не указано') || AchievementStatus.find_by(title: 'Университетский') || AchievementStatus.first
         end
       end
 

@@ -1,0 +1,16 @@
+FROM golang:1.25-alpine AS builder
+
+WORKDIR /app
+
+RUN apk add --no-cache --update git || (sleep 5 && apk add --no-cache --update git)
+
+RUN go install github.com/air-verse/air@latest
+
+COPY go.mod ./
+RUN go mod download || true
+
+COPY . .
+
+RUN go mod tidy
+
+CMD ["sh", "-c", "go mod tidy && air -c .air.toml"]

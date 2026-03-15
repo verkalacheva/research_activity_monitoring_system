@@ -7,6 +7,9 @@ class Researcher < ApplicationRecord
   has_many :researcher_achievements, dependent: :destroy
   has_many :achievements, -> { where(achievements: { deleted_at: nil }) }, through: :researcher_achievements
 
+  validates :orcid_id, uniqueness: true, allow_blank: true
+  validates :openalex_id, uniqueness: true, allow_blank: true
+
   def fullName
     [surname, name, second_name].compact.join(' ')
   end

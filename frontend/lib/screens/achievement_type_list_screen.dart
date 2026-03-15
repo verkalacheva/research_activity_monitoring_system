@@ -181,7 +181,7 @@ class _AchievementTypeListScreenState extends State<AchievementTypeListScreen> {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: AppColors.background,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(
                 IconHelper.getIcon(type.iconName),

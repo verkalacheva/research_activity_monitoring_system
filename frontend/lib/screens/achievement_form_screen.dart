@@ -285,7 +285,7 @@ class _AchievementFormScreenState extends State<AchievementFormScreen> {
                 padding: const EdgeInsets.all(AppDimensions.paddingMedium),
                 decoration: BoxDecoration(
                   color: AppColors.background,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.divider),
                 ),
                 child: Row(

@@ -35,6 +35,7 @@ class _ResearcherFormScreenState extends State<ResearcherFormScreen> {
   late TextEditingController _facultyController;
   late TextEditingController _employmentStatusController;
   late TextEditingController _orcidIdController;
+  late TextEditingController _openalexIdController;
 
   String? _selectedDegreeLevel;
   int? _selectedCourse;
@@ -64,6 +65,7 @@ class _ResearcherFormScreenState extends State<ResearcherFormScreen> {
     _facultyController = TextEditingController(text: widget.researcher?.faculty ?? '');
     _employmentStatusController = TextEditingController(text: widget.researcher?.employmentStatus ?? '');
     _orcidIdController = TextEditingController(text: widget.researcher?.orcidId ?? '');
+    _openalexIdController = TextEditingController(text: widget.researcher?.openalexId ?? '');
 
     _selectedDegreeLevel = widget.researcher?.degreeLevel;
     _selectedCourse = widget.researcher?.course;
@@ -81,6 +83,7 @@ class _ResearcherFormScreenState extends State<ResearcherFormScreen> {
     _facultyController.dispose();
     _employmentStatusController.dispose();
     _orcidIdController.dispose();
+    _openalexIdController.dispose();
     super.dispose();
   }
 
@@ -100,6 +103,7 @@ class _ResearcherFormScreenState extends State<ResearcherFormScreen> {
         faculty: _facultyController.text.isEmpty ? null : _facultyController.text,
         employmentStatus: _employmentStatusController.text.isEmpty ? null : _employmentStatusController.text,
         orcidId: _orcidIdController.text.isEmpty ? null : _orcidIdController.text,
+        openalexId: _openalexIdController.text.isEmpty ? null : _openalexIdController.text,
       );
 
       try {
@@ -212,6 +216,11 @@ class _ResearcherFormScreenState extends State<ResearcherFormScreen> {
             TextFormField(
               controller: _orcidIdController,
               decoration: const InputDecoration(labelText: 'ORCID ID (напр. 0000-0001-2345-6789)'),
+            ),
+            const SizedBox(height: AppDimensions.paddingMedium),
+            TextFormField(
+              controller: _openalexIdController,
+              decoration: const InputDecoration(labelText: 'OpenAlex ID (напр. A5023888336)'),
             ),
             const SizedBox(height: AppDimensions.paddingExtraLarge),
             Row(

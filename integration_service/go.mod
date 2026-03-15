@@ -1,6 +1,6 @@
 module integration_service
 
-go 1.18
+go 1.25
 
 require (
 	github.com/lib/pq v1.11.1

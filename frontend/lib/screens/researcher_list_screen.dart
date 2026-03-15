@@ -45,6 +45,91 @@ class _ResearcherListScreenState extends State<ResearcherListScreen> {
     }
   }
 
+  void _showSyncMenu(BuildContext context) {
+    final RenderBox button = context.findRenderObject() as RenderBox;
+    final Offset buttonPosition = button.localToGlobal(Offset.zero);
+
+    showMenu<String>(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        buttonPosition.dx,
+        buttonPosition.dy + button.size.height + 8,
+        buttonPosition.dx + button.size.width,
+        buttonPosition.dy + button.size.height + 108,
+      ),
+      items: [
+        PopupMenuItem(
+          value: 'all',
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                ),
+                child: const Icon(Icons.all_inclusive, color: AppColors.primary, size: 18),
+              ),
+              const SizedBox(width: 16),
+              const Text('Все', style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem(
+          value: 'orcid',
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                ),
+                child: const Icon(Icons.link, color: AppColors.primary, size: 18),
+              ),
+              const SizedBox(width: 16),
+              const Text('ORCID', style: TextStyle(fontWeight: FontWeight.w500)),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'openalex',
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                ),
+                child: const Icon(Icons.school_outlined, color: AppColors.primary, size: 18),
+              ),
+              const SizedBox(width: 16),
+              const Text('OpenAlex', style: TextStyle(fontWeight: FontWeight.w500)),
+            ],
+          ),
+        ),
+      ],
+    ).then((provider) async {
+      if (provider != null) {
+        final result = await showDialog(
+          context: context,
+          builder: (context) => SyncPreviewDialog(provider: provider),
+        );
+        if (result == true) {
+          _refreshList();
+          if (_selectedResearcher != null) {
+            _refreshSelectedResearcher(_selectedResearcher!.id!);
+          }
+        }
+      }
+    });
+  }
+
   Future<void> _refreshList() async {
     setState(() {
       _researchers.clear();
@@ -87,23 +172,23 @@ class _ResearcherListScreenState extends State<ResearcherListScreen> {
       appBar: AppBar(
         title: const Text('Сотрудники'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.sync),
-            tooltip: 'Синхронизировать с ORCID',
-            onPressed: () async {
-              final result = await showDialog(
-                context: context,
-                builder: (context) => const SyncPreviewDialog(),
-              );
-              if (result == true) {
-                _refreshList();
-                if (_selectedResearcher != null) {
-                  _refreshSelectedResearcher(_selectedResearcher!.id!);
-                }
-              }
-            },
+          const SizedBox(width: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Builder(
+              builder: (context) => OutlinedButton.icon(
+                onPressed: () => _showSyncMenu(context),
+                icon: const Icon(Icons.sync, size: 18),
+                label: const Text('СИНХРОНИЗАЦИЯ'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                ),
+              ),
+            ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 24),
         ],
       ),
       body: Row(
@@ -218,7 +303,7 @@ class _ResearcherListScreenState extends State<ResearcherListScreen> {
                   const Icon(
                     Icons.star,
                     size: 16,
-                    color: Colors.amber,
+                    color: AppColors.warning,
                   ),
                 ],
               ],

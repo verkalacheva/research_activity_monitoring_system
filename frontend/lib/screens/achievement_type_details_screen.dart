@@ -251,10 +251,10 @@ class _AchievementTypeDetailsScreenState extends State<AchievementTypeDetailsScr
   Widget _buildIconSelector() {
     if (!_isEditing) {
       return Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.grey[200],
-          borderRadius: BorderRadius.circular(12),
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Icon(IconHelper.getIcon(_type.iconName), size: 32, color: AppColors.primary),
       );
@@ -296,7 +296,7 @@ class _AchievementTypeDetailsScreenState extends State<AchievementTypeDetailsScr
               'Тип: ${_fieldTypeName(field.fieldType)} | Обязательно: ${field.isRequired ? "Да" : "Нет"}${field.options.isNotEmpty ? "\nВарианты: ${field.options.join(", ")}" : ""}'
             ),
             trailing: IconButton(
-              icon: const Icon(Icons.copy, size: 20, color: Colors.grey),
+              icon: const Icon(Icons.copy, size: 20, color: AppColors.textTertiary),
               onPressed: () => ClipboardHelper.copyToClipboard(context, field.title),
               tooltip: 'Копировать название поля',
             ),

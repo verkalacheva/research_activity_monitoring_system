@@ -7,8 +7,9 @@ services:
       POSTGRES_PASSWORD: password
 
   web:
-    build: .
-    command: bash -c "bundle check || bundle install && rm -f tmp/pids/server.pid && bundle exec rails s -p 3000 -b '0.0.0.0'"
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     volumes:
       - .:/app
       - bundle_data:/usr/local/bundle
@@ -27,6 +28,9 @@ services:
   analytics:
     build:
       context: ./analytics_service
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./analytics_service:/app
     environment:
       DATABASE_URL: postgres://postgres:password@db:5432/research_activity_monitoring_system_development?sslmode=disable
       PORT: 50051
@@ -36,6 +40,9 @@ services:
   integration:
     build:
       context: ./integration_service
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./integration_service:/app
     environment:
       DATABASE_URL: postgres://postgres:password@db:5432/research_activity_monitoring_system_development?sslmode=disable
       PORT: 50052
@@ -47,11 +54,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      target: build-env
-    command: >
-      bash -c "flutter pub get &&
-               flutter create . --platforms web &&
-               nodemon --watch lib --ext dart --exec 'flutter run -d web-server --web-port 80 --web-hostname 0.0.0.0'"
+      dockerfile: Dockerfile.dev
     volumes:
       - ./frontend:/app
     ports:

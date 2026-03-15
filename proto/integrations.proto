@@ -6,11 +6,12 @@ option go_package = "./pb";
 
 service IntegrationService {
   rpc FetchOrcidAchievements(OrcidRequest) returns (OrcidResponse) {}
+  rpc FetchOpenAlexAchievements(OpenAlexRequest) returns (OpenAlexResponse) {}
   rpc SyncAllAchievements(SyncRequest) returns (SyncResponse) {}
 }
 
 message SyncRequest {
-  string provider = 1; // e.g., "orcid"
+  string provider = 1; // e.g., "orcid", "openalex"
 }
 
 message SyncResponse {
@@ -20,11 +21,20 @@ message SyncResponse {
 message ResearcherAchievements {
   int64 researcher_id = 1;
   string orcid_id = 2;
-  repeated Achievement achievements = 3;
+  string openalex_id = 3;
+  repeated Achievement achievements = 4;
 }
 
 message OrcidRequest {
   string orcid_id = 1;
+}
+
+message OpenAlexRequest {
+  string openalex_id = 1;
+}
+
+message OpenAlexResponse {
+  repeated Achievement achievements = 1;
 }
 
 message Achievement {

@@ -9,9 +9,9 @@ module Integrations
   class Client
     def self.sync_all(provider = 'orcid')
       host = ENV.fetch('INTEGRATION_SERVICE_HOST', 'integration:50052')
-      stub = GrpcIntegrations::IntegrationService::Stub.new(host, :this_channel_is_insecure)
+      stub = ::GrpcIntegrations::IntegrationService::Stub.new(host, :this_channel_is_insecure)
       
-      request = GrpcIntegrations::SyncRequest.new(provider: provider)
+      request = ::GrpcIntegrations::SyncRequest.new(provider: provider)
       stub.sync_all_achievements(request)
     end
   end

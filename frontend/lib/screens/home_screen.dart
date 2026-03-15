@@ -32,49 +32,54 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 0, // Скрываем основную часть AppBar
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60.0),
-          child: Row(
-            children: [
-              Expanded(
-                child: CustomNavButton(
-                  index: 0,
-                  currentIndex: _currentViewIndex,
-                  label: 'Профиль',
-                  icon: Icons.person,
-                  onTap: () => setState(() => _currentViewIndex = 0),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(80.0),
+        child: Container(
+          decoration: const BoxDecoration(
+            border: Border(bottom: BorderSide(color: AppColors.primary, width: 1)),
+            color: AppColors.surface,
+          ),
+          child: SafeArea(
+            child: Row(
+              children: [
+                Expanded(
+                  child: CustomNavButton(
+                    index: 0,
+                    currentIndex: _currentViewIndex,
+                    label: 'Профиль',
+                    icon: Icons.person,
+                    onTap: () => setState(() => _currentViewIndex = 0),
+                  ),
                 ),
-              ),
-              Expanded(
-                child: CustomNavButton(
-                  index: 1,
-                  currentIndex: _currentViewIndex,
-                  label: 'Отчеты',
-                  icon: Icons.analytics,
-                  onTap: () => setState(() => _currentViewIndex = 1),
+                Expanded(
+                  child: CustomNavButton(
+                    index: 1,
+                    currentIndex: _currentViewIndex,
+                    label: 'Отчеты',
+                    icon: Icons.analytics,
+                    onTap: () => setState(() => _currentViewIndex = 1),
+                  ),
                 ),
-              ),
-              Expanded(
-                child: CustomNavButton(
-                  index: 2,
-                  currentIndex: _currentViewIndex,
-                  label: 'Импорт',
-                  icon: Icons.file_upload,
-                  onTap: () => setState(() => _currentViewIndex = 2),
+                Expanded(
+                  child: CustomNavButton(
+                    index: 2,
+                    currentIndex: _currentViewIndex,
+                    label: 'Импорт',
+                    icon: Icons.file_upload,
+                    onTap: () => setState(() => _currentViewIndex = 2),
+                  ),
                 ),
-              ),
-              Expanded(
-                child: CustomNavButton(
-                  index: 3,
-                  currentIndex: _currentViewIndex,
-                  label: 'Справочники',
-                  icon: Icons.menu_book,
-                  onTap: () => setState(() => _currentViewIndex = 3),
+                Expanded(
+                  child: CustomNavButton(
+                    index: 3,
+                    currentIndex: _currentViewIndex,
+                    label: 'Справочники',
+                    icon: Icons.menu_book,
+                    onTap: () => setState(() => _currentViewIndex = 3),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -186,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 8),
                     ... (importResult['errors'] as List).take(5).map((e) => Padding(
                       padding: const EdgeInsets.only(bottom: 4),
-                      child: Text('• $e', style: const TextStyle(fontSize: 12, color: Colors.red)),
+                      child: Text('• $e', style: const TextStyle(fontSize: 16, color: Colors.red)),
                     )),
                   ],
                 ],
@@ -383,8 +388,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 Chip(
                                   label: const Text('Рейтинг: 85.5'),
-                                  backgroundColor: AppColors.itmoPurple.withOpacity(0.1),
-                                  labelStyle: const TextStyle(color: AppColors.itmoPurple),
+                                  backgroundColor: AppColors.primary.withOpacity(0.1),
+                                  labelStyle: const TextStyle(color: AppColors.primary),
                                   side: BorderSide.none,
                                 ),
                               ],
@@ -407,9 +412,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     _profileInfoRow(Icons.email, 'Email', 'ivanov@university.ru'),
                     const Divider(height: 1, indent: 56),
-                    _profileInfoRow(Icons.phone, 'Телефон', '+7 (999) 123-45-67'),
+                    _profileInfoRow(Icons.phone, 'Телефон', '+7 (999) 163-45-67'),
                     const Divider(height: 1, indent: 56),
-                    _profileInfoRow(Icons.location_on, 'Кабинет', 'Ломоносова, 9, ауд. 1234'),
+                    _profileInfoRow(Icons.location_on, 'Кабинет', 'Ломоносова, 9, ауд. 1634'),
                   ],
                 ),
               ),
@@ -449,7 +454,7 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: AppColors.background,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(icon, color: AppColors.primary, size: 20),
           ),
@@ -518,7 +523,7 @@ class _HomeScreenState extends State<HomeScreen> {
             final dir = directories[index];
             return Card(
               child: InkWell(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(16),
                 onTap: () {
                   if (dir['title'] == 'Сотрудники') {
                     Navigator.push(
@@ -590,7 +595,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(dir['icon'], size: 32, color: AppColors.primary),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
                       Text(
                         dir['title'],
                         textAlign: TextAlign.center,

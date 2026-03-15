@@ -6,8 +6,9 @@ import (
 )
 
 type Researcher struct {
-	ID      int64
-	OrcidID string
+	ID         int64
+	OrcidID    sql.NullString
+	OpenAlexID sql.NullString
 }
 
 type ResearcherRepository struct {
@@ -23,13 +24,34 @@ func (r *ResearcherRepository) ExistsByOrcidID(orcidID string) (bool, error) {
 	query := "SELECT EXISTS(SELECT 1 FROM researchers WHERE orcid_id = $1 AND deleted_at IS NULL)"
 	err := r.db.QueryRow(query, orcidID).Scan(&exists)
 	if err != nil {
-		return false, fmt.Errorf("error checking researcher existence: %w", err)
+		return false, fmt.Errorf("error checking orcid_id existence: %w", err)
 	}
 	return exists, nil
 }
 
-func (r *ResearcherRepository) GetAllWithOrcidID() ([]Researcher, error) {
-	query := "SELECT id, orcid_id FROM researchers WHERE orcid_id IS NOT NULL AND deleted_at IS NULL"
+func (r *ResearcherRepository) ExistsByOpenAlexID(openAlexID string) (bool, error) {
+	var exists bool
+	query := "SELECT EXISTS(SELECT 1 FROM researchers WHERE openalex_id = $1 AND deleted_at IS NULL)"
+	err := r.db.QueryRow(query, openAlexID).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("error checking openalex_id existence: %w", err)
+	}
+	return exists, nil
+}
+
+func (r *ResearcherRepository) GetAllWithExternalID(provider string) ([]Researcher, error) {
+	var query string
+	switch provider {
+	case "orcid":
+		query = "SELECT id, orcid_id, openalex_id FROM researchers WHERE orcid_id IS NOT NULL AND deleted_at IS NULL"
+	case "openalex":
+		query = "SELECT id, orcid_id, openalex_id FROM researchers WHERE openalex_id IS NOT NULL AND deleted_at IS NULL"
+	case "all":
+		query = "SELECT id, orcid_id, openalex_id FROM researchers WHERE (orcid_id IS NOT NULL OR openalex_id IS NOT NULL) AND deleted_at IS NULL"
+	default:
+		return nil, fmt.Errorf("unsupported provider: %s", provider)
+	}
+
 	rows, err := r.db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("error querying researchers: %w", err)
@@ -39,7 +61,7 @@ func (r *ResearcherRepository) GetAllWithOrcidID() ([]Researcher, error) {
 	var researchers []Researcher
 	for rows.Next() {
 		var res Researcher
-		if err := rows.Scan(&res.ID, &res.OrcidID); err != nil {
+		if err := rows.Scan(&res.ID, &res.OrcidID, &res.OpenAlexID); err != nil {
 			return nil, err
 		}
 		researchers = append(researchers, res)
