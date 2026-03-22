@@ -263,8 +263,16 @@ class _ReportScreenState extends State<ReportScreen> {
           }
           return Dialog.fullscreen(
             child: Scaffold(
+              backgroundColor: AppColors.background,
               appBar: AppBar(
-                title: Text(_reportTitles[reportId] ?? 'Отчет', overflow: TextOverflow.ellipsis),
+                backgroundColor: AppColors.surface,
+                elevation: 0,
+                iconTheme: const IconThemeData(color: AppColors.textPrimary),
+                title: Text(
+                  _reportTitles[reportId] ?? 'Отчет', 
+                  style: AppTextStyles.h2.copyWith(color: AppColors.textPrimary),
+                  overflow: TextOverflow.ellipsis
+                ),
                 actions: [
                   LayoutBuilder(
                     builder: (context, constraints) {
@@ -272,26 +280,29 @@ class _ReportScreenState extends State<ReportScreen> {
                       return Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          OutlinedButton.icon(
+                          TextButton.icon(
                             onPressed: () => _handlePrint(),
-                            icon: const Icon(Icons.print, size: 18),
-                            label: isNarrow ? const SizedBox.shrink() : const Text('ПЕЧАТЬ'),
-                            style: OutlinedButton.styleFrom(
+                            icon: const Icon(Icons.print_outlined, size: 18),
+                            label: isNarrow ? const SizedBox.shrink() : const Text('Печать'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.primary,
                               padding: EdgeInsets.symmetric(horizontal: isNarrow ? 8 : 16),
-                              minimumSize: isNarrow ? Size.zero : const Size(120, 40),
                             ),
                           ),
                           const SizedBox(width: 8),
-                          OutlinedButton.icon(
+                          ElevatedButton.icon(
                             onPressed: () => _exportReport('csv'),
-                            icon: const Icon(Icons.download, size: 18),
-                            label: isNarrow ? const SizedBox.shrink() : const Text('ЭКСПОРТ'),
-                            style: OutlinedButton.styleFrom(
-                              padding: EdgeInsets.symmetric(horizontal: isNarrow ? 8 : 16),
-                              minimumSize: isNarrow ? Size.zero : const Size(120, 40),
+                            icon: const Icon(Icons.download_outlined, size: 18),
+                            label: isNarrow ? const SizedBox.shrink() : const Text('Экспорт CSV'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              padding: EdgeInsets.symmetric(horizontal: isNarrow ? 12 : 20),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
                           ),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: 24),
                         ],
                       );
                     },
@@ -302,26 +313,50 @@ class _ReportScreenState extends State<ReportScreen> {
                 children: [
                   // LEFT PANEL: FILTERS
                   Container(
-                    width: 300,
-                    decoration: BoxDecoration(
-                      border: Border(right: BorderSide(color: AppColors.border)),
-                      color: AppColors.surfaceSecondary,
+                    width: 320,
+                    decoration: const BoxDecoration(
+                      color: AppColors.surface,
+                      border: Border(right: BorderSide(color: AppColors.divider, width: 0.5)),
                     ),
-                    child: ListView(
-                      padding: const EdgeInsets.all(16),
+                    child: Column(
                       children: [
-                        const Text('Фильтры', style: AppTextStyles.h3),
-                        const Divider(),
-                        ..._activeFilters.map((f) => _buildFilterItem(f, (fn) {
-                          setModalState(fn);
-                        })),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () {
-                            _generateReport().then((_) => setModalState(() {}));
-                          },
-                          style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 45)),
-                          child: const Text('Применить'),
+                        Expanded(
+                          child: ListView(
+                            padding: const EdgeInsets.all(24),
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.tune, size: 20, color: AppColors.primary),
+                                  const SizedBox(width: 8),
+                                  const Text('Фильтры', style: AppTextStyles.h3),
+                                ],
+                              ),
+                              const SizedBox(height: 24),
+                              ..._activeFilters.map((f) => _buildFilterItem(f, (fn) {
+                                setModalState(fn);
+                              })),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            border: Border(top: BorderSide(color: AppColors.divider, width: 0.5)),
+                          ),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              _generateReport().then((_) => setModalState(() {}));
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              minimumSize: const Size(double.infinity, 48),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: const Text('Применить фильтры', style: TextStyle(fontWeight: FontWeight.bold)),
+                          ),
                         ),
                       ],
                     ),
@@ -331,9 +366,24 @@ class _ReportScreenState extends State<ReportScreen> {
                     child: Column(
                       children: [
                         Expanded(
-                          child: _isGenerating 
-                            ? const Center(child: CircularProgressIndicator())
-                            : _buildReportTable(setModalState),
+                          child: Container(
+                            margin: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.02),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: _isGenerating 
+                              ? const Center(child: CircularProgressIndicator())
+                              : _buildReportTable(setModalState),
+                          ),
                         ),
                         _buildPagination(setModalState),
                       ],
@@ -604,34 +654,51 @@ class _ReportScreenState extends State<ReportScreen> {
         Container(
           width: 280,
           decoration: const BoxDecoration(
-            border: Border(right: BorderSide(color: AppColors.primary, width: 1)),
+            color: AppColors.surfaceSecondary,
+            // Border is replaced by a subtle shadow or just nothing for a more modern look
           ),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                height: 64,
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: const BoxDecoration(
-                  color: AppColors.surface,
-                  border: Border(bottom: BorderSide(color: AppColors.primary, width: 1)),
-                ),
-                alignment: Alignment.centerLeft,
+              Padding(
+                padding: const EdgeInsets.only(left: 24, top: 32, bottom: 16),
                 child: const Text('Отчеты', style: AppTextStyles.h2),
               ),
+              const SizedBox(height: 8),
               Expanded(
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : ListView(
-                        padding: EdgeInsets.zero,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
                         children: [
                           ...((_selectors?['report_types'] as List?) ?? []).map((report) {
                             final reportId = report['id'];
-                            return ListTile(
-                              leading: const Icon(Icons.analytics_outlined, color: AppColors.primary),
-                              title: Text(_reportTitles[reportId] ?? reportId),
-                              trailing: const Icon(Icons.chevron_right, size: 16),
-                              onTap: () => _openReportDetail(reportId),
+                            final isSelected = _selectedReportId == reportId;
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 4),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                color: isSelected ? AppColors.primary.withOpacity(0.08) : Colors.transparent,
+                              ),
+                              child: ListTile(
+                                dense: true,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                leading: Icon(
+                                  Icons.analytics_outlined, 
+                                  color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                                  size: 20,
+                                ),
+                                title: Text(
+                                  _reportTitles[reportId] ?? reportId,
+                                  style: TextStyle(
+                                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                    color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                onTap: () => _openReportDetail(reportId),
+                                hoverColor: AppColors.primary.withOpacity(0.04),
+                              ),
                             );
                           }).toList(),
                         ],
@@ -642,73 +709,71 @@ class _ReportScreenState extends State<ReportScreen> {
         ),
         // RIGHT SIDE: DASHBOARD CHARTS
         Expanded(
-          child: Column(
-            children: [
-              Container(
-                height: 64,
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                decoration: const BoxDecoration(
-                  color: AppColors.surface,
-                  border: Border(bottom: BorderSide(color: AppColors.primary, width: 1)),
-                ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Container(
+            color: AppColors.surface, // Main area is white
+            child: Column(
               children: [
-                const Flexible(
-                  child: Text(
-                    'Обзор активности', 
-                    style: AppTextStyles.h2,
-                    overflow: TextOverflow.ellipsis,
+                Container(
+                  height: 80, // Slightly taller header
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Flexible(
+                        child: Text(
+                          'Обзор активности', 
+                          style: AppTextStyles.h1, // Use h1 for main title
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Flexible(child: _buildDashboardPeriodSelector()),
+                    ],
                   ),
                 ),
-                Flexible(child: _buildDashboardPeriodSelector()),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final crossAxisCount = constraints.maxWidth < 1000 ? 1 : 2;
+                        return GridView.count(
+                          crossAxisCount: crossAxisCount,
+                          crossAxisSpacing: 24,
+                          mainAxisSpacing: 24,
+                          childAspectRatio: crossAxisCount == 1 ? 1.8 : 1.5,
+                          children: [
+                            _buildDashboardChart(
+                              'Распределение по типам', 
+                              Icons.pie_chart_outline,
+                              _buildTypeDistributionChart(),
+                            ),
+                            _buildDashboardChart(
+                              _dashboardStartDate != null || _dashboardEndDate != null 
+                                  ? 'Динамика достижений' 
+                                  : 'Динамика достижений (год)', 
+                              Icons.insights,
+                              _buildDynamicsChart(),
+                            ),
+                            _buildDashboardChart(
+                              _dashboardStartDate != null || _dashboardEndDate != null 
+                                  ? 'Топ исследователей' 
+                                  : 'Топ исследователей (3 мес.)', 
+                              Icons.workspace_premium_outlined,
+                              _buildTopResearchersList(),
+                            ),
+                            _buildDashboardChart(
+                              'Распределение по статусам', 
+                              Icons.donut_large_outlined,
+                              _buildStatusDistributionChart(),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ),
               ],
             ),
-              ),
-              Expanded(
-                child: Container(
-                  color: AppColors.surfaceSecondary,
-                  padding: const EdgeInsets.all(24),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final crossAxisCount = constraints.maxWidth < 1000 ? 1 : 2;
-              return GridView.count(
-                crossAxisCount: crossAxisCount,
-                crossAxisSpacing: 20,
-                mainAxisSpacing: 24,
-                childAspectRatio: crossAxisCount == 1 ? 1.8 : 1.4,
-                children: [
-                  _buildDashboardChart(
-                    'Распределение по типам', 
-                    Icons.pie_chart,
-                    _buildTypeDistributionChart(),
-                  ),
-                  _buildDashboardChart(
-                    _dashboardStartDate != null || _dashboardEndDate != null 
-                        ? 'Динамика достижений' 
-                        : 'Динамика достижений (год)', 
-                    Icons.show_chart,
-                    _buildDynamicsChart(),
-                  ),
-                  _buildDashboardChart(
-                    _dashboardStartDate != null || _dashboardEndDate != null 
-                        ? 'Топ исследователей' 
-                        : 'Топ исследователей (3 мес.)', 
-                    Icons.leaderboard,
-                    _buildTopResearchersList(),
-                  ),
-                  _buildDashboardChart(
-                    'Распределение по статусам', 
-                    Icons.donut_large,
-                    _buildStatusDistributionChart(),
-                  ),
-                ],
-              );
-            },
-          ),
-                ),
-              ),
-            ],
           ),
         ),
       ],
@@ -716,37 +781,56 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   Widget _buildDashboardChart(String title, IconData icon, Widget chart) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: AppColors.primary, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    title, 
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                    overflow: TextOverflow.ellipsis,
-                  ),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.divider.withOpacity(0.5)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: _isLoadingDashboard 
-                ? const Center(child: CircularProgressIndicator())
-                : _dashboardData == null
-                  ? Center(child: Icon(icon, size: 80, color: AppColors.divider))
-                  : chart,
-            ),
-          ],
-        ),
+                child: Icon(icon, color: AppColors.primary, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title, 
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    color: AppColors.textPrimary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Expanded(
+            child: _isLoadingDashboard 
+              ? const Center(child: CircularProgressIndicator())
+              : _dashboardData == null
+                ? Center(child: Icon(icon, size: 80, color: AppColors.divider))
+                : chart,
+          ),
+        ],
       ),
     );
   }
@@ -756,10 +840,11 @@ class _ReportScreenState extends State<ReportScreen> {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (_dashboardStartDate != null || _dashboardEndDate != null)
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: IconButton(
-              icon: const Icon(Icons.clear, size: 20, color: AppColors.error),
+          Container(
+            margin: const EdgeInsets.only(right: 12),
+            child: TextButton.icon(
+              icon: const Icon(Icons.close, size: 16),
+              label: const Text('Сбросить'),
               onPressed: () {
                 setState(() {
                   _dashboardStartDate = null;
@@ -768,20 +853,28 @@ class _ReportScreenState extends State<ReportScreen> {
                 });
                 _loadDashboardData();
               },
-              tooltip: 'Сбросить период',
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.error,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                backgroundColor: AppColors.error.withOpacity(0.05),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
             ),
           ),
         CompositedTransformTarget(
           link: _dashboardPeriodLink,
           child: Builder(
-            builder: (context) => OutlinedButton.icon(
+            builder: (context) => ElevatedButton.icon(
               onPressed: () => _showDashboardPeriodDropdown(context),
-              icon: const Icon(Icons.date_range, size: 18),
+              icon: const Icon(Icons.calendar_today_outlined, size: 16),
               label: Text(_dashboardPeriodLabel),
-              style: OutlinedButton.styleFrom(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.surface,
                 foregroundColor: AppColors.primary,
-                side: const BorderSide(color: AppColors.primary),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                elevation: 0,
+                side: BorderSide(color: AppColors.primary.withOpacity(0.2)),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ),
@@ -1253,40 +1346,67 @@ class _ReportScreenState extends State<ReportScreen> {
     final data = _dashboardData?['top_researchers'] as List?;
     if (data == null || data.isEmpty) return const Center(child: Text('Нет данных'));
 
-    return ListView.builder(
+    return ListView.separated(
       itemCount: data.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final item = data[index];
         return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.divider),
+            color: AppColors.surfaceSecondary,
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 16,
-                backgroundColor: AppColors.primary.withOpacity(0.1),
-                child: Text('${index + 1}', 
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary)),
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: index < 3 ? AppColors.primary : AppColors.primary.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    '${index + 1}', 
+                    style: TextStyle(
+                      fontSize: 12, 
+                      fontWeight: FontWeight.bold, 
+                      color: index < 3 ? Colors.white : AppColors.primary,
+                    ),
+                  ),
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: Text(item['name'], style: const TextStyle(fontWeight: FontWeight.w500)),
-              ),
-              IconButton(
-                icon: const Icon(Icons.copy, size: 16, color: AppColors.inactive),
-                onPressed: () => ClipboardHelper.copyToClipboard(context, item['name']),
-                tooltip: 'Копировать ФИО',
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item['name'], 
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(width: 8),
-              Text('${(item['points'] as num).toDouble().toStringAsFixed(1)} б.', 
-                style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+              Text(
+                '${(item['points'] as num).toDouble().toStringAsFixed(1)}', 
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800, 
+                  color: AppColors.primary,
+                  fontSize: 15,
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Text(
+                'б.', 
+                style: TextStyle(
+                  fontSize: 12, 
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
         );
@@ -1652,14 +1772,17 @@ class _ReportScreenState extends State<ReportScreen> {
             child: ConstrainedBox(
               constraints: BoxConstraints(minWidth: constraints.maxWidth),
               child: DataTable(
-                headingRowColor: MaterialStateProperty.all(AppColors.primaryLight),
-                headingTextStyle: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                headingRowHeight: 56,
+                headingTextStyle: const TextStyle(
+                  color: AppColors.textPrimary, 
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
                 columnSpacing: 24,
-                horizontalMargin: 16,
-                border: TableBorder(
-                  verticalInside: BorderSide(color: AppColors.divider, width: 1),
-                  horizontalInside: BorderSide(color: AppColors.divider, width: 1),
-                  bottom: BorderSide(color: AppColors.divider, width: 1),
+                horizontalMargin: 24,
+                border: const TableBorder(
+                  horizontalInside: BorderSide(color: AppColors.divider, width: 0.5),
+                  bottom: BorderSide(color: AppColors.divider, width: 0.5),
                 ),
                 columns: [
                   _buildSortableColumn('ID', 'id', setModalState),
@@ -1799,14 +1922,17 @@ class _ReportScreenState extends State<ReportScreen> {
             child: ConstrainedBox(
               constraints: BoxConstraints(minWidth: constraints.maxWidth),
               child: DataTable(
-                headingRowColor: MaterialStateProperty.all(AppColors.primaryLight),
-                headingTextStyle: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                headingRowHeight: 56,
+                headingTextStyle: const TextStyle(
+                  color: AppColors.textPrimary, 
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
                 columnSpacing: 24,
-                horizontalMargin: 16,
-                border: TableBorder(
-                  verticalInside: BorderSide(color: AppColors.divider, width: 1),
-                  horizontalInside: BorderSide(color: AppColors.divider, width: 1),
-                  bottom: BorderSide(color: AppColors.divider, width: 1),
+                horizontalMargin: 24,
+                border: const TableBorder(
+                  horizontalInside: BorderSide(color: AppColors.divider, width: 0.5),
+                  bottom: BorderSide(color: AppColors.divider, width: 0.5),
                 ),
                 columns: [
                   _buildSortableColumn('ID', 'id', setModalState),
@@ -1836,14 +1962,17 @@ class _ReportScreenState extends State<ReportScreen> {
             child: ConstrainedBox(
               constraints: BoxConstraints(minWidth: constraints.maxWidth),
               child: DataTable(
-                headingRowColor: MaterialStateProperty.all(AppColors.primaryLight),
-                headingTextStyle: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                headingRowHeight: 56,
+                headingTextStyle: const TextStyle(
+                  color: AppColors.textPrimary, 
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
                 columnSpacing: 24,
-                horizontalMargin: 16,
-                border: TableBorder(
-                  verticalInside: BorderSide(color: AppColors.divider, width: 1),
-                  horizontalInside: BorderSide(color: AppColors.divider, width: 1),
-                  bottom: BorderSide(color: AppColors.divider, width: 1),
+                horizontalMargin: 24,
+                border: const TableBorder(
+                  horizontalInside: BorderSide(color: AppColors.divider, width: 0.5),
+                  bottom: BorderSide(color: AppColors.divider, width: 0.5),
                 ),
                 columns: [
                   _buildSortableColumn('ID', 'id', setModalState),
@@ -2124,31 +2253,61 @@ class _ReportScreenState extends State<ReportScreen> {
     if (totalPages <= 1) return const SizedBox.shrink();
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 32),
+      decoration: const BoxDecoration(
         color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.divider)),
+        border: Border(top: BorderSide(color: AppColors.divider, width: 0.5)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          Text('Страница ${_currentPage + 1} из $totalPages (всего $totalCount)'),
-          const SizedBox(width: 16),
-          IconButton(
-            icon: const Icon(Icons.chevron_left),
-            onPressed: _currentPage > 0 ? () {
+          Text(
+            'Страница ${_currentPage + 1} из $totalPages', 
+            style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textSecondary)
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '(всего $totalCount записей)', 
+            style: const TextStyle(fontSize: 12, color: AppColors.textTertiary)
+          ),
+          const SizedBox(width: 32),
+          _paginationButton(
+            Icons.chevron_left, 
+            _currentPage > 0 ? () {
               setModalState(() => _currentPage--);
               _generateReport().then((_) => setModalState(() {}));
-            } : null,
+            } : null
           ),
-          IconButton(
-            icon: const Icon(Icons.chevron_right),
-            onPressed: _currentPage < totalPages - 1 ? () {
+          const SizedBox(width: 8),
+          _paginationButton(
+            Icons.chevron_right, 
+            _currentPage < totalPages - 1 ? () {
               setModalState(() => _currentPage++);
               _generateReport().then((_) => setModalState(() {}));
-            } : null,
+            } : null
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _paginationButton(IconData icon, VoidCallback? onPressed) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: onPressed == null ? Colors.transparent : AppColors.primary.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: onPressed == null ? AppColors.divider : AppColors.primary.withOpacity(0.1),
+        ),
+      ),
+      child: IconButton(
+        icon: Icon(icon, size: 20),
+        onPressed: onPressed,
+        color: onPressed == null ? AppColors.textTertiary : AppColors.primary,
+        padding: EdgeInsets.zero,
+        splashRadius: 20,
       ),
     );
   }
