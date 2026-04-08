@@ -2,19 +2,19 @@ services:
   db:
     image: postgres:14
     volumes:
-      - ./tmp/db:/var/lib/postgresql/data
+      - ./backend/tmp/db:/var/lib/postgresql/data
     environment:
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
 
-  web:
+  backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
     environment:
       RAILS_ENV: production
-      DATABASE_URL: postgresql://postgres:password@db:5432/research_activity_monitoring_system_production
+      DATABASE_URL: postgresql://postgres:${DB_PASSWORD}@db:5432/research_activity_monitoring_system_production
       ANALYTICS_SERVICE_HOST: analytics:50051
       INTEGRATION_SERVICE_HOST: integration:50052
     depends_on:
@@ -27,7 +27,7 @@ services:
       context: ./analytics_service
       dockerfile: Dockerfile
     environment:
-      DATABASE_URL: postgres://postgres:password@db:5432/research_activity_monitoring_system_production?sslmode=disable
+      DATABASE_URL: postgres://postgres:${DB_PASSWORD}@db:5432/research_activity_monitoring_system_production?sslmode=disable
       PORT: 50051
     depends_on:
       - db
@@ -37,8 +37,9 @@ services:
       context: ./integration_service
       dockerfile: Dockerfile
     environment:
-      DATABASE_URL: postgres://postgres:password@db:5432/research_activity_monitoring_system_production?sslmode=disable
+      DATABASE_URL: postgres://postgres:${DB_PASSWORD}@db:5432/research_activity_monitoring_system_production?sslmode=disable
       PORT: 50052
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
     depends_on:
       - db
 
@@ -46,7 +47,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        API_BASE_URL: ${API_BASE_URL:-http://localhost:3000}
     ports:
       - "80:80"
     depends_on:
-      - web
+      - backend

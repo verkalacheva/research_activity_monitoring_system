@@ -8,6 +8,54 @@ service IntegrationService {
   rpc FetchOrcidAchievements(OrcidRequest) returns (OrcidResponse) {}
   rpc FetchOpenAlexAchievements(OpenAlexRequest) returns (OpenAlexResponse) {}
   rpc SyncAllAchievements(SyncRequest) returns (SyncResponse) {}
+  rpc CrawlAchievements(CrawlRequest) returns (CrawlResponse) {}
+  rpc CrawlDevActivity(DevActivityRequest) returns (DevActivityResponse) {}
+}
+
+message DevActivityRequest {
+  string github_username = 1;
+  int64 researcher_id = 2;
+  int64 team_id = 3;
+}
+
+message DevActivityResponse {
+  repeated DevActivity activities = 1;
+  repeated string project_criteria_met = 2;
+  repeated ActivityDetail activity_details = 3;
+}
+
+message DevActivity {
+  string activity_type = 1;
+  int32 count = 2;
+  string date = 3;
+}
+
+message ActivityDetail {
+  string activity_type = 1;  // "commits", "pull_requests", "issues", etc.
+  string external_id = 2;    // sha, issue/PR number
+  string title = 3;          // commit message, PR/issue title, release name
+  string repository = 4;
+  string url = 5;
+  string date = 6;
+  string state = 7;          // "open", "closed", "merged" for PRs/issues
+}
+
+message CrawlRequest {
+  string url = 1;
+  int64 researcher_id = 2;
+  string researcher_name = 3; // Optional: if provided, service can search the web
+  bool auto_search = 4;       // If true, use researcher_name to find URLs
+  string llm_provider = 5;    // Optional: "openai", "google", "anthropic", "ollama"
+  string llm_model = 6;       // Optional: model name, e.g., "gpt-4o", "gemini-1.5-flash", "llama3"
+  string github_username = 7;
+}
+
+message CrawlResponse {
+  repeated Achievement achievements = 1;
+  repeated DevActivity dev_activities = 2;
+  repeated string project_criteria_met = 3;
+  // User-visible messages (e.g. LLM model missing/deprecated on OpenRouter) — do not auto-switch models
+  repeated string warnings = 4;
 }
 
 message SyncRequest {
@@ -46,6 +94,7 @@ message Achievement {
   string description = 6;
   int32 author_count = 7;
   string journal_title = 8;
+  string extra_fields_json = 9; // JSON object: {"field_title": "value", ...}
 }
 
 message OrcidResponse {

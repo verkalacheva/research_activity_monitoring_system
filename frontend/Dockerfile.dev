@@ -2,12 +2,14 @@ FROM ghcr.io/cirruslabs/flutter:stable
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y nodejs npm && npm install -g nodemon
-
 RUN flutter config --enable-web
 
-COPY pubspec.yaml ./
+COPY pubspec.yaml pubspec.lock ./
+RUN flutter pub get
 
 COPY . .
 
-CMD ["sh", "-c", "flutter pub get && nodemon --watch lib --ext dart --exec 'flutter run -d web-server --web-port 80 --web-hostname 0.0.0.0'"]
+ENV API_BASE_URL=http://localhost:3000
+
+CMD flutter run -d web-server --web-port 80 --web-hostname 0.0.0.0 \
+    --dart-define=API_BASE_URL=${API_BASE_URL}

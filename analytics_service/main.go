@@ -11,6 +11,8 @@ import (
 	"analytics_service/internal/reports/dashboard_overview"
 	"analytics_service/internal/reports/researchers_report"
 	"analytics_service/internal/reports/teams"
+	"analytics_service/internal/reports/dev_teams"
+	"analytics_service/internal/reports/dev_researchers"
 	"analytics_service/pb"
 
 	_ "github.com/lib/pq"
@@ -51,6 +53,8 @@ func main() {
 	registry.Register("researchers_report", researchers_report.NewHandler(db))
 	registry.Register("teams", teams.NewHandler(db))
 	registry.Register("dashboard_overview", dashboard_overview.NewHandler(db))
+	registry.Register("dev_teams_report", dev_teams.NewHandler(db))
+	registry.Register("dev_researchers_report", dev_researchers.NewHandler(db))
 
 	port := os.Getenv("PORT")
 	if port == "" {

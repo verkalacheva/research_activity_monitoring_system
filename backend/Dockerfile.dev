@@ -1,0 +1,15 @@
+FROM ruby:3.2.2-slim
+
+RUN apt-get update -qq && \
+    apt-get install -y --no-install-recommends build-essential libpq-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY Gemfile Gemfile.lock ./
+RUN gem install bundler -v 2.4.22 && \
+    bundle _2.4.22_ install --jobs 4 --retry 3
+
+COPY . .
+
+CMD ["bash", "-c", "rm -f tmp/pids/server.pid && bundle exec rails s -p 3000 -b '0.0.0.0'"]

@@ -13,8 +13,14 @@ class Researcher {
   final String? employmentStatus;
   final String? orcidId;
   final String? openalexId;
+  final String? github;
+  final double? totalDevPoints;
   final bool isLeader;
   final List<Achievement> achievements;
+  final List<ResearcherDevActivity> devActivities;
+  final List<ResearcherActivityDetail> activityDetails;
+  // teamId -> project_sum (dev_criteria_sum + dev_activities_sum)
+  final Map<int, double> devTeamMultipliers;
 
   Researcher({
     this.id,
@@ -31,11 +37,32 @@ class Researcher {
     this.employmentStatus,
     this.orcidId,
     this.openalexId,
+    this.github,
+    this.totalDevPoints,
     this.isLeader = false,
     this.achievements = const [],
+    this.devActivities = const [],
+    this.activityDetails = const [],
+    this.devTeamMultipliers = const {},
   });
 
   String get fullName => '$surname $name ${secondName ?? ''}'.trim();
+
+  /// Recomputes total dev points locally from [devActivities] and [devTeamMultipliers].
+  /// Falls back to [totalDevPoints] from the backend if multipliers are not available.
+  double? get computedDevPoints {
+    if (devTeamMultipliers.isEmpty) return totalDevPoints;
+    double total = 0;
+    for (final entry in devTeamMultipliers.entries) {
+      final teamId = entry.key;
+      final projectSum = entry.value;
+      final activitySum = devActivities
+          .where((a) => a.teamId == teamId)
+          .fold<double>(0, (s, a) => s + a.count * (a.type?.points ?? 0));
+      total += projectSum * activitySum;
+    }
+    return double.parse(total.toStringAsFixed(2));
+  }
 
   static int compareByFullName(Researcher a, Researcher b) {
     int res = a.surname.toLowerCase().compareTo(b.surname.toLowerCase());
@@ -61,11 +88,25 @@ class Researcher {
       employmentStatus: json['employment_status'],
       orcidId: json['orcid_id'],
       openalexId: json['openalex_id'],
+      github: json['github'],
+      totalDevPoints: json['total_dev_points'] != null ? double.tryParse(json['total_dev_points'].toString()) : null,
       isLeader: json['is_leader'] ?? false,
       achievements: (json['achievements'] as List?)
               ?.map((a) => Achievement.fromJson(a))
               .toList() ??
           [],
+      devActivities: (json['researcher_dev_activities'] as List?)
+              ?.map((a) => ResearcherDevActivity.fromJson(a))
+              .toList() ??
+          [],
+      activityDetails: (json['researcher_activity_details'] as List?)
+              ?.map((d) => ResearcherActivityDetail.fromJson(d))
+              .toList() ??
+          [],
+      devTeamMultipliers: {
+        for (final m in (json['dev_team_multipliers'] as List? ?? []))
+          (m['team_id'] as int): double.tryParse(m['project_sum'].toString()) ?? 0.0
+      },
     );
   }
 
@@ -84,6 +125,7 @@ class Researcher {
       'employment_status': employmentStatus,
       'orcid_id': orcidId,
       'openalex_id': openalexId,
+      'github': github,
     };
   }
 
@@ -102,8 +144,13 @@ class Researcher {
     String? employmentStatus,
     String? orcidId,
     String? openalexId,
+    String? github,
+    double? totalDevPoints,
     bool? isLeader,
     List<Achievement>? achievements,
+    List<ResearcherDevActivity>? devActivities,
+    List<ResearcherActivityDetail>? activityDetails,
+    Map<int, double>? devTeamMultipliers,
   }) {
     return Researcher(
       id: id ?? this.id,
@@ -120,8 +167,89 @@ class Researcher {
       employmentStatus: employmentStatus ?? this.employmentStatus,
       orcidId: orcidId ?? this.orcidId,
       openalexId: openalexId ?? this.openalexId,
+      github: github ?? this.github,
+      totalDevPoints: totalDevPoints ?? this.totalDevPoints,
       isLeader: isLeader ?? this.isLeader,
       achievements: achievements ?? this.achievements,
+      devActivities: devActivities ?? this.devActivities,
+      activityDetails: activityDetails ?? this.activityDetails,
+      devTeamMultipliers: devTeamMultipliers ?? this.devTeamMultipliers,
+    );
+  }
+}
+
+class ResearcherActivityDetail {
+  final int? id;
+  final int? researcherId;
+  final int? teamId;
+  final String activityType;
+  final String externalId;
+  final String? title;
+  final String? repository;
+  final String? url;
+  final String? date;
+  final String? state;
+
+  ResearcherActivityDetail({
+    this.id,
+    this.researcherId,
+    this.teamId,
+    required this.activityType,
+    required this.externalId,
+    this.title,
+    this.repository,
+    this.url,
+    this.date,
+    this.state,
+  });
+
+  factory ResearcherActivityDetail.fromJson(Map<String, dynamic> json) {
+    return ResearcherActivityDetail(
+      id: json['id'],
+      researcherId: json['researcher_id'],
+      teamId: json['team_id'],
+      activityType: json['activity_type']?.toString() ?? '',
+      externalId: json['external_id']?.toString() ?? '',
+      title: json['title']?.toString(),
+      repository: json['repository']?.toString(),
+      url: json['url']?.toString(),
+      date: json['date']?.toString(),
+      state: json['state']?.toString(),
+    );
+  }
+}
+
+class ResearcherDevActivity {
+  final int? id;
+  final int? researcherId;
+  final int? teamId;
+  final int devEmployeeActivityTypeId;
+  final int count;
+  final String? date;
+  final DateTime? createdAt;
+  final DevEmployeeActivityType? type;
+
+  ResearcherDevActivity({
+    this.id,
+    this.researcherId,
+    this.teamId,
+    required this.devEmployeeActivityTypeId,
+    required this.count,
+    this.date,
+    this.createdAt,
+    this.type,
+  });
+
+  factory ResearcherDevActivity.fromJson(Map<String, dynamic> json) {
+    return ResearcherDevActivity(
+      id: json['id'],
+      researcherId: json['researcher_id'],
+      teamId: json['team_id'],
+      devEmployeeActivityTypeId: json['dev_employee_activity_type_id'],
+      count: json['count'] ?? 0,
+      date: json['date'],
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
+      type: json['dev_employee_activity_type'] != null ? DevEmployeeActivityType.fromJson(json['dev_employee_activity_type']) : null,
     );
   }
 }
@@ -190,7 +318,7 @@ class Achievement {
       achievementStatusId: json['achievement_status_id'],
       achievementResultId: json['achievement_result_id'],
       achievementParticipationId: json['achievement_participation_id'],
-      points: json['points'] != null ? (json['points'] as num).toDouble() : null,
+      points: json['points'] != null ? double.tryParse(json['points'].toString()) : null,
       submissionDate: json['submission_date'] != null ? DateTime.parse(json['submission_date']) : null,
       answers: (json['achievement_field_answers'] as List?)
               ?.map((a) => AchievementFieldAnswer.fromJson(a))
@@ -223,6 +351,10 @@ class Team {
   final int? leaderId;
   final Researcher? leader;
   final List<Researcher>? researchers;
+  final double? devCriteriaSum;
+  final double? devActivitiesSum;
+  final String? githubRepoUrl;
+  final List<DevProjectCriterion>? devProjectCriteria;
 
   Team({
     this.id,
@@ -230,6 +362,10 @@ class Team {
     this.leaderId,
     this.leader,
     this.researchers,
+    this.devCriteriaSum,
+    this.devActivitiesSum,
+    this.githubRepoUrl,
+    this.devProjectCriteria,
   });
 
   factory Team.fromJson(Map<String, dynamic> json) {
@@ -239,12 +375,18 @@ class Team {
         : null;
     researchers?.sort(Researcher.compareByFullName);
 
+    final criteriaJson = json['dev_project_criteria'] as List?;
+
     return Team(
       id: json['id'],
       title: json['title'] ?? '',
       leaderId: json['leader_id'],
       leader: json['leader'] != null ? Researcher.fromJson(json['leader']) : null,
       researchers: researchers,
+      devCriteriaSum: json['dev_criteria_sum'] != null ? double.tryParse(json['dev_criteria_sum'].toString()) : null,
+      devActivitiesSum: json['dev_activities_sum'] != null ? double.tryParse(json['dev_activities_sum'].toString()) : null,
+      githubRepoUrl: json['github_repo_url'],
+      devProjectCriteria: criteriaJson?.map((c) => DevProjectCriterion.fromJson(c)).toList(),
     );
   }
 
@@ -253,6 +395,7 @@ class Team {
       if (id != null) 'id': id,
       'title': title,
       'leader_id': leaderId,
+      'github_repo_url': githubRepoUrl,
       if (researchers != null)
         'researcher_ids': researchers!.map((r) => r.id).toList(),
     };
@@ -424,6 +567,107 @@ class AchievementParticipation {
       'title': title,
       if (points != null) 'points': points,
     };
+  }
+}
+
+class DevEmployeeActivityType {
+  final int? id;
+  final String title;
+  final double? points;
+  final String? checkKey;
+
+  DevEmployeeActivityType({this.id, required this.title, this.points, this.checkKey});
+
+  factory DevEmployeeActivityType.fromJson(Map<String, dynamic> json) {
+    return DevEmployeeActivityType(
+      id: json['id'],
+      title: json['title'] ?? '',
+      points: json['points'] != null ? double.tryParse(json['points'].toString()) : null,
+      checkKey: json['check_key'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (id != null) 'id': id,
+      'title': title,
+      if (points != null) 'points': points,
+      'check_key': checkKey,
+    };
+  }
+}
+
+class DevProjectCriterion {
+  final int? id;
+  final String title;
+  final double? points;
+  final String? checkKey;
+
+  DevProjectCriterion({this.id, required this.title, this.points, this.checkKey});
+
+  factory DevProjectCriterion.fromJson(Map<String, dynamic> json) {
+    return DevProjectCriterion(
+      id: json['id'],
+      title: json['title'] ?? '',
+      points: json['points'] != null ? double.tryParse(json['points'].toString()) : null,
+      checkKey: json['check_key'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (id != null) 'id': id,
+      'title': title,
+      if (points != null) 'points': points,
+      'check_key': checkKey,
+    };
+  }
+}
+
+class GitHubCheckKey {
+  final String key;
+  final String label;
+  final String category;
+
+  const GitHubCheckKey({required this.key, required this.label, required this.category});
+
+  factory GitHubCheckKey.fromJson(Map<String, dynamic> json) {
+    return GitHubCheckKey(
+      key: json['key'] ?? '',
+      label: json['label'] ?? '',
+      category: json['category'] ?? '',
+    );
+  }
+}
+
+class GitHubCheckKeysRegistry {
+  final List<GitHubCheckKey> criteriaKeys;
+  final List<GitHubCheckKey> activityKeys;
+  final Map<String, String> categoryLabels;
+
+  const GitHubCheckKeysRegistry({
+    required this.criteriaKeys,
+    required this.activityKeys,
+    required this.categoryLabels,
+  });
+
+  factory GitHubCheckKeysRegistry.fromJson(Map<String, dynamic> json) {
+    return GitHubCheckKeysRegistry(
+      criteriaKeys: (json['criteria_keys'] as List? ?? [])
+          .map((e) => GitHubCheckKey.fromJson(e))
+          .toList(),
+      activityKeys: (json['activity_keys'] as List? ?? [])
+          .map((e) => GitHubCheckKey.fromJson(e))
+          .toList(),
+      categoryLabels: Map<String, String>.from(json['category_labels'] ?? {}),
+    );
+  }
+
+  String labelFor(String key) {
+    for (final k in [...criteriaKeys, ...activityKeys]) {
+      if (k.key == key) return k.label;
+    }
+    return key;
   }
 }
 

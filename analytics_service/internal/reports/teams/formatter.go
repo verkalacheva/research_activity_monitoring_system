@@ -16,7 +16,7 @@ func (f *Formatter) ToJSON(data []DataRow) ([]byte, error) {
 func (f *Formatter) ToCSV(data []DataRow, totals map[string]float64) ([]byte, error) {
 	var buf strings.Builder
 	w := csv.NewWriter(&buf)
-	w.Write([]string{"ID", "Название команды", "Лидер", "Количество участников", "Всего баллов"})
+	w.Write([]string{"ID", "Название команды", "Руководитель", "Количество участников", "Баллы достижений", "Баллы разработки", "Итоговые баллы"})
 
 	for _, d := range data {
 		w.Write([]string{
@@ -25,10 +25,12 @@ func (f *Formatter) ToCSV(data []DataRow, totals map[string]float64) ([]byte, er
 			d.LeaderName,
 			fmt.Sprintf("%d", d.MembersCount),
 			fmt.Sprintf("%.1f", d.TotalPoints),
+			fmt.Sprintf("%.1f", d.DevPoints),
+			fmt.Sprintf("%.1f", d.CombinedPoints),
 		})
 	}
 
-	w.Write([]string{"ИТОГО", "", "", fmt.Sprintf("%.0f", totals["members_count"]), fmt.Sprintf("%.1f", totals["total_points"])})
+	w.Write([]string{"ИТОГО", "", "", fmt.Sprintf("%.0f", totals["members_count"]), fmt.Sprintf("%.1f", totals["total_points"]), fmt.Sprintf("%.1f", totals["dev_points"]), fmt.Sprintf("%.1f", totals["combined_points"])})
 	w.Flush()
 	return []byte(buf.String()), nil
 }

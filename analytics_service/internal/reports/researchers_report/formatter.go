@@ -16,15 +16,16 @@ func (f *Formatter) ToJSON(data []DataRow) ([]byte, error) {
 func (f *Formatter) ToCSV(data []DataRow, totals map[string]float64) ([]byte, error) {
 	var buf strings.Builder
 	w := csv.NewWriter(&buf)
-	w.Write([]string{"ID", "Researcher", "Achievement", "Points", "Status", "Result", "Participation"})
+	w.Write([]string{"ID", "Researcher", "Achievement", "Баллы достижений", "Status", "Result", "Participation", "Баллы разработки", "Итоговые баллы"})
 
 	var lastResearcherID int
 	var researcherSubtotal float64
+	var lastDevPoints float64
 
 	for i, d := range data {
 		if i > 0 && d.ResearcherID != lastResearcherID {
-			// Write subtotal for previous researcher
-			w.Write([]string{"", "SUBTOTAL", "", fmt.Sprintf("%.1f", researcherSubtotal), "", "", ""})
+			combined := researcherSubtotal + lastDevPoints
+			w.Write([]string{"", "SUBTOTAL", "", fmt.Sprintf("%.1f", researcherSubtotal), "", "", "", fmt.Sprintf("%.1f", lastDevPoints), fmt.Sprintf("%.1f", combined)})
 			researcherSubtotal = 0
 		}
 
@@ -36,17 +37,22 @@ func (f *Formatter) ToCSV(data []DataRow, totals map[string]float64) ([]byte, er
 			d.Status,
 			d.Result,
 			d.Participation,
+			"",
+			"",
 		})
 
 		lastResearcherID = d.ResearcherID
+		lastDevPoints = d.DevPoints
 		researcherSubtotal += d.Points
 	}
 
 	if len(data) > 0 {
-		w.Write([]string{"", "SUBTOTAL", "", fmt.Sprintf("%.1f", researcherSubtotal), "", "", ""})
+		combined := researcherSubtotal + lastDevPoints
+		w.Write([]string{"", "SUBTOTAL", "", fmt.Sprintf("%.1f", researcherSubtotal), "", "", "", fmt.Sprintf("%.1f", lastDevPoints), fmt.Sprintf("%.1f", combined)})
 	}
 
-	w.Write([]string{"TOTAL", "", "", fmt.Sprintf("%.1f", totals["points"]), "", "", ""})
+	totalCombined := totals["points"] + totals["dev_points"]
+	w.Write([]string{"TOTAL", "", "", fmt.Sprintf("%.1f", totals["points"]), "", "", "", fmt.Sprintf("%.1f", totals["dev_points"]), fmt.Sprintf("%.1f", totalCombined)})
 	w.Flush()
 	return []byte(buf.String()), nil
 }

@@ -1,0 +1,29 @@
+{
+  "achievement_types": [
+    { "title": "Статья" },
+    { "title": "Конференция" },
+    { "title": "Грант" },
+    { "title": "Другое" }
+  ],
+  "cases": [
+    {
+      "llm_type": "статья",
+      "expected_type": "Статья"
+    },
+    {
+      "llm_type": "Статья в журнале",
+      "expected_type": "Статья"
+    },
+    {
+      "llm_type": "конференция ",
+      "expected_type": "Конференция"
+    },
+    {
+      "llm_type": "неизвестный тип xyz",
+      "expected_type": "Другое"
+    }
+  ],
+  "title_dedup_examples": [
+    { "a": "  Machine Learning: A Survey ", "b": "Machine Learning: A Survey", "same_key": true }
+  ]
+}

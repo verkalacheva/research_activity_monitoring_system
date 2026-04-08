@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/models.dart';
+import '../config.dart';
 
 class TeamService {
-  static const String baseUrl = 'http://localhost:3000/api/v1';
+  static const String baseUrl = AppConfig.apiV1;
 
   Future<List<Team>> getAll() async {
     final response = await http.get(Uri.parse('$baseUrl/teams/list?limit=1000'));
@@ -26,6 +27,15 @@ class TeamService {
       return PaginatedResponse(items: items, pagination: pagination);
     } else {
       throw Exception('Failed to load projects list');
+    }
+  }
+
+  Future<Team> getById(int id) async {
+    final response = await http.get(Uri.parse('$baseUrl/teams/$id'));
+    if (response.statusCode == 200) {
+      return Team.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Failed to load project');
     }
   }
 
@@ -52,6 +62,19 @@ class TeamService {
       return Team.fromJson(json.decode(response.body));
     } else {
       throw Exception('Failed to update project');
+    }
+  }
+
+  Future<Team> updateCriteria(int id, List<int> criterionIds) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/teams/$id/update_criteria'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'criterion_ids': criterionIds}),
+    );
+    if (response.statusCode == 200) {
+      return Team.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Failed to update project criteria');
     }
   }
 

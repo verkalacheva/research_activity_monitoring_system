@@ -1,0 +1,13 @@
+crawl4ai==0.7.1
+tenacity
+grpcio
+grpcio-tools
+pydantic>=2.0.0
+typing-extensions>=4.10.0
+python-dotenv
+openai
+anthropic
+tavily-python
+ddgs
+python-multipart
+asyncpg

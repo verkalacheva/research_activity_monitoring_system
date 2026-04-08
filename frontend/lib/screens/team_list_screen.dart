@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../services/team_service.dart';
+import '../services/sync_notification_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_dimensions.dart';
@@ -51,6 +52,15 @@ class _TeamListScreenState extends State<TeamListScreen> {
       _hasMore = true;
     });
     await _loadMore();
+    _syncSelectedTeam();
+  }
+
+  void _syncSelectedTeam() {
+    if (_selectedTeam == null) return;
+    final fresh = _teams.where((t) => t.id == _selectedTeam!.id).firstOrNull;
+    if (fresh != null && fresh != _selectedTeam) {
+      setState(() => _selectedTeam = fresh);
+    }
   }
 
   Future<void> _loadMore() async {
@@ -80,11 +90,34 @@ class _TeamListScreenState extends State<TeamListScreen> {
     }
   }
 
+  void _syncAllTeams() {
+    SyncNotificationService.instance.enqueue(SyncRequest(
+      provider: 'github',
+      scope: 'teams',
+      label: 'GitHub — все проекты',
+      onSaved: _refreshList,
+    ));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Синхронизация GitHub запущена в фоне')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Проекты'),
+        actions: [
+          Tooltip(
+            message: 'Синхронизировать все проекты через GitHub',
+            child: IconButton(
+              icon: const Icon(Icons.sync),
+              onPressed: _syncAllTeams,
+            ),
+          ),
+        ],
       ),
       body: Row(
         children: [
@@ -119,9 +152,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
                     team: _selectedTeam!,
                     isEmbedded: true,
                     onTeamUpdated: (updated) {
-                      setState(() {
-                        _selectedTeam = updated;
-                      });
+                      setState(() => _selectedTeam = updated);
                       _refreshList();
                     },
                   ),

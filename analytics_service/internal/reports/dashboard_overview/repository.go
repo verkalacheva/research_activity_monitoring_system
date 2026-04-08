@@ -23,8 +23,11 @@ type DistributionItem struct {
 }
 
 type ResearcherItem struct {
-	Name   string  `json:"name"`
-	Points float64 `json:"points"`
+	Name              string  `json:"name"`
+	Points            float64 `json:"points"`
+	AchievementPoints float64 `json:"achievement_points"`
+	DevPoints         float64 `json:"dev_points"`
+	TotalPoints       float64 `json:"total_points"`
 }
 
 type DynamicsItem struct {
@@ -102,29 +105,57 @@ func (r *Repository) FetchData(req *pb.ReportRequest) (*DashboardData, error) {
 		}
 	}
 
-	// 3. Top Researchers
-	topResearcherCond := dateCond
+	// 3. Top Researchers (by combined achievement + dev score)
+	achDateCond := dateCond
 	topResearcherArgs := args
 	if startDate == "" && endDate == "" {
-		topResearcherCond = " AND a.submission_date > CURRENT_DATE - INTERVAL '3 months'"
+		achDateCond = " AND a.submission_date > CURRENT_DATE - INTERVAL '3 months'"
 	}
 
 	researcherRows, err := r.db.Query(fmt.Sprintf(`
-		SELECT TRIM(CONCAT_WS(' ', r.surname, SUBSTRING(r.name, 1, 1) || '.')), ROUND(COALESCE(SUM(a.points), 0)::numeric, 1) as total_points
-		FROM researchers r
-		JOIN researcher_achievements ra ON r.id = ra.researcher_id
-		JOIN achievements a ON ra.achievement_id = a.id
-		WHERE r.deleted_at IS NULL AND a.deleted_at IS NULL
-		%s
-		GROUP BY r.id, r.surname, r.name
+		SELECT
+			name,
+			achievement_points,
+			dev_points,
+			achievement_points + dev_points AS total_points
+		FROM (
+			SELECT
+				TRIM(CONCAT_WS(' ', r.surname, SUBSTRING(r.name, 1, 1) || '.')) AS name,
+				ROUND(COALESCE((
+					SELECT SUM(a.points)
+					FROM researcher_achievements ra
+					JOIN achievements a ON ra.achievement_id = a.id
+					WHERE ra.researcher_id = r.id AND a.deleted_at IS NULL %s
+				), 0)::numeric, 1) AS achievement_points,
+				ROUND(COALESCE((
+					SELECT SUM(cs * als)
+					FROM (
+						SELECT
+							(SELECT COALESCE(SUM(dpc.points), 0)
+							 FROM team_dev_criteria tdc
+							 JOIN dev_project_criteria dpc ON tdc.dev_project_criterion_id = dpc.id
+							 WHERE tdc.team_id = rt2.team_id) AS cs,
+							(SELECT COALESCE(SUM(rda.count * deat.points), 0)
+							 FROM researcher_dev_activities rda
+							 JOIN dev_employee_activity_types deat ON rda.dev_employee_activity_type_id = deat.id
+							 WHERE rda.researcher_id = r.id AND rda.team_id = rt2.team_id) AS als
+						FROM researchers_teams rt2
+						WHERE rt2.researcher_id = r.id
+					) dp
+				), 0)::numeric, 1) AS dev_points
+			FROM researchers r
+			WHERE r.deleted_at IS NULL
+		) sub
+		WHERE achievement_points > 0 OR dev_points > 0
 		ORDER BY total_points DESC
 		LIMIT 5
-	`, topResearcherCond), topResearcherArgs...)
+	`, achDateCond), topResearcherArgs...)
 	if err == nil {
 		defer researcherRows.Close()
 		for researcherRows.Next() {
 			var item ResearcherItem
-			if err := researcherRows.Scan(&item.Name, &item.Points); err == nil {
+			if err := researcherRows.Scan(&item.Name, &item.AchievementPoints, &item.DevPoints, &item.TotalPoints); err == nil {
+				item.Points = item.TotalPoints
 				data.TopResearchers = append(data.TopResearchers, item)
 			}
 		}

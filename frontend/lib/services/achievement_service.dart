@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/models.dart';
+import '../config.dart';
 
 class AchievementService {
-  static const String baseUrl = 'http://localhost:3000/api/v1';
+  static const String baseUrl = AppConfig.apiV1;
 
   Future<PaginatedResponse<Achievement>> list({int limit = 20, int offset = 0}) async {
     final response = await http.get(Uri.parse('$baseUrl/achievements/list?limit=$limit&offset=$offset'));

@@ -1,6 +1,7 @@
 import 'package:action_cable/action_cable.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import '../config.dart';
 
 class SocketService {
   static final SocketService _instance = SocketService._internal();
@@ -8,7 +9,7 @@ class SocketService {
   SocketService._internal();
 
   ActionCable? _cable;
-  final String _baseUrl = 'ws://localhost:3000/cable';
+  final String _baseUrl = '${AppConfig.wsBase}/cable';
 
   void connect({
     required String channel,

@@ -2,28 +2,38 @@ services:
   db:
     image: postgres:14
     volumes:
-      - ./tmp/db:/var/lib/postgresql/data
+      - ./backend/tmp/db:/var/lib/postgresql/data
     environment:
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
 
-  web:
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
+  backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile.dev
     volumes:
-      - .:/app
+      - ./backend:/app
       - bundle_data:/usr/local/bundle
     ports:
       - "3000:3000"
     environment:
       RAILS_ENV: development
-      DATABASE_URL: postgresql://postgres:password@db:5432/research_activity_monitoring_system_development
+      DATABASE_URL: postgresql://postgres:${DB_PASSWORD}@db:5432/research_activity_monitoring_system_development
+      REDIS_URL: redis://redis:6379/0
       ANALYTICS_SERVICE_HOST: analytics:50051
       INTEGRATION_SERVICE_HOST: integration:50052
+      CRAWLER_SERVICE_HOST: crawler:50053
     depends_on:
       - db
+      - redis
       - analytics
       - integration
+      - crawler
 
   analytics:
     build:
@@ -32,7 +42,7 @@ services:
     volumes:
       - ./analytics_service:/app
     environment:
-      DATABASE_URL: postgres://postgres:password@db:5432/research_activity_monitoring_system_development?sslmode=disable
+      DATABASE_URL: postgres://postgres:${DB_PASSWORD}@db:5432/research_activity_monitoring_system_development?sslmode=disable
       PORT: 50051
     depends_on:
       - db
@@ -44,10 +54,29 @@ services:
     volumes:
       - ./integration_service:/app
     environment:
-      DATABASE_URL: postgres://postgres:password@db:5432/research_activity_monitoring_system_development?sslmode=disable
+      DATABASE_URL: postgres://postgres:${DB_PASSWORD}@db:5432/research_activity_monitoring_system_development?sslmode=disable
       PORT: 50052
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
     ports:
       - "50052:50052"
+    depends_on:
+      - db
+
+  crawler:
+    build:
+      context: ./crawler_service
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./crawler_service:/app
+    environment:
+      DATABASE_URL: postgres://postgres:${DB_PASSWORD}@db:5432/research_activity_monitoring_system_development?sslmode=disable
+      PORT: 50053
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+      LLM_MODEL_NAME: ${LLM_MODEL_NAME:-google/gemini-2.0-flash-001}
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+    ports:
+      - "50053:50053"
     depends_on:
       - db
 
@@ -61,9 +90,11 @@ services:
       - "8080:80"
     stdin_open: true
     tty: true
+    environment:
+      API_BASE_URL: ${API_BASE_URL:-http://localhost:3000}
     depends_on:
-      - web
+      - backend
 
 volumes:
   bundle_data:
-
+  redis_data:

@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/models.dart';
+import '../config.dart';
 
 class ResearcherService {
-  static const String baseUrl = 'http://localhost:3000/api/v1';
+  static const String baseUrl = AppConfig.apiV1;
 
   Future<List<Researcher>> getAll() async {
     final response = await http.get(Uri.parse('$baseUrl/researchers/list?limit=1000'));

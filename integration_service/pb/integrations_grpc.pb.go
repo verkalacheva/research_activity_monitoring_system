@@ -25,6 +25,8 @@ type IntegrationServiceClient interface {
 	FetchOrcidAchievements(ctx context.Context, in *OrcidRequest, opts ...grpc.CallOption) (*OrcidResponse, error)
 	FetchOpenAlexAchievements(ctx context.Context, in *OpenAlexRequest, opts ...grpc.CallOption) (*OpenAlexResponse, error)
 	SyncAllAchievements(ctx context.Context, in *SyncRequest, opts ...grpc.CallOption) (*SyncResponse, error)
+	CrawlAchievements(ctx context.Context, in *CrawlRequest, opts ...grpc.CallOption) (*CrawlResponse, error)
+	CrawlDevActivity(ctx context.Context, in *DevActivityRequest, opts ...grpc.CallOption) (*DevActivityResponse, error)
 }
 
 type integrationServiceClient struct {
@@ -62,6 +64,24 @@ func (c *integrationServiceClient) SyncAllAchievements(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *integrationServiceClient) CrawlAchievements(ctx context.Context, in *CrawlRequest, opts ...grpc.CallOption) (*CrawlResponse, error) {
+	out := new(CrawlResponse)
+	err := c.cc.Invoke(ctx, "/integrations.IntegrationService/CrawlAchievements", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *integrationServiceClient) CrawlDevActivity(ctx context.Context, in *DevActivityRequest, opts ...grpc.CallOption) (*DevActivityResponse, error) {
+	out := new(DevActivityResponse)
+	err := c.cc.Invoke(ctx, "/integrations.IntegrationService/CrawlDevActivity", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // IntegrationServiceServer is the server API for IntegrationService service.
 // All implementations must embed UnimplementedIntegrationServiceServer
 // for forward compatibility
@@ -69,6 +89,8 @@ type IntegrationServiceServer interface {
 	FetchOrcidAchievements(context.Context, *OrcidRequest) (*OrcidResponse, error)
 	FetchOpenAlexAchievements(context.Context, *OpenAlexRequest) (*OpenAlexResponse, error)
 	SyncAllAchievements(context.Context, *SyncRequest) (*SyncResponse, error)
+	CrawlAchievements(context.Context, *CrawlRequest) (*CrawlResponse, error)
+	CrawlDevActivity(context.Context, *DevActivityRequest) (*DevActivityResponse, error)
 	mustEmbedUnimplementedIntegrationServiceServer()
 }
 
@@ -84,6 +106,12 @@ func (UnimplementedIntegrationServiceServer) FetchOpenAlexAchievements(context.C
 }
 func (UnimplementedIntegrationServiceServer) SyncAllAchievements(context.Context, *SyncRequest) (*SyncResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SyncAllAchievements not implemented")
+}
+func (UnimplementedIntegrationServiceServer) CrawlAchievements(context.Context, *CrawlRequest) (*CrawlResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CrawlAchievements not implemented")
+}
+func (UnimplementedIntegrationServiceServer) CrawlDevActivity(context.Context, *DevActivityRequest) (*DevActivityResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CrawlDevActivity not implemented")
 }
 func (UnimplementedIntegrationServiceServer) mustEmbedUnimplementedIntegrationServiceServer() {}
 
@@ -152,6 +180,42 @@ func _IntegrationService_SyncAllAchievements_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _IntegrationService_CrawlAchievements_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CrawlRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IntegrationServiceServer).CrawlAchievements(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/integrations.IntegrationService/CrawlAchievements",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IntegrationServiceServer).CrawlAchievements(ctx, req.(*CrawlRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IntegrationService_CrawlDevActivity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DevActivityRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IntegrationServiceServer).CrawlDevActivity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/integrations.IntegrationService/CrawlDevActivity",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IntegrationServiceServer).CrawlDevActivity(ctx, req.(*DevActivityRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // IntegrationService_ServiceDesc is the grpc.ServiceDesc for IntegrationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -170,6 +234,14 @@ var IntegrationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SyncAllAchievements",
 			Handler:    _IntegrationService_SyncAllAchievements_Handler,
+		},
+		{
+			MethodName: "CrawlAchievements",
+			Handler:    _IntegrationService_CrawlAchievements_Handler,
+		},
+		{
+			MethodName: "CrawlDevActivity",
+			Handler:    _IntegrationService_CrawlDevActivity_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../services/researcher_service.dart';
+import '../services/sync_notification_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_dimensions.dart';
 import '../utils/clipboard_helper.dart';
-import '../widgets/sync_preview_dialog.dart';
 import 'researcher_form_screen.dart';
 import 'researcher_profile_screen.dart';
 
@@ -25,6 +25,8 @@ class _ResearcherListScreenState extends State<ResearcherListScreen> {
   int _currentOffset = 0;
   final int _limit = 20;
   Researcher? _selectedResearcher;
+  bool _bulkSelectMode = false;
+  final Set<int> _bulkSelectedIds = {};
 
   @override
   void initState() {
@@ -113,21 +115,210 @@ class _ResearcherListScreenState extends State<ResearcherListScreen> {
             ],
           ),
         ),
+        PopupMenuItem(
+          value: 'github', 
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                ),
+                child: const Icon(Icons.code, color: AppColors.primary, size: 18),
+              ),
+              const SizedBox(width: 16),
+              const Text('GitHub', style: TextStyle(fontWeight: FontWeight.w500)),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem(
+          value: 'crawl',
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                ),
+                child: const Icon(Icons.search, color: AppColors.primary, size: 18),
+              ),
+              const SizedBox(width: 16),
+              const Text('Поиск по ссылке (AI)', style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'crawl_search',
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                ),
+                child: const Icon(Icons.travel_explore, color: AppColors.primary, size: 18),
+              ),
+              const SizedBox(width: 16),
+              const Text('Поиск в интернете (AI)', style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
       ],
     ).then((provider) async {
-      if (provider != null) {
-        final result = await showDialog(
-          context: context,
-          builder: (context) => SyncPreviewDialog(provider: provider),
-        );
-        if (result == true) {
-          _refreshList();
-          if (_selectedResearcher != null) {
-            _refreshSelectedResearcher(_selectedResearcher!.id!);
-          }
+      if (provider == null) return;
+
+      final bulkIds = _bulkSelectMode ? _bulkSelectedIds.toList() : const <int>[];
+      final useBulk = _bulkSelectMode && bulkIds.isNotEmpty;
+
+      if (_bulkSelectMode && bulkIds.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Отметьте сотрудников для синхронизации')),
+          );
+        }
+        return;
+      }
+
+      if (useBulk && provider == 'crawl') {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Поиск по ссылке (AI) — только без массового выбора: один URL на задачу.',
+              ),
+            ),
+          );
+        }
+        return;
+      }
+
+      void onSavedForResearcher(int? rid) {
+        _refreshList();
+        if (rid != null && _selectedResearcher?.id == rid) {
+          _refreshSelectedResearcher(rid);
         }
       }
+
+      // For 'crawl' provider ask for URL first, then start background sync.
+      if (provider == 'crawl') {
+        final url = await _askCrawlUrl(context);
+        if (url == null) return;
+        SyncNotificationService.instance.enqueue(SyncRequest(
+          provider: 'crawl',
+          url: url,
+          researcherId: _selectedResearcher?.id,
+          label: 'Поиск по ссылке (AI)',
+          onSaved: () => onSavedForResearcher(_selectedResearcher?.id),
+        ));
+      } else {
+        if (useBulk) {
+          for (final id in bulkIds) {
+            Researcher? ref;
+            for (final r in _researchers) {
+              if (r.id == id) {
+                ref = r;
+                break;
+              }
+            }
+            final name = ref?.fullName ?? '#$id';
+            final shortLabel = switch (provider) {
+              'all' => 'Все источники',
+              'crawl_search' => 'Поиск в интернете (AI)',
+              _ => provider.toUpperCase(),
+            };
+            SyncNotificationService.instance.enqueue(SyncRequest(
+              provider: provider,
+              researcherId: id,
+              label: '$shortLabel — $name',
+              onSaved: () => onSavedForResearcher(id),
+            ));
+          }
+        } else {
+          final singleLabel = provider == 'crawl_search'
+              ? 'Поиск в интернете (AI)'
+              : 'Синхронизация: ${provider.toUpperCase()}';
+          SyncNotificationService.instance.enqueue(SyncRequest(
+            provider: provider,
+            researcherId: _selectedResearcher?.id,
+            label: singleLabel,
+            onSaved: () => onSavedForResearcher(_selectedResearcher?.id),
+          ));
+        }
+      }
+      if (mounted) {
+        final msg = useBulk
+            ? 'Запущено задач синхронизации: ${bulkIds.length}'
+            : 'Синхронизация запущена в фоне';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg)),
+        );
+      }
     });
+  }
+
+  void _toggleBulkSelectMode() {
+    setState(() {
+      _bulkSelectMode = !_bulkSelectMode;
+      if (!_bulkSelectMode) {
+        _bulkSelectedIds.clear();
+      }
+    });
+  }
+
+  void _selectAllLoadedResearchers() {
+    setState(() {
+      for (final r in _researchers) {
+        if (r.id != null) _bulkSelectedIds.add(r.id!);
+      }
+    });
+  }
+
+  void _toggleBulkId(int id) {
+    setState(() {
+      if (_bulkSelectedIds.contains(id)) {
+        _bulkSelectedIds.remove(id);
+      } else {
+        _bulkSelectedIds.add(id);
+      }
+    });
+  }
+
+  Future<String?> _askCrawlUrl(BuildContext ctx) async {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: ctx,
+      builder: (dCtx) => AlertDialog(
+        title: const Text('Поиск по ссылке (AI)'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'URL страницы',
+            hintText: 'https://example.com/publications',
+            prefixIcon: Icon(Icons.link),
+          ),
+          onSubmitted: (_) => Navigator.pop(dCtx, controller.text.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dCtx),
+            child: const Text('ОТМЕНА'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dCtx, controller.text.trim()),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+            child: const Text('НАЧАТЬ', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    ).then((v) => (v != null && v.isNotEmpty) ? v : null);
   }
 
   Future<void> _refreshList() async {
@@ -170,9 +361,25 @@ class _ResearcherListScreenState extends State<ResearcherListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Сотрудники'),
+        title: Text(_bulkSelectMode ? 'Выбрано: ${_bulkSelectedIds.length}' : 'Сотрудники'),
         actions: [
-          const SizedBox(width: 16),
+          if (_bulkSelectMode) ...[
+            TextButton(
+              onPressed: _researchers.isEmpty ? null : _selectAllLoadedResearchers,
+              child: const Text('ВСЕ НА ЭКРАНЕ'),
+            ),
+            IconButton(
+              tooltip: 'Выйти из режима выбора',
+              icon: const Icon(Icons.close),
+              onPressed: _toggleBulkSelectMode,
+            ),
+          ] else
+            IconButton(
+              tooltip: 'Массовый выбор для синхронизации',
+              icon: const Icon(Icons.checklist),
+              onPressed: _toggleBulkSelectMode,
+            ),
+          const SizedBox(width: 8),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
             child: Builder(
@@ -276,15 +483,27 @@ class _ResearcherListScreenState extends State<ResearcherListScreen> {
           }
 
           final researcher = _researchers[index];
+          final rid = researcher.id;
           final isSelected = _selectedResearcher?.id == researcher.id;
+          final inBulk = rid != null && _bulkSelectedIds.contains(rid);
 
           return ListTile(
-            selected: isSelected,
+            leading: _bulkSelectMode && rid != null
+                ? Checkbox(
+                    value: inBulk,
+                    onChanged: (_) => _toggleBulkId(rid),
+                  )
+                : null,
+            selected: !_bulkSelectMode && isSelected,
             selectedTileColor: AppColors.primary.withOpacity(0.05),
             onTap: () {
-              setState(() {
-                _selectedResearcher = researcher;
-              });
+              if (_bulkSelectMode && rid != null) {
+                _toggleBulkId(rid);
+              } else {
+                setState(() {
+                  _selectedResearcher = researcher;
+                });
+              }
             },
             title: Row(
               children: [
@@ -292,8 +511,8 @@ class _ResearcherListScreenState extends State<ResearcherListScreen> {
                   child: Text(
                     researcher.fullName,
                     style: AppTextStyles.body.copyWith(
-                      color: isSelected ? AppColors.primary : null,
-                      fontWeight: isSelected ? FontWeight.bold : null,
+                      color: (isSelected || inBulk) ? AppColors.primary : null,
+                      fontWeight: (isSelected || inBulk) ? FontWeight.bold : null,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),

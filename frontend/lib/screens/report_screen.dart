@@ -23,16 +23,22 @@ class _ReportScreenState extends State<ReportScreen> {
   static const Map<String, String> _reportTitles = {
     'researchers_report': 'Сотрудники',
     'teams': 'Команды',
+    'dev_teams_report': 'Разработка: Команды',
+    'dev_researchers_report': 'Разработка: Сотрудники',
   };
 
   static const Map<String, List<String>> _reportFilters = {
     'researchers_report': ['submission_date', 'researcher_id', 'team_id', 'status', 'achievement_result_id', 'achievement_participation_id'],
-    'teams': ['team_id'],
+    'teams': ['submission_date', 'team_id'],
+    'dev_teams_report': ['activity_date', 'team_id'],
+    'dev_researchers_report': ['activity_date', 'researcher_id', 'team_id'],
   };
 
   static const Map<String, List<String>> _reportSorts = {
-    'researchers_report': ['r.surname', 'a.points', 'id'],
-    'teams': ['title', 'total_points', 'members_count', 'id'],
+    'researchers_report': ['r.surname', 'a.points', 'dev_points', 'combined_points', 'id'],
+    'teams': ['title', 'total_points', 'dev_points', 'combined_points', 'members_count', 'id'],
+    'dev_teams_report': ['team', 'total_score', 'criteria_sum', 'criteria_list', 'activity_sum'],
+    'dev_researchers_report': ['researcher', 'team', 'dev_points', 'criteria_sum', 'activity_type', 'activity_points'],
   };
 
   static const Map<String, Map<String, String>> _filterMetadata = {
@@ -49,7 +55,7 @@ class _ReportScreenState extends State<ReportScreen> {
       'url': '/api/v1/selectors/researchers',
     },
     'leader_id': {
-      'title': 'Лидер',
+      'title': 'Руководитель',
       'url': '/api/v1/selectors/researchers',
     },
     'team_id': {
@@ -73,6 +79,9 @@ class _ReportScreenState extends State<ReportScreen> {
     'submission_date': {
       'title': 'Дата подачи',
     },
+    'activity_date': {
+      'title': 'Период активности',
+    },
   };
 
   static const Map<String, String> _sortTitles = {
@@ -83,8 +92,19 @@ class _ReportScreenState extends State<ReportScreen> {
     'at.title': 'Достижение',
     's.title': 'Статус',
     'title': 'Название',
-    'total_points': 'Всего баллов',
+    'total_points': 'Баллы достижений',
+    'combined_points': 'Итоговые баллы',
     'members_count': 'Участники',
+    'team': 'Команда',
+    'researcher': 'Сотрудник',
+    'total_score': 'Общий балл',
+    'criteria_sum': 'Критерии проекта',
+    'criteria_list': 'Выполненные критерии',
+    'activity_list': 'Подробности активности',
+    'activity_sum': 'Активность сотрудника',
+    'activity_type': 'Тип активности',
+    'activity_points': 'Баллы по активности',
+    'dev_points': 'Баллы разработки',
   };
 
   Map<String, dynamic>? _selectors;
@@ -225,7 +245,7 @@ class _ReportScreenState extends State<ReportScreen> {
         'operator': 'eq',
         'value': '',
         'title': meta['title'] ?? id,
-        'type': id == 'points' ? 'number' : (id == 'submission_date' ? 'date' : (meta['url'] != null ? 'select' : 'text')),
+        'type': id == 'points' ? 'number' : ((id == 'submission_date' || id == 'activity_date') ? 'date' : (meta['url'] != null ? 'select' : 'text')),
         'selector_url': meta['url'],
         'options': [], // To be loaded on demand
         'isLoadingOptions': false,
@@ -346,6 +366,7 @@ class _ReportScreenState extends State<ReportScreen> {
                           ),
                           child: ElevatedButton(
                             onPressed: () {
+                              setModalState(() => _currentPage = 0);
                               _generateReport().then((_) => setModalState(() {}));
                             },
                             style: ElevatedButton.styleFrom(
@@ -439,17 +460,15 @@ class _ReportScreenState extends State<ReportScreen> {
     }
   }
 
-  void _printNative(Map<String, dynamic> reportData) {
-    final reportType = _selectedReportId;
+  (List<String>, List<List<String>>) _buildReportRowsAndHeaders(
+      String reportType, Map<String, dynamic> reportData) {
     final data = reportData['data'] as List? ?? [];
     final totals = reportData['column_totals'] as Map? ?? {};
-    final title = _reportTitles[reportType] ?? 'Отчет';
-
     List<String> headers = [];
     List<List<String>> rows = [];
 
     if (reportType == 'teams') {
-      headers = ['ID', 'Название команды', 'Лидер', 'Кол-во участников', 'Всего баллов'];
+      headers = ['ID', 'Название команды', 'Руководитель', 'Кол-во участников', 'Баллы достижений', 'Баллы разработки', 'Итоговые баллы'];
       for (var item in data) {
         rows.add([
           item['id'].toString(),
@@ -457,6 +476,8 @@ class _ReportScreenState extends State<ReportScreen> {
           (item['leader_name'] ?? '').toString(),
           (item['members_count']?.toString() ?? '0'),
           (item['total_points'] as num?)?.toDouble().toStringAsFixed(1) ?? '0.0',
+          (item['dev_points'] as num?)?.toDouble().toStringAsFixed(1) ?? '0.0',
+          (item['combined_points'] as num?)?.toDouble().toStringAsFixed(1) ?? '0.0',
         ]);
       }
       if (totals.isNotEmpty) {
@@ -466,53 +487,134 @@ class _ReportScreenState extends State<ReportScreen> {
           '',
           (totals['members_count']?.toString() ?? ''),
           (totals['total_points'] as num?)?.toDouble().toStringAsFixed(1) ?? '',
+          (totals['dev_points'] as num?)?.toDouble().toStringAsFixed(1) ?? '',
+          (totals['combined_points'] as num?)?.toDouble().toStringAsFixed(1) ?? '',
         ]);
+      }
+    } else if (reportType == 'dev_teams_report') {
+      headers = ['Команда', 'Критерии проекта', 'Выполненные критерии', 'Активность', 'Общий балл'];
+      for (var item in data) {
+        rows.add([
+          (item['team'] ?? '').toString(),
+          (item['criteria_sum'] as num?)?.toDouble().toStringAsFixed(1) ?? '0.0',
+          (item['criteria_list'] ?? '').toString(),
+          (item['activity_sum'] as num?)?.toDouble().toStringAsFixed(1) ?? '0.0',
+          (item['total_score'] as num?)?.toDouble().toStringAsFixed(1) ?? '0.0',
+        ]);
+      }
+      if (totals.isNotEmpty) {
+        rows.add([
+          'ИТОГО',
+          (totals['criteria_sum'] as num?)?.toDouble().toStringAsFixed(1) ?? '',
+          '',
+          (totals['activity_sum'] as num?)?.toDouble().toStringAsFixed(1) ?? '',
+          '',
+        ]);
+      }
+    } else if (reportType == 'dev_researchers_report') {
+      headers = ['Сотрудник', 'Команда', 'Тип активности', 'Кол-во', 'Баллы / ед.', 'Баллы', 'Критерии проекта', 'Итого баллов'];
+
+      // Regroup by (researcher_id, team) preserving backend sort order of groups
+      final Map<String, List<dynamic>> exportGroupMap = {};
+      final List<String> exportGroupKeys = [];
+      for (var item in data) {
+        final key = '${item['researcher_id']}|${item['team'] ?? ''}';
+        if (!exportGroupMap.containsKey(key)) {
+          exportGroupMap[key] = [];
+          exportGroupKeys.add(key);
+        }
+        exportGroupMap[key]!.add(item);
+      }
+
+      for (final key in exportGroupKeys) {
+        final groupItems = exportGroupMap[key]!;
+        double exportGroupActivitySum = 0;
+        double exportGroupDevPoints = 0;
+        double exportGroupCriteriaSum = 0;
+
+        for (var i = 0; i < groupItems.length; i++) {
+          final item = groupItems[i];
+          final team = (item['team'] ?? '').toString();
+          rows.add([
+            i == 0 ? (item['researcher'] ?? '').toString() : '',
+            i == 0 ? team : '',
+            (item['activity_type'] ?? '').toString(),
+            (item['count'] as num?)?.toInt().toString() ?? '0',
+            (item['type_points'] as num?)?.toDouble().toStringAsFixed(1) ?? '0.0',
+            (item['activity_points'] as num?)?.toDouble().toStringAsFixed(1) ?? '0.0',
+            '',
+            '',
+          ]);
+          exportGroupActivitySum += (item['activity_points'] as num?)?.toDouble() ?? 0.0;
+          exportGroupDevPoints = (item['dev_points'] as num?)?.toDouble() ?? 0.0;
+          exportGroupCriteriaSum = (item['criteria_sum'] as num?)?.toDouble() ?? 0.0;
+        }
+
+        rows.add(['', '', 'Итого по сотруднику', '', '', exportGroupActivitySum.toStringAsFixed(1), exportGroupCriteriaSum.toStringAsFixed(1), exportGroupDevPoints.toStringAsFixed(1)]);
+      }
+
+      if (totals.isNotEmpty) {
+        rows.add(['ИТОГО', '', '', '', '', '', '', (totals['dev_points'] as num?)?.toDouble().toStringAsFixed(1) ?? '']);
+      }
+    } else if (reportType == 'researchers_report') {
+      headers = ['ID', 'Исследователь', 'Достижение', 'Баллы достижений', 'Статус', 'Результат', 'Роль', 'Баллы разработки', 'Итоговые баллы'];
+
+      int? lastResearcherId;
+      double researcherSubtotal = 0;
+      double lastDevPts = 0;
+
+      for (var item in data) {
+        final researcherId = item['researcher_id'];
+        final points = (item['points'] as num?)?.toDouble() ?? 0.0;
+        final devPts = (item['dev_points'] as num?)?.toDouble() ?? 0.0;
+
+        if (lastResearcherId != null && lastResearcherId != researcherId) {
+          final combined = researcherSubtotal + lastDevPts;
+          rows.add(['', 'Итого по сотруднику', '', researcherSubtotal.toStringAsFixed(1), '', '', '', lastDevPts.toStringAsFixed(1), combined.toStringAsFixed(1)]);
+          researcherSubtotal = 0;
+        }
+
+        rows.add([
+          item['id'].toString(),
+          (lastResearcherId == researcherId ? '' : (item['researcher_name'] ?? item['researcher'] ?? '')).toString(),
+          (item['achievement'] ?? '').toString(),
+          points.toStringAsFixed(1),
+          (item['status'] ?? '').toString(),
+          (item['result'] ?? '').toString(),
+          (item['participation'] ?? '').toString(),
+          '',
+          '',
+        ]);
+
+        lastResearcherId = researcherId;
+        lastDevPts = devPts;
+        researcherSubtotal += points;
+      }
+
+      if (lastResearcherId != null) {
+        final combined = researcherSubtotal + lastDevPts;
+        rows.add(['', 'Итого по сотруднику', '', researcherSubtotal.toStringAsFixed(1), '', '', '', lastDevPts.toStringAsFixed(1), combined.toStringAsFixed(1)]);
+      }
+
+      if (totals.isNotEmpty && totals.containsKey('points')) {
+        final totalAch = (totals['points'] as num?)?.toDouble() ?? 0.0;
+        final totalDev = (totals['dev_points'] as num?)?.toDouble() ?? 0.0;
+        final totalCombined = totalAch + totalDev;
+        rows.add(['ИТОГО', '', '', totalAch.toStringAsFixed(1), '', '', '', totalDev.toStringAsFixed(1), totalCombined.toStringAsFixed(1)]);
       }
     } else {
       headers = ['ID', 'Исследователь', 'Достижение', 'Баллы', 'Статус', 'Результат', 'Роль'];
-      
-      if (reportType == 'researchers_report') {
-        int? lastResearcherId;
-        double researcherSubtotal = 0;
-        
-        for (var item in data) {
-          final researcherId = item['researcher_id'];
-          final points = (item['points'] as num?)?.toDouble() ?? 0.0;
 
-          if (lastResearcherId != null && lastResearcherId != researcherId) {
-            rows.add(['', 'Итого по сотруднику', '', researcherSubtotal.toStringAsFixed(1), '', '', '']);
-            researcherSubtotal = 0;
-          }
-
-          rows.add([
-            item['id'].toString(),
-            (lastResearcherId == researcherId ? '' : (item['researcher_name'] ?? item['researcher'] ?? '')).toString(),
-            (item['achievement'] ?? '').toString(),
-            points.toStringAsFixed(1),
-            (item['status'] ?? '').toString(),
-            (item['result'] ?? '').toString(),
-            (item['participation'] ?? '').toString(),
-          ]);
-
-          lastResearcherId = researcherId;
-          researcherSubtotal += points;
-        }
-        
-        if (lastResearcherId != null) {
-          rows.add(['', 'Итого по сотруднику', '', researcherSubtotal.toStringAsFixed(1), '', '', '']);
-        }
-      } else {
-        for (var item in data) {
-          rows.add([
-            item['id'].toString(),
-            (item['researcher_name'] ?? item['researcher'] ?? '').toString(),
-            (item['achievement'] ?? '').toString(),
-            (item['points'] as num?)?.toDouble().toStringAsFixed(1) ?? '0.0',
-            (item['status'] ?? '').toString(),
-            (item['result'] ?? '').toString(),
-            (item['participation'] ?? '').toString(),
-          ]);
-        }
+      for (var item in data) {
+        rows.add([
+          item['id'].toString(),
+          (item['researcher_name'] ?? item['researcher'] ?? '').toString(),
+          (item['achievement'] ?? '').toString(),
+          (item['points'] as num?)?.toDouble().toStringAsFixed(1) ?? '0.0',
+          (item['status'] ?? '').toString(),
+          (item['result'] ?? '').toString(),
+          (item['participation'] ?? '').toString(),
+        ]);
       }
 
       if (totals.isNotEmpty && totals.containsKey('points')) {
@@ -527,6 +629,21 @@ class _ReportScreenState extends State<ReportScreen> {
         ]);
       }
     }
+
+    return (headers, rows);
+  }
+
+  String _escapeCsvCell(String cell) {
+    if (cell.contains(',') || cell.contains('"') || cell.contains('\n') || cell.contains('\r')) {
+      return '"${cell.replaceAll('"', '""')}"';
+    }
+    return cell;
+  }
+
+  void _printNative(Map<String, dynamic> reportData) {
+    final reportType = _selectedReportId;
+    final title = _reportTitles[reportType] ?? 'Отчет';
+    final (headers, rows) = _buildReportRowsAndHeaders(reportType!, reportData);
 
     if (kIsWeb) {
       js.context.callMethod('eval', ["""
@@ -546,7 +663,7 @@ class _ReportScreenState extends State<ReportScreen> {
           html += '</tr></thead><tbody>';
           
           rows.forEach(function(row) {
-            var isTotal = row[0] === 'ИТОГО' || row[1] === 'Итого по сотруднику';
+            var isTotal = row[0] === 'ИТОГО' || row.some(function(c) { return c === 'Итого по сотруднику'; });
             html += '<tr' + (isTotal ? ' style=\"font-weight: bold; background-color: #f9f9f9;\"' : '') + '>';
             row.forEach(function(cell) { html += '<td>' + (cell || '') + '</td>'; });
             html += '</tr>';
@@ -607,7 +724,20 @@ class _ReportScreenState extends State<ReportScreen> {
       
       if (mounted) {
         if (format == 'csv' && result['data'] != null) {
-          final String csvData = result['data'].toString();
+          final String csvData;
+          if (result['format'] == 'csv') {
+            // Backend already produced CSV (e.g. researchers_report)
+            csvData = result['data'].toString();
+          } else {
+            // Backend returned JSON — build CSV client-side
+            final (csvHeaders, csvRows) = _buildReportRowsAndHeaders(_selectedReportId!, result);
+            final buf = StringBuffer();
+            buf.writeln(csvHeaders.map(_escapeCsvCell).join(','));
+            for (final row in csvRows) {
+              buf.writeln(row.map(_escapeCsvCell).join(','));
+            }
+            csvData = buf.toString();
+          }
           if (kIsWeb) {
             // Триггерим скачивание CSV через JS
             final base64Data = base64Encode(utf8.encode(csvData));
@@ -1351,6 +1481,11 @@ class _ReportScreenState extends State<ReportScreen> {
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final item = data[index];
+        final totalPoints = ((item['total_points'] as num?)?.toDouble() ?? (item['points'] as num?)?.toDouble() ?? 0.0);
+        final achPoints = (item['achievement_points'] as num?)?.toDouble() ?? 0.0;
+        final devPoints = (item['dev_points'] as num?)?.toDouble() ?? 0.0;
+        final hasBreakdown = achPoints > 0 || devPoints > 0;
+
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
@@ -1386,12 +1521,22 @@ class _ReportScreenState extends State<ReportScreen> {
                       item['name'], 
                       style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                     ),
+                    if (hasBreakdown) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        'дост.: ${achPoints.toStringAsFixed(1)}  разр.: ${devPoints.toStringAsFixed(1)}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
               const SizedBox(width: 8),
               Text(
-                '${(item['points'] as num).toDouble().toStringAsFixed(1)}', 
+                totalPoints.toStringAsFixed(1), 
                 style: const TextStyle(
                   fontWeight: FontWeight.w800, 
                   color: AppColors.primary,
@@ -1763,6 +1908,14 @@ class _ReportScreenState extends State<ReportScreen> {
       return _buildTeamsTable(data, totals, setModalState);
     }
 
+    if (_selectedReportId == 'dev_teams_report') {
+      return _buildDevTeamsTable(data, totals, setModalState);
+    }
+
+    if (_selectedReportId == 'dev_researchers_report') {
+      return _buildDevResearchersTable(data, totals, setModalState);
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
         return SingleChildScrollView(
@@ -1799,7 +1952,7 @@ class _ReportScreenState extends State<ReportScreen> {
                       DataCell(Text(item['id'].toString())),
                       DataCell(Text(item['researcher'] ?? item['researcher_name'] ?? '')),
                       DataCell(Text(item['achievement'] ?? '')),
-                      DataCell(Text((item['points'] as num).toDouble().toStringAsFixed(1))),
+                      DataCell(Text(((item['points'] as num?)?.toDouble() ?? 0.0).toStringAsFixed(1))),
                       DataCell(Text(item['status'] ?? '')),
                       DataCell(Text(item['result'] ?? '')),
                       DataCell(Text(item['participation'] ?? '')),
@@ -1812,7 +1965,7 @@ class _ReportScreenState extends State<ReportScreen> {
                         const DataCell(Text('ИТОГО', style: TextStyle(fontWeight: FontWeight.bold))),
                         const DataCell(Text('')),
                         const DataCell(Text('')),
-                        DataCell(Text((totals['points'] as num).toDouble().toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold))),
+                        DataCell(Text(((totals['points'] as num?)?.toDouble() ?? 0.0).toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold))),
                         const DataCell(Text('')),
                         const DataCell(Text('')),
                         const DataCell(Text('')),
@@ -1831,16 +1984,17 @@ class _ReportScreenState extends State<ReportScreen> {
     List<DataRow> rows = [];
     int? lastResearcherId;
     double researcherSubtotal = 0;
-    String? lastResearcherName;
+    double lastDevPoints = 0;
 
     for (var i = 0; i < data.length; i++) {
       final item = data[i];
       final researcherId = item['researcher_id'];
       final researcherName = item['researcher_name'] ?? '';
-      final points = (item['points'] as num).toDouble();
+      final points = (item['points'] as num?)?.toDouble() ?? 0.0;
+      final devPoints = (item['dev_points'] as num?)?.toDouble() ?? 0.0;
 
       if (lastResearcherId != null && lastResearcherId != researcherId) {
-        // Add subtotal row
+        final combined = researcherSubtotal + lastDevPoints;
         rows.add(DataRow(
           color: MaterialStateProperty.all(AppColors.primary.withOpacity(0.05)),
           cells: [
@@ -1851,6 +2005,8 @@ class _ReportScreenState extends State<ReportScreen> {
             const DataCell(Text('')),
             const DataCell(Text('')),
             const DataCell(Text('')),
+            DataCell(Text(lastDevPoints.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textSecondary))),
+            DataCell(Text(combined.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary))),
           ],
         ));
         researcherSubtotal = 0;
@@ -1873,16 +2029,19 @@ class _ReportScreenState extends State<ReportScreen> {
           DataCell(Text(item['status'] ?? '')),
           DataCell(Text(item['result'] ?? '')),
           DataCell(Text(item['participation'] ?? '')),
+          const DataCell(Text('')),
+          const DataCell(Text('')),
         ],
       ));
 
       lastResearcherId = researcherId;
-      lastResearcherName = researcherName;
+      lastDevPoints = devPoints;
       researcherSubtotal += points;
     }
 
     // Last subtotal
     if (lastResearcherId != null) {
+      final combined = researcherSubtotal + lastDevPoints;
       rows.add(DataRow(
         color: MaterialStateProperty.all(AppColors.primary.withOpacity(0.05)),
         cells: [
@@ -1893,22 +2052,29 @@ class _ReportScreenState extends State<ReportScreen> {
           const DataCell(Text('')),
           const DataCell(Text('')),
           const DataCell(Text('')),
+          DataCell(Text(lastDevPoints.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textSecondary))),
+          DataCell(Text(combined.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary))),
         ],
       ));
     }
 
     // Grand total
     if (totals != null && totals.containsKey('points')) {
+      final totalDev = (totals['dev_points'] as num?)?.toDouble() ?? 0.0;
+      final totalAch = (totals['points'] as num?)?.toDouble() ?? 0.0;
+      final totalCombined = totalAch + totalDev;
       rows.add(DataRow(
         color: MaterialStateProperty.all(AppColors.primary.withOpacity(0.1)),
         cells: [
           const DataCell(Text('ИТОГО', style: TextStyle(fontWeight: FontWeight.bold))),
           const DataCell(Text('')),
           const DataCell(Text('')),
-          DataCell(Text(totals['points'].toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
+          DataCell(Text(totalAch.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15))),
           const DataCell(Text('')),
           const DataCell(Text('')),
           const DataCell(Text('')),
+          DataCell(Text(totalDev.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15))),
+          DataCell(Text(totalCombined.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primary))),
         ],
       ));
     }
@@ -1938,10 +2104,12 @@ class _ReportScreenState extends State<ReportScreen> {
                   _buildSortableColumn('ID', 'id', setModalState),
                   _buildSortableColumn('Исследователь', 'r.surname', setModalState),
                   const DataColumn(label: Text('Достижение')),
-                  _buildSortableColumn('Баллы', 'a.points', setModalState),
+                  _buildSortableColumn('Баллы достижений', 'a.points', setModalState),
                   const DataColumn(label: Text('Статус')),
                   const DataColumn(label: Text('Результат')),
                   const DataColumn(label: Text('Роль')),
+                  _buildSortableColumn('Баллы разработки', 'dev_points', setModalState),
+                  _buildSortableColumn('Итоговые баллы', 'combined_points', setModalState),
                 ],
                 rows: rows,
               ),
@@ -1977,9 +2145,11 @@ class _ReportScreenState extends State<ReportScreen> {
                 columns: [
                   _buildSortableColumn('ID', 'id', setModalState),
                   _buildSortableColumn('Название команды', 'title', setModalState),
-                  const DataColumn(label: Text('Лидер')),
+                  const DataColumn(label: Text('Руководитель')),
                   _buildSortableColumn('Кол-во участников', 'members_count', setModalState),
-                  _buildSortableColumn('Всего баллов', 'total_points', setModalState),
+                  _buildSortableColumn('Баллы достижений', 'total_points', setModalState),
+                  _buildSortableColumn('Баллы разработки', 'dev_points', setModalState),
+                  _buildSortableColumn('Итоговые баллы', 'combined_points', setModalState),
                 ],
                 rows: [
                   ...data.map((item) {
@@ -1988,7 +2158,9 @@ class _ReportScreenState extends State<ReportScreen> {
                       DataCell(Text(item['title'] ?? '')),
                       DataCell(Text(item['leader_name'] ?? '')),
                       DataCell(Text(item['members_count'].toString())),
-                      DataCell(Text((item['total_points'] as num).toDouble().toStringAsFixed(1))),
+                      DataCell(Text(((item['total_points'] as num?)?.toDouble() ?? 0.0).toStringAsFixed(1))),
+                      DataCell(Text(((item['dev_points'] as num?)?.toDouble() ?? 0.0).toStringAsFixed(1))),
+                      DataCell(Text(((item['combined_points'] as num?)?.toDouble() ?? 0.0).toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold))),
                     ]);
                   }).toList(),
                   if (totals != null)
@@ -2000,6 +2172,8 @@ class _ReportScreenState extends State<ReportScreen> {
                         const DataCell(Text('')),
                         DataCell(Text(totals['members_count']?.toString() ?? '', style: const TextStyle(fontWeight: FontWeight.bold))),
                         DataCell(Text((totals['total_points'] as num?)?.toDouble().toStringAsFixed(1) ?? '', style: const TextStyle(fontWeight: FontWeight.bold))),
+                        DataCell(Text((totals['dev_points'] as num?)?.toDouble().toStringAsFixed(1) ?? '', style: const TextStyle(fontWeight: FontWeight.bold))),
+                        DataCell(Text((totals['combined_points'] as num?)?.toDouble().toStringAsFixed(1) ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15))),
                       ],
                     ),
                 ],
@@ -2008,6 +2182,238 @@ class _ReportScreenState extends State<ReportScreen> {
           ),
         );
       }
+    );
+  }
+
+  Widget _buildDevTeamsTable(List data, Map? totals, Function(VoidCallback) setModalState) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          scrollDirection: Axis.vertical,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+              child: DataTable(
+                headingRowHeight: 56,
+                headingTextStyle: const TextStyle(
+                  color: AppColors.textPrimary, 
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+                columnSpacing: 24,
+                horizontalMargin: 24,
+                border: const TableBorder(
+                  horizontalInside: BorderSide(color: AppColors.divider, width: 0.5),
+                  bottom: BorderSide(color: AppColors.divider, width: 0.5),
+                ),
+                columns: [
+                  _buildSortableColumn('Название команды', 'team', setModalState),
+                  _buildSortableColumn('Критерии проекта', 'criteria_sum', setModalState),
+                  const DataColumn(label: Text('Выполненные критерии')),
+                  _buildSortableColumn('Активность (сумма)', 'activity_sum', setModalState),
+                  _buildSortableColumn('Общий балл', 'total_score', setModalState),
+                ],
+                rows: [
+                  ...data.map((item) {
+                    return DataRow(cells: [
+                      DataCell(Text(item['team'] ?? '')),
+                      DataCell(Text(((item['criteria_sum'] as num?)?.toDouble() ?? 0.0).toStringAsFixed(1))),
+                      DataCell(
+                        Container(
+                          constraints: const BoxConstraints(maxWidth: 300),
+                          child: Text(
+                            item['criteria_list'] ?? '',
+                            style: AppTextStyles.caption.copyWith(fontSize: 11),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 2,
+                          ),
+                        ),
+                        onTap: (item['criteria_list'] ?? '').toString().isNotEmpty ? () {
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: Text('Критерии: ${item['team']}'),
+                              content: SingleChildScrollView(
+                                child: Text(item['criteria_list'] ?? ''),
+                              ),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Закрыть')),
+                              ],
+                            ),
+                          );
+                        } : null,
+                      ),
+                      DataCell(Text(((item['activity_sum'] as num?)?.toDouble() ?? 0.0).toStringAsFixed(1))),
+                      DataCell(Text(((item['total_score'] as num?)?.toDouble() ?? 0.0).toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold))),
+                    ]);
+                  }).toList(),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+    );
+  }
+
+  Widget _buildDevResearchersTable(List data, Map? totals, Function(VoidCallback) setModalState) {
+    // Group rows by (researcher_id, team) to guarantee grouping regardless of backend sort order
+    final Map<String, List<dynamic>> groupMap = {};
+    final List<String> groupKeys = [];
+    for (var item in data) {
+      final key = '${item['researcher_id']}|${item['team'] ?? ''}';
+      if (!groupMap.containsKey(key)) {
+        groupMap[key] = [];
+        groupKeys.add(key);
+      }
+      groupMap[key]!.add(item);
+    }
+
+    // Sort groups by aggregate field so the user's chosen sort applies to researchers, not rows
+    groupKeys.sort((a, b) {
+      final aFirst = groupMap[a]!.first;
+      final bFirst = groupMap[b]!.first;
+      int cmp;
+      switch (_sortField) {
+        case 'dev_points':
+          cmp = ((aFirst['dev_points'] as num?)?.toDouble() ?? 0.0)
+              .compareTo((bFirst['dev_points'] as num?)?.toDouble() ?? 0.0);
+          break;
+        case 'criteria_sum':
+          cmp = ((aFirst['criteria_sum'] as num?)?.toDouble() ?? 0.0)
+              .compareTo((bFirst['criteria_sum'] as num?)?.toDouble() ?? 0.0);
+          break;
+        case 'team':
+          cmp = (aFirst['team'] ?? '').toString()
+              .compareTo((bFirst['team'] ?? '').toString());
+          break;
+        case 'researcher':
+        default:
+          cmp = (aFirst['researcher'] ?? '').toString()
+              .compareTo((bFirst['researcher'] ?? '').toString());
+      }
+      return _sortDescending ? -cmp : cmp;
+    });
+
+    final List<DataRow> rows = [];
+
+    void _flushGroupRow(double groupActivitySum, double groupDevPoints, double groupCriteriaSum) {
+      rows.add(DataRow(
+        color: MaterialStateProperty.all(AppColors.primary.withOpacity(0.05)),
+        cells: [
+          const DataCell(Text('')),
+          const DataCell(Text('')),
+          const DataCell(Text('Итого по сотруднику', style: TextStyle(fontWeight: FontWeight.bold, fontStyle: FontStyle.italic))),
+          const DataCell(Text('')),
+          const DataCell(Text('')),
+          DataCell(Text(groupActivitySum.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold))),
+          DataCell(Text(groupCriteriaSum.toStringAsFixed(1))),
+          DataCell(Text(groupDevPoints.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary))),
+        ],
+      ));
+    }
+
+    for (final key in groupKeys) {
+      final groupItems = groupMap[key]!;
+      double groupActivitySum = 0;
+      double groupDevPoints = 0;
+      double groupCriteriaSum = 0;
+
+      for (var i = 0; i < groupItems.length; i++) {
+        final item = groupItems[i];
+        final researcherName = (item['researcher'] ?? '').toString();
+        final team = (item['team'] ?? '').toString();
+        final activityType = (item['activity_type'] ?? '').toString();
+        final count = (item['count'] as num?)?.toInt() ?? 0;
+        final typePoints = (item['type_points'] as num?)?.toDouble() ?? 0.0;
+        final activityPoints = (item['activity_points'] as num?)?.toDouble() ?? 0.0;
+        final criteriaSum = (item['criteria_sum'] as num?)?.toDouble() ?? 0.0;
+        final devPoints = (item['dev_points'] as num?)?.toDouble() ?? 0.0;
+
+        rows.add(DataRow(
+          cells: [
+            DataCell(Text(
+              researcherName,
+              style: TextStyle(
+                color: i == 0 ? AppColors.primaryDark : Colors.transparent,
+                fontWeight: FontWeight.bold,
+              ),
+            )),
+            DataCell(Text(i == 0 ? team : '')),
+            DataCell(Text(activityType)),
+            DataCell(Text(count.toString())),
+            DataCell(Text(typePoints.toStringAsFixed(1))),
+            DataCell(Text(activityPoints.toStringAsFixed(1))),
+            const DataCell(Text('')),
+            const DataCell(Text('')),
+          ],
+        ));
+
+        groupActivitySum += activityPoints;
+        groupDevPoints = devPoints;
+        groupCriteriaSum = criteriaSum;
+      }
+
+      _flushGroupRow(groupActivitySum, groupDevPoints, groupCriteriaSum);
+    }
+
+    if (totals != null && totals.containsKey('dev_points')) {
+      rows.add(DataRow(
+        color: MaterialStateProperty.all(AppColors.primary.withOpacity(0.1)),
+        cells: [
+          const DataCell(Text('ИТОГО', style: TextStyle(fontWeight: FontWeight.bold))),
+          const DataCell(Text('')),
+          const DataCell(Text('')),
+          const DataCell(Text('')),
+          const DataCell(Text('')),
+          const DataCell(Text('')),
+          const DataCell(Text('')),
+          DataCell(Text(
+            (totals['dev_points'] as num).toDouble().toStringAsFixed(1),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          )),
+        ],
+      ));
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          scrollDirection: Axis.vertical,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+              child: DataTable(
+                headingRowHeight: 56,
+                headingTextStyle: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+                columnSpacing: 24,
+                horizontalMargin: 24,
+                border: const TableBorder(
+                  horizontalInside: BorderSide(color: AppColors.divider, width: 0.5),
+                  bottom: BorderSide(color: AppColors.divider, width: 0.5),
+                ),
+                columns: [
+                  _buildSortableColumn('Сотрудник', 'researcher', setModalState),
+                  _buildSortableColumn('Команда', 'team', setModalState),
+                  _buildSortableColumn('Тип активности', 'activity_type', setModalState),
+                  const DataColumn(label: Text('Кол-во')),
+                  const DataColumn(label: Text('Баллы / ед.')),
+                  _buildSortableColumn('Баллы', 'activity_points', setModalState),
+                  _buildSortableColumn('Критерии проекта', 'criteria_sum', setModalState),
+                  _buildSortableColumn('Итого баллов', 'dev_points', setModalState),
+                ],
+                rows: rows,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -2027,6 +2433,7 @@ class _ReportScreenState extends State<ReportScreen> {
                   _sortField = field;
                   _sortDescending = false;
                 }
+                _currentPage = 0;
               });
               _generateReport().then((_) => setModalState(() {}));
             },

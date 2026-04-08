@@ -9,7 +9,9 @@ COPY pubspec.yaml ./
 RUN flutter pub get
 
 COPY . .
-RUN flutter build web --release
+
+ARG API_BASE_URL=http://localhost:3000
+RUN flutter build web --release --dart-define=API_BASE_URL=${API_BASE_URL}
 
 # Stage 2: Serve
 FROM nginx:alpine
