@@ -26,12 +26,6 @@ type DataRow struct {
 }
 
 func (r *Repository) FetchData(req *pb.ReportRequest) ([]DataRow, int32, map[string]float64, error) {
-	// Achievement-centric query joined to researchers. Soft-delete conditions for
-	// lookup tables (type, status, result, participation) are placed in the JOIN ON
-	// clause so that achievements whose linked lookup was soft-deleted are still
-	// included in the report (they simply show an empty value for that field).
-	// Only achievements and researchers that are themselves deleted are excluded.
-	// Explicit column aliases are required for the CTE-based points sort below.
 	devPointsSubquery := "(SELECT COALESCE(SUM(cs * als), 0) FROM (" +
 		"SELECT (SELECT COALESCE(SUM(dpc2.points), 0) FROM team_dev_criteria tdc2 " +
 		"JOIN dev_project_criteria dpc2 ON tdc2.dev_project_criterion_id = dpc2.id WHERE tdc2.team_id = rt2.team_id) AS cs, " +

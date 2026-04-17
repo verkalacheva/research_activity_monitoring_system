@@ -14,4 +14,3 @@ class AchievementTypeContract < BaseContract
     end
   end
 end
-

@@ -62,3 +62,4 @@ build-iPhoneSimulator/
 *.csv
 *.sql
 *.lock
+*.docker/make-build/*

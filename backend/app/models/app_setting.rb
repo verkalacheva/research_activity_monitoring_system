@@ -4,7 +4,6 @@ class AppSetting < ApplicationRecord
   SENSITIVE_KEYS = %w[
     github_token
     openrouter_api_key
-    tavily_api_key
   ].freeze
 
   def self.get(key)

@@ -21,5 +21,7 @@ Rails.application.configure do
 
   # Ensure changes are picked up in docker
   config.file_watcher = ActiveSupport::FileUpdateChecker
+
+  config.action_cable.disable_request_forgery_protection = true
 end
 

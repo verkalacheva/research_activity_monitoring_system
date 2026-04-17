@@ -5,14 +5,12 @@ import '../config.dart';
 class AppSettings {
   final String? githubToken;
   final String? openrouterApiKey;
-  final String? tavilyApiKey;
   final String? llmModelName;
   final String? llmProvider;
 
   const AppSettings({
     this.githubToken,
     this.openrouterApiKey,
-    this.tavilyApiKey,
     this.llmModelName,
     this.llmProvider,
   });
@@ -21,7 +19,6 @@ class AppSettings {
     return AppSettings(
       githubToken: json['github_token'] as String?,
       openrouterApiKey: json['openrouter_api_key'] as String?,
-      tavilyApiKey: json['tavily_api_key'] as String?,
       llmModelName: json['llm_model_name'] as String?,
       llmProvider: json['llm_provider'] as String?,
     );
@@ -31,7 +28,6 @@ class AppSettings {
     return {
       'github_token': githubToken,
       'openrouter_api_key': openrouterApiKey,
-      'tavily_api_key': tavilyApiKey,
       'llm_model_name': llmModelName,
       'llm_provider': llmProvider,
     };

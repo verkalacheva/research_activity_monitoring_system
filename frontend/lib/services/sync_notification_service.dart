@@ -3,7 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../config.dart';
-import 'integration_service.dart';
+import 'integration_service.dart' show IntegrationService;
+import 'sync_preview_exceptions.dart';
 
 class SyncRequest {
   final String provider;
@@ -74,6 +75,8 @@ class SyncNotificationService extends ChangeNotifier {
   http.Client? _activeHttpClient;
   /// Completes when [cancelSync] is called — wakes [Future.any] waiting on the current request.
   Completer<void>? _cancelCompleter;
+  /// Текущая фоновая задача на бэкенде (для DELETE /integration_sync_jobs/:id при «Стоп»).
+  String? _activeSyncJobId;
 
   bool get isSyncing => _isRunning;
 
@@ -110,6 +113,10 @@ class SyncNotificationService extends ChangeNotifier {
     final hasWork =
         _isRunning || _requests.any((r) => !r.isCompleted);
     if (!hasWork) return;
+    final jid = _activeSyncJobId;
+    if (jid != null && jid.isNotEmpty) {
+      unawaited(_notifyServerCancelJob(jid));
+    }
     _cancelRequested = true;
     final c = _cancelCompleter;
     if (c != null && !c.isCompleted) {
@@ -119,7 +126,19 @@ class SyncNotificationService extends ChangeNotifier {
       _activeHttpClient?.close();
     } catch (_) {}
     _activeHttpClient = null;
+    _activeSyncJobId = null;
     notifyListeners();
+  }
+
+  Future<void> _notifyServerCancelJob(String jobId) async {
+    try {
+      final r = await http.delete(Uri.parse('$_baseUrl/integration_sync_jobs/$jobId'));
+      if (r.statusCode != 200 && r.statusCode != 202 && r.statusCode != 204) {
+        debugPrint('integration_sync_jobs cancel HTTP ${r.statusCode}: ${r.body}');
+      }
+    } catch (e) {
+      debugPrint('integration_sync_jobs cancel failed: $e');
+    }
   }
 
   void dismissCompleted() {
@@ -218,6 +237,11 @@ class SyncNotificationService extends ChangeNotifier {
               teamId: request.teamId,
               scope: request.scope,
               httpClient: _activeHttpClient,
+              shouldAbort: () => _cancelRequested,
+              onJobCreated: (id) {
+                _activeSyncJobId = id;
+                notifyListeners();
+              },
             ),
             _cancelCompleter!.future.then((_) => cancelSentinel),
           ]);
@@ -242,7 +266,7 @@ class SyncNotificationService extends ChangeNotifier {
           request.results = enriched;
           request.isCompleted = true;
         } catch (e) {
-          if (_cancelRequested) {
+          if (_cancelRequested || e is SyncPreviewAborted) {
             _removePendingIncomplete();
             break;
           }
@@ -251,6 +275,7 @@ class SyncNotificationService extends ChangeNotifier {
           request.isCompleted = true;
         } finally {
           _cancelCompleter = null;
+          _activeSyncJobId = null;
         }
         notifyListeners();
       }

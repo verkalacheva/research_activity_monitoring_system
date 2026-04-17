@@ -33,11 +33,12 @@ class SyncPreviewDialog extends StatefulWidget {
 
 class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
   final IntegrationService _service = IntegrationService();
-  final TextEditingController _urlController = TextEditingController();
   bool _isLoading = false;
-  bool _hasStartedCrawl = false;
   List<dynamic> _results = [];
   final Set<Map<String, dynamic>> _selectedAchievements = {};
+
+  bool get _isInternetCrawl =>
+      widget.provider == 'crawl_search' || widget.provider == 'crawl';
 
   bool _hasDevData() {
     return _results.any((res) {
@@ -50,20 +51,14 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
   @override
   void initState() {
     super.initState();
-    _urlController.text = widget.url ?? '';
     if (widget.preloadedResults != null) {
       // Background-sync flow: results are already fetched, show them directly.
-      _hasStartedCrawl = true;
       _results = List<dynamic>.from(widget.preloadedResults!);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         _showCrawlModelWarnings(_collectWarnings(_results));
       });
-    } else if (widget.provider != 'crawl' && widget.provider != 'crawl_search') {
-      _hasStartedCrawl = true;
-      _loadPreview();
-    } else if (widget.url != null || widget.provider == 'github') {
-      _hasStartedCrawl = true;
+    } else {
       _loadPreview();
     }
   }
@@ -73,13 +68,11 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
       _isLoading = true;
       _results = [];
       _selectedAchievements.clear();
-      _hasStartedCrawl = true;
     });
     
     try {
       final results = await _service.syncPreview(
         provider: widget.provider,
-        url: widget.provider == 'crawl' ? _urlController.text : null,
         researcherId: widget.researcherId,
         teamId: widget.teamId,
         scope: widget.scope,
@@ -265,17 +258,15 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final providerName = widget.provider == 'crawl'
-        ? 'автоматический поиск'
-        : (widget.provider == 'crawl_search'
-            ? 'поиск в интернете'
-            : (widget.provider == 'all'
-                ? 'всех источников'
-                : (widget.provider == 'background'
-                    ? 'фоновая синхронизация'
-                    : (widget.provider == 'github' && widget.scope == 'teams'
-                        ? 'GitHub — все проекты'
-                        : widget.provider.toUpperCase()))));
+    final providerName = _isInternetCrawl
+        ? 'краулер (интернет)'
+        : (widget.provider == 'all'
+            ? 'всех источников'
+            : (widget.provider == 'background'
+                ? 'фоновая синхронизация'
+                : (widget.provider == 'github' && widget.scope == 'teams'
+                    ? 'GitHub — все проекты'
+                    : widget.provider.toUpperCase())));
     
     // Для команд кнопка активна всегда, так как dev_data сохраняется сразу
     // Для исследователей кнопка активна если выбраны ачивки или есть данные по разработке
@@ -302,13 +293,15 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
                         border: Border.all(color: AppColors.primary.withOpacity(0.2)),
                       ),
                       child: Icon(
-                        widget.provider == 'orcid' 
-                          ? Icons.link 
-                          : (widget.provider == 'openalex' 
-                              ? Icons.school_outlined 
-                              : (widget.provider == 'github'
-                                  ? Icons.code
-                                  : (widget.provider == 'crawl' || widget.provider == 'crawl_search' ? Icons.search : Icons.all_inclusive))),
+                        widget.provider == 'orcid'
+                            ? Icons.link
+                            : (widget.provider == 'openalex'
+                                ? Icons.school_outlined
+                                : (widget.provider == 'github'
+                                    ? Icons.code
+                                    : (_isInternetCrawl
+                                        ? Icons.travel_explore
+                                        : Icons.all_inclusive))),
                         color: AppColors.primary,
                       ),
                     ),
@@ -329,28 +322,29 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
               ],
             ),
             const SizedBox(height: 24),
-            if ((widget.provider == 'crawl' || widget.provider == 'crawl_search') && !_hasStartedCrawl)
-              _buildUrlInput()
-            else ...[
-              const Divider(),
-              Expanded(
-                child: _isLoading
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const CircularProgressIndicator(),
-                            const SizedBox(height: 24),
-                            Text(widget.provider == 'crawl_search' ? 'Ищем информацию в интернете...' : 'Запрашиваем данные по API...', style: AppTextStyles.bodySecondary),
-                            const Text('Это может занять до минуты', style: AppTextStyles.caption),
-                          ],
-                        ),
-                      )
-                    : _results.isEmpty
-                        ? _buildEmptyState()
-                        : _buildList(),
-              ),
-            ],
+            const Divider(),
+            Expanded(
+              child: _isLoading
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const CircularProgressIndicator(),
+                          const SizedBox(height: 24),
+                          Text(
+                            _isInternetCrawl
+                                ? 'Краулер ищет информацию в интернете по сотрудникам...'
+                                : 'Запрашиваем данные по API...',
+                            style: AppTextStyles.bodySecondary,
+                          ),
+                          const Text('Это может занять до минуты', style: AppTextStyles.caption),
+                        ],
+                      ),
+                    )
+                  : _results.isEmpty
+                      ? _buildEmptyState()
+                      : _buildList(),
+            ),
             const SizedBox(height: 24),
             const Divider(),
             const SizedBox(height: 16),
@@ -389,57 +383,6 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
     );
   }
 
-  Widget _buildUrlInput() {
-    return Expanded(
-      child: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 500),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.travel_explore, size: 64, color: AppColors.primary),
-              const SizedBox(height: 24),
-              const Text(
-                'Автоматический поиск достижений',
-                style: AppTextStyles.h3,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Введите ссылку на страницу со списком публикаций, патентов или наград. Наш ИИ-помощник проанализирует страницу и предложит добавить найденное.',
-                style: AppTextStyles.bodySecondary,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              TextField(
-                controller: _urlController,
-                decoration: InputDecoration(
-                  labelText: 'URL страницы',
-                  hintText: 'https://example.com/publications',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  prefixIcon: const Icon(Icons.link),
-                ),
-                onSubmitted: (_) => _loadPreview(),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: () => _loadPreview(),
-                icon: const Icon(Icons.search),
-                label: const Text('НАЧАТЬ ПОИСК'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -448,13 +391,12 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
           const Icon(Icons.search_off, size: 64, color: AppColors.inactive),
           const SizedBox(height: 16),
           const Text('Новых данных не найдено', style: AppTextStyles.h3),
-          if (widget.provider == 'crawl' || widget.provider == 'crawl_search') ...[
+          if (_isInternetCrawl) ...[
             const SizedBox(height: 8),
-            const Text('Попробуйте другую ссылку или проверьте текущую', style: AppTextStyles.bodySecondary),
-            const SizedBox(height: 24),
-            TextButton(
-              onPressed: () => setState(() => _hasStartedCrawl = false),
-              child: const Text('ВВЕСТИ ДРУГОЙ URL'),
+            const Text(
+              'Проверьте настройки LLM в разделе «Настройки» или повторите позже.',
+              style: AppTextStyles.bodySecondary,
+              textAlign: TextAlign.center,
             ),
           ],
         ],

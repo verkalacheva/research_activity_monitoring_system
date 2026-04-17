@@ -1,207 +1,6 @@
 module Api
   module V1
     class IntegrationsController < BaseController
-      def sync_preview
-        provider = params[:provider] || 'orcid'
-        researcher_id = params[:researcher_id]
-        team_id = params[:team_id]
-        cancel_proc = -> { ClientDisconnect.io_closed?(request) }
-
-        if provider == 'crawl' || provider == 'crawl_search' || provider == 'github'
-          url = params[:url]
-          auto_search = provider == 'crawl_search'
-          llm_provider = params[:llm_provider]
-          
-          if team_id.present?
-            team = Team.find(team_id)
-            if provider == 'github'
-              # Use GitHub API (Go) for teams
-              response = Integrations::Client.crawl_dev_activity(team.github_repo_url, nil, team_id, cancel_proc: cancel_proc)
-              
-              if response
-                results = [{
-                  team_id: team_id.to_i,
-                  team_title: team.title,
-                  dev_activities: response.activities.map { |da| { activity_type: da.activity_type, count: da.count, date: da.date } },
-                  project_criteria_met: response.project_criteria_met.to_a,
-                  activity_details: response.activity_details.map { |ad| { activity_type: ad.activity_type, external_id: ad.external_id, title: ad.title, repository: ad.repository, url: ad.url, date: ad.date, state: ad.state } }
-                }]
-              else
-                results = []
-              end
-            else
-              # Use Python CRAWLER for projects
-              response = Integrations::Client.crawl(team.github_repo_url, nil, team.title, false, nil, nil, cancel_proc: cancel_proc)
-              
-              if response
-                results = [{
-                  team_id: team_id.to_i,
-                  team_title: team.title,
-                  dev_activities: response.dev_activities.map { |da| { activity_type: da.activity_type, count: da.count, date: da.date } },
-                  project_criteria_met: response.project_criteria_met.to_a,
-                  warnings: response.warnings.to_a
-                }]
-              else
-                results = []
-              end
-            end
-          elsif researcher_id.present?
-            researcher = Researcher.find(researcher_id)
-            
-            if provider == 'github'
-              # Use GitHub API (Go) for researchers
-              response = Integrations::Client.crawl_dev_activity(researcher.github, researcher_id, nil, cancel_proc: cancel_proc)
-              
-              if response
-                results = [{
-                  researcher_id: researcher_id.to_i,
-                  researcher_name: researcher.fullName,
-                  achievements: [],
-                  dev_activities: response.activities.map { |da| { activity_type: da.activity_type, count: da.count, date: da.date } },
-                  project_criteria_met: [],
-                  activity_details: response.activity_details.map { |ad| { activity_type: ad.activity_type, external_id: ad.external_id, title: ad.title, repository: ad.repository, url: ad.url, date: ad.date, state: ad.state } }
-                }]
-              else
-                results = []
-              end
-            else
-              # Use general crawl for other providers
-              response = Integrations::Client.crawl(url, researcher_id, researcher.fullName, auto_search, llm_provider, researcher.github, cancel_proc: cancel_proc)
-              
-              if response
-                results = [{
-                  researcher_id: researcher_id.to_i,
-                  researcher_name: researcher.fullName,
-                  achievements: filter_new_achievements(researcher_id, response.achievements),
-                  dev_activities: response.dev_activities.map { |da| { activity_type: da.activity_type, count: da.count, date: da.date } },
-                  project_criteria_met: response.project_criteria_met.to_a,
-                  warnings: response.warnings.to_a
-                }]
-                results = results.reject do |r|
-                  r[:achievements].empty? && r[:dev_activities].empty? && r[:project_criteria_met].empty? &&
-                    (r[:warnings].blank?)
-                end
-              else
-                results = []
-              end
-            end
-          else
-            # Sync for multiple (use parallel requests for better performance)
-            if provider == 'github' && params[:scope] == 'teams'
-              team_data = Team.where.not(github_repo_url: [nil, ''])
-                              .map { |t| { id: t.id, title: t.title, url: t.github_repo_url } }
-
-              threads = team_data.map do |t|
-                Thread.new do
-                  begin
-                    resp = Integrations::Client.crawl_dev_activity(t[:url], nil, t[:id], cancel_proc: cancel_proc)
-                    next nil unless resp
-                    {
-                      team_id: t[:id],
-                      team_title: t[:title],
-                      dev_activities: resp.activities.map { |da| { activity_type: da.activity_type, count: da.count, date: da.date } },
-                      project_criteria_met: resp.project_criteria_met.to_a,
-                      activity_details: resp.activity_details.map { |ad| { activity_type: ad.activity_type, external_id: ad.external_id, title: ad.title, repository: ad.repository, url: ad.url, date: ad.date, state: ad.state } }
-                    }
-                  rescue => e
-                    Rails.logger.error "Failed to sync GitHub for team #{t[:title]}: #{e.message.to_s.force_encoding('UTF-8')}"
-                    nil
-                  end
-                end
-              end
-
-              results = threads.map(&:value).compact
-            elsif provider == 'github'
-              # Load all data from DB before spawning threads to avoid connection pool exhaustion
-              researcher_data = Researcher.where.not(github: [nil, ""])
-                                          .map { |r| { id: r.id, name: r.fullName, github: r.github } }
-
-              threads = researcher_data.map do |r|
-                Thread.new do
-                  begin
-                    resp = Integrations::Client.crawl_dev_activity(r[:github], r[:id], nil)
-                    next nil unless resp
-                    {
-                      researcher_id: r[:id],
-                      researcher_name: r[:name],
-                      achievements: [],
-                      dev_activities: resp.activities.map { |da| { activity_type: da.activity_type, count: da.count, date: da.date } },
-                      project_criteria_met: [],
-                      activity_details: resp.activity_details.map { |ad| { activity_type: ad.activity_type, external_id: ad.external_id, title: ad.title, repository: ad.repository, url: ad.url, date: ad.date, state: ad.state } }
-                    }
-                  rescue => e
-                    Rails.logger.error "Failed to sync GitHub for researcher #{r[:name]}: #{e.message.to_s.force_encoding('UTF-8')}"
-                    nil
-                  end
-                end
-              end
-
-              results = threads.map(&:value).compact
-            else
-              # Sequential for LLM-based crawl
-              researchers = Researcher.limit(10)
-              results = []
-              researchers.each do |r|
-                break if cancel_proc.call
-                begin
-                  resp = Integrations::Client.crawl(nil, r.id, r.fullName, provider == 'crawl_search', llm_provider, r.github, cancel_proc: cancel_proc)
-                  next unless resp
-
-                  new_achievements = filter_new_achievements(r.id, resp.achievements)
-                  dev_acts = resp.dev_activities.map { |da| { activity_type: da.activity_type, count: da.count, date: da.date } }
-                  warns = resp.warnings.to_a
-
-                  next if new_achievements.empty? && dev_acts.empty? && warns.empty?
-
-                  results << {
-                    researcher_id: r.id,
-                    researcher_name: r.fullName,
-                    achievements: new_achievements,
-                    dev_activities: dev_acts,
-                    project_criteria_met: resp.project_criteria_met.to_a,
-                    warnings: warns
-                  }
-                rescue => e
-                  msg = e.message.to_s.force_encoding('UTF-8')
-                  Rails.logger.error "Failed to sync for #{r.fullName}: #{msg}"
-                end
-              end
-            end
-          end
-        else
-          response = Integrations::Client.sync_all(provider, cancel_proc: cancel_proc)
-
-          if response
-            results = response.results.map do |res|
-              researcher = Researcher.find_by(id: res.researcher_id)
-              next nil unless researcher
-
-              {
-                researcher_id: res.researcher_id,
-                orcid_id: res.orcid_id,
-                openalex_id: res.openalex_id,
-                researcher_name: researcher.fullName,
-                achievements: filter_new_achievements(res.researcher_id, res.achievements)
-              }
-            end.compact.reject { |r| r[:achievements].empty? }
-          else
-            results = []
-          end
-        end
-
-        render json: { results: results }
-      rescue GRPC::BadStatus => e
-        if e.code == GRPC::Core::StatusCodes::CANCELLED
-          Rails.logger.info '[IntegrationsController#sync_preview] gRPC cancelled (client disconnected)'
-          render json: { results: [] }
-          return
-        end
-        msg = e.message.to_s.force_encoding('UTF-8')
-        Rails.logger.error "[IntegrationsController#sync_preview] gRPC error (#{e.class}): #{msg}"
-        rate_limit = rate_limit_message?(msg)
-        render json: { error: msg, rate_limit: rate_limit }, status: :service_unavailable
-      end
-
       def save_achievements
         achievements_params = params[:achievements] || []
         researcher_dev_data = params[:researcher_dev_data] || []
@@ -286,15 +85,6 @@ module Api
         end
       end
 
-      def rate_limit_message?(msg)
-        lower = msg.downcase
-        lower.include?('rate_limit') ||
-          lower.include?('rate limit') ||
-          lower.include?('429') ||
-          lower.include?('quota') ||
-          lower.include?('api rate limit exceeded')
-      end
-
       def save_researcher_dev_data(researcher_id, dev_activities, activity_details = [])
         return unless researcher_id.present?
         researcher = Researcher.find_by(id: researcher_id)
@@ -328,6 +118,8 @@ module Api
 
           date = da[:date].present? ? (begin Date.parse(da[:date]); rescue; Date.current; end) : Date.current
           new_count = da[:count].to_i
+          # Нет данных по этому типу у сотрудника — не сохраняем строку с count 0.
+          next if new_count.zero?
 
           if GithubCheckKeys::SNAPSHOT_CHECK_KEYS.include?(type.check_key)
             # Snapshot metric: GitHub returns the current cumulative total (e.g. "150 followers now").
@@ -373,6 +165,7 @@ module Api
 
           date = da[:date].present? ? (begin Date.parse(da[:date]); rescue; Date.current; end) : Date.current
           new_count = da[:count].to_i
+          next if new_count.zero?
 
           if GithubCheckKeys::SNAPSHOT_CHECK_KEYS.include?(type.check_key)
             historical_sum = TeamDevActivity
@@ -402,38 +195,6 @@ module Api
           next unless criterion
 
           TeamDevCriterion.find_or_create_by!(team: team, dev_project_criterion: criterion)
-        end
-      end
-
-      def filter_new_achievements(researcher_id, achievements)
-        existing_values = AchievementFieldAnswer.joins(achievement: :researchers)
-                                               .where(researchers: { id: researcher_id })
-                                               .where(achievements: { deleted_at: nil })
-                                               .where(achievement_field_answers: { deleted_at: nil })
-                                               .pluck(:value).map(&:downcase).to_set
-
-        achievements.reject do |a|
-          existing_values.include?(a.title.to_s.downcase) || 
-          (a.external_id.present? && existing_values.include?(a.external_id.to_s.downcase)) ||
-          (a.url.present? && existing_values.include?(a.url.to_s.downcase))
-        end.map do |a|
-          extra = begin
-            a.extra_fields_json.present? ? JSON.parse(a.extra_fields_json) : {}
-          rescue JSON::ParserError
-            {}
-          end
-
-          {
-            title: a.title,
-            type: a.type,
-            external_id: a.external_id,
-            url: a.url,
-            date: a.date,
-            description: a.description,
-            author_count: a.author_count,
-            journal_title: a.journal_title,
-            extra_fields: extra
-          }
         end
       end
 

@@ -20,10 +20,13 @@ gem 'google-protobuf'
 gem 'grpc-tools'
 
 gem 'redis', '~> 5.0'
+gem 'sidekiq', '~> 7.0'
+gem 'connection_pool', '~> 2.4'
 
 group :development, :test do
   gem 'debug', platforms: [:mri, :mingw, :x64_mingw]
   gem 'listen', '~> 3.3'
+  gem 'ffi', '>= 1.17.4'
 end
 
 group :development do

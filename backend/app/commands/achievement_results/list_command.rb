@@ -1,44 +1,23 @@
+# frozen_string_literal: true
+
 module AchievementResults
-  class ListCommand < BaseCommand
-    def call(params)
-      limit, offset = yield execute(:pagination_error) { parse_pagination(params) }
-      scope = yield execute { build_scope }
-      total = yield execute { count_total(scope) }
-      items = yield execute { fetch_items(scope, limit, offset) }
+  class ListCommand < Listings::PaginatedListCommand
+    protected
 
-      success({
-        items: format_items(items),
-        pagination: {
-          total: total,
-          limit: limit,
-          offset: offset
-        }
-      })
+    def list_scope
+      AchievementResult.select(:id, :title, :points).order(:title)
     end
 
-    private
-
-    def parse_pagination(params)
-      limit = params[:limit].to_i > 0 ? params[:limit].to_i : 100
-      offset = params[:offset].to_i >= 0 ? params[:offset].to_i : 0
-      [limit, offset]
+    def row_serializer_class
+      AchievementCatalogRowSerializer
     end
 
-    def build_scope
-      AchievementResult.order(:title)
+    def default_limit
+      100
     end
 
-    def count_total(scope)
-      AchievementResult.count
-    end
-
-    def fetch_items(scope, limit, offset)
-      scope.select(:id, :title, :points).limit(limit).offset(offset)
-    end
-
-    def format_items(items)
-      items.as_json
+    def total_count_scope(_list_scope)
+      AchievementResult.all
     end
   end
 end
-

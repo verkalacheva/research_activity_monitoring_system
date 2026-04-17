@@ -14,6 +14,26 @@ module Integrations
       unary_rpc(stub, :sync_all_achievements, request, cancel_proc)
     end
 
+    def self.fetch_orcid_achievements(orcid_id, cancel_proc: nil)
+      return nil unless ::Integrations::OrcidRequest
+      return nil if orcid_id.to_s.strip.empty?
+
+      host = ENV.fetch('INTEGRATION_SERVICE_HOST', 'integration:50052')
+      stub = ::Integrations::IntegrationService::Stub.new(host, :this_channel_is_insecure)
+      request = ::Integrations::OrcidRequest.new(orcid_id: orcid_id.to_s)
+      unary_rpc(stub, :fetch_orcid_achievements, request, cancel_proc)
+    end
+
+    def self.fetch_open_alex_achievements(openalex_id, cancel_proc: nil)
+      return nil unless ::Integrations::OpenAlexRequest
+      return nil if openalex_id.to_s.strip.empty?
+
+      host = ENV.fetch('INTEGRATION_SERVICE_HOST', 'integration:50052')
+      stub = ::Integrations::IntegrationService::Stub.new(host, :this_channel_is_insecure)
+      request = ::Integrations::OpenAlexRequest.new(openalex_id: openalex_id.to_s)
+      unary_rpc(stub, :fetch_open_alex_achievements, request, cancel_proc)
+    end
+
     def self.crawl(url, researcher_id, researcher_name = nil, auto_search = false, llm_provider = nil, github_username = nil, cancel_proc: nil)
       return nil unless ::Integrations::CrawlRequest
 
@@ -37,7 +57,8 @@ module Integrations
       unary_rpc(stub, :crawl_achievements, request, cancel_proc)
     end
 
-    def self.crawl_dev_activity(github_username, researcher_id = nil, team_id = nil, cancel_proc: nil)
+    # Метрики GitHub через integration_service (прямой GitHub API). Не использует CRAWLER_SERVICE_HOST.
+    def self.github_dev_activity(github_username, researcher_id = nil, team_id = nil, cancel_proc: nil)
       return nil unless ::Integrations::DevActivityRequest
 
       host = ENV.fetch('INTEGRATION_SERVICE_HOST', 'integration:50052')
@@ -59,7 +80,15 @@ module Integrations
 
       op = stub.send(rpc_name, request_msg, return_op: true)
       worker = Thread.new do
-        op.execute
+        begin
+          op.execute
+        rescue GRPC::Cancelled
+          # op.cancel — нормальный исход, поток не должен падать с report_on_exception.
+          nil
+        rescue GRPC::BadStatus => e
+          # На случай отмены без отдельного класса Cancelled в иерархии.
+          e.code == CANCELLED ? nil : raise(e)
+        end
       end
       while worker.alive?
         if cancel_proc.call
@@ -74,6 +103,8 @@ module Integrations
       end
       worker.join
       worker.value
+    rescue GRPC::Cancelled
+      nil
     rescue GRPC::BadStatus => e
       return nil if e.code == CANCELLED
       raise

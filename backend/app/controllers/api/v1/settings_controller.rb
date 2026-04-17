@@ -4,7 +4,6 @@ module Api
       ALLOWED_KEYS = %w[
         github_token
         openrouter_api_key
-        tavily_api_key
         llm_model_name
         llm_provider
       ].freeze

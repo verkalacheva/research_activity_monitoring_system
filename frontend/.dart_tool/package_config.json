@@ -2,12 +2,6 @@
   "configVersion": 2,
   "packages": [
     {
-      "name": "action_cable",
-      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/action_cable-1.3.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.2"
-    },
-    {
       "name": "async",
       "rootUri": "file:///root/.pub-cache/hosted/pub.dev/async-2.13.0",
       "packageUri": "lib/",

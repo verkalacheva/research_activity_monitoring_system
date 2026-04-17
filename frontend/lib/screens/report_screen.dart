@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -137,14 +139,11 @@ class _ReportScreenState extends State<ReportScreen> {
 
   @override
   void dispose() {
-    if (!kIsWeb) {
-      SocketService().disconnect();
-    }
+    unawaited(SocketService().disconnect());
     super.dispose();
   }
 
   void _initSocket() {
-    if (kIsWeb) return;
     SocketService().connect(
       channel: 'ReportsChannel',
       onMessage: (data) {

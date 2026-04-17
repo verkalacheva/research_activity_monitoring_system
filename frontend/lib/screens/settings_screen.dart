@@ -24,13 +24,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _llmModelCtrl = TextEditingController();
   final _openrouterKeyCtrl = TextEditingController();
 
-  // Search
-  final _tavilyKeyCtrl = TextEditingController();
-
   final Map<String, bool> _obscured = {
     'github_token': true,
     'openrouter_api_key': true,
-    'tavily_api_key': true,
   };
 
   @override
@@ -45,7 +41,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _llmProviderCtrl.dispose();
     _llmModelCtrl.dispose();
     _openrouterKeyCtrl.dispose();
-    _tavilyKeyCtrl.dispose();
     super.dispose();
   }
 
@@ -57,7 +52,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _llmProviderCtrl.text = s.llmProvider ?? '';
       _llmModelCtrl.text = s.llmModelName ?? '';
       _openrouterKeyCtrl.text = s.openrouterApiKey ?? '';
-      _tavilyKeyCtrl.text = s.tavilyApiKey ?? '';
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -77,7 +71,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         'llm_provider': _llmProviderCtrl.text.trim().isEmpty ? null : _llmProviderCtrl.text.trim(),
         'llm_model_name': _llmModelCtrl.text.trim().isEmpty ? null : _llmModelCtrl.text.trim(),
         'openrouter_api_key': _openrouterKeyCtrl.text.trim().isEmpty ? null : _openrouterKeyCtrl.text.trim(),
-        'tavily_api_key': _tavilyKeyCtrl.text.trim().isEmpty ? null : _tavilyKeyCtrl.text.trim(),
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -174,21 +167,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             helper: 'Название модели без префикса провайдера. '
                                 'Итоговая строка: <провайдер>/<модель>. '
                                 'По умолчанию: google/gemini-2.0-flash-001',
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppDimensions.paddingLarge),
-                      _buildSection(
-                        icon: Icons.search,
-                        title: 'Поиск',
-                        subtitle: 'API-ключи для поисковых сервисов (используются краулером)',
-                        children: [
-                          _buildSecretField(
-                            controller: _tavilyKeyCtrl,
-                            label: 'Tavily API Key',
-                            hint: 'tvly-xxxxxxxxxxxxxxxxxxxx',
-                            obscureKey: 'tavily_api_key',
-                            helper: 'Получите на tavily.com. При отсутствии используется DuckDuckGo',
                           ),
                         ],
                       ),

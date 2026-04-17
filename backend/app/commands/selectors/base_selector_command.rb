@@ -1,19 +1,17 @@
+# frozen_string_literal: true
+
 module Selectors
   class BaseSelectorCommand < ::BaseCommand
     def call(params)
       limit, offset = yield execute(:pagination_error) { parse_pagination(params) }
       scope = yield execute { build_scope(params) }
-      total = yield execute { count_total(scope) }
-      items = yield execute { fetch_items(scope, limit, offset) }
-      
-      success({
-        items: serialize_items(items),
-        pagination: {
-          total: total,
-          limit: limit,
-          offset: offset
-        }
-      })
+
+      Selectors::ListPageInteractor.call(
+        scope: scope,
+        serializer_class: serializer_class,
+        limit: limit,
+        offset: offset
+      )
     end
 
     private
@@ -26,7 +24,6 @@ module Selectors
 
     def build_scope(params)
       scope = model_class.kept
-      # Pass both params[:filters] (old format) and params (new format) for compatibility
       filters = (params[:filters] || {}).merge(params)
       scope = apply_filters(scope, filters)
       apply_default_sort(scope)
@@ -43,20 +40,7 @@ module Selectors
     end
 
     def apply_filters(scope, filters)
-      # Override in subclasses
       scope
-    end
-
-    def count_total(scope)
-      scope.count
-    end
-
-    def fetch_items(scope, limit, offset)
-      scope.limit(limit).offset(offset)
-    end
-
-    def serialize_items(items)
-      items.map { |item| serializer_class.new(item).to_h }
     end
 
     def model_class
@@ -68,4 +52,3 @@ module Selectors
     end
   end
 end
-

@@ -72,6 +72,7 @@ class GrpcHandler(integrations_pb2_grpc.IntegrationServiceServicer):
                 auto_search=request.auto_search,
                 github_username=request.github_username,
                 researcher_id=int(request.researcher_id or 0),
+                cancel_check=lambda: _context_active(context),
             )
 
             pb_achievements = [

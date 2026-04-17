@@ -1,4 +1,8 @@
 crawl4ai==0.7.1
+trafilatura>=1.6.0
+lxml_html_clean>=0.4.0
+httpx>=0.27.0
+pypdf>=4.0.0
 tenacity
 grpcio
 grpcio-tools
@@ -7,7 +11,7 @@ typing-extensions>=4.10.0
 python-dotenv
 openai
 anthropic
-tavily-python
 ddgs
 python-multipart
 asyncpg
+redis>=5.0.0

@@ -8,7 +8,7 @@ RUN apt-get update -qq && \
 WORKDIR /app
 
 COPY Gemfile Gemfile.lock ./
-RUN gem install bundler && \
+RUN gem install bundler -v 2.4.22 && \
     bundle config set --local without 'development test' && \
     bundle config set --local path vendor/bundle && \
     bundle install --jobs 4 --retry 3

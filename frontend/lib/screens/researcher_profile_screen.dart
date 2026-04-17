@@ -775,32 +775,110 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
           const Divider(height: 1, indent: 56),
           _infoRow(context, Icons.work, 'Трудоустройство', _researcher.employmentStatus ?? 'Не указано', controller: _employmentStatusController),
           const Divider(height: 1, indent: 56),
-          _infoRow(context, Icons.link, 'ORCID ID', _researcher.orcidId ?? 'Не указано', controller: _orcidIdController),
-          const Divider(height: 1, indent: 56),
-          _infoRow(context, Icons.link, 'OpenAlex ID', _researcher.openalexId ?? 'Не указано', controller: _openalexIdController),
+          _infoRow(
+            context,
+            Icons.link,
+            'ORCID ID',
+            _researcher.orcidId ?? 'Не указано',
+            controller: _orcidIdController,
+            trailing: _researcher.orcidId != null &&
+                    _researcher.orcidId!.trim().isNotEmpty &&
+                    !_isEditing
+                ? IconButton(
+                    icon: const Icon(Icons.sync, color: AppColors.primary),
+                    onPressed: () {
+                      SyncNotificationService.instance.enqueue(SyncRequest(
+                        provider: 'orcid',
+                        researcherId: _researcher.id,
+                        label: 'ORCID — ${_researcher.fullName}',
+                        onSaved: _refreshProfile,
+                      ));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Синхронизация ORCID запущена в фоне')),
+                      );
+                    },
+                    tooltip: 'Синхронизировать ORCID',
+                  )
+                : null,
+          ),
           const Divider(height: 1, indent: 56),
           _infoRow(
-            context, 
-            Icons.code, 
-            'Github', 
-            _researcher.github ?? 'Не указано', 
-            controller: _githubController,
-            trailing: _researcher.github != null && _researcher.github!.isNotEmpty && !_isEditing ? IconButton(
-              icon: const Icon(Icons.sync, color: AppColors.primary),
-              onPressed: () {
-                SyncNotificationService.instance.enqueue(SyncRequest(
-                  provider: 'github',
-                  researcherId: _researcher.id,
-                  label: 'GitHub — ${_researcher.fullName}',
-                  onSaved: _refreshProfile,
-                ));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Синхронизация GitHub запущена в фоне')),
-                );
-              },
-              tooltip: 'Синхронизировать GitHub',
-            ) : null,
+            context,
+            Icons.school_outlined,
+            'OpenAlex ID',
+            _researcher.openalexId ?? 'Не указано',
+            controller: _openalexIdController,
+            trailing: _researcher.openalexId != null &&
+                    _researcher.openalexId!.trim().isNotEmpty &&
+                    !_isEditing
+                ? IconButton(
+                    icon: const Icon(Icons.sync, color: AppColors.primary),
+                    onPressed: () {
+                      SyncNotificationService.instance.enqueue(SyncRequest(
+                        provider: 'openalex',
+                        researcherId: _researcher.id,
+                        label: 'OpenAlex — ${_researcher.fullName}',
+                        onSaved: _refreshProfile,
+                      ));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Синхронизация OpenAlex запущена в фоне')),
+                      );
+                    },
+                    tooltip: 'Синхронизировать OpenAlex',
+                  )
+                : null,
           ),
+          const Divider(height: 1, indent: 56),
+          _infoRow(
+            context,
+            Icons.code,
+            'Github',
+            _researcher.github ?? 'Не указано',
+            controller: _githubController,
+            trailing: _researcher.github != null &&
+                    _researcher.github!.trim().isNotEmpty &&
+                    !_isEditing
+                ? IconButton(
+                    icon: const Icon(Icons.sync, color: AppColors.primary),
+                    onPressed: () {
+                      SyncNotificationService.instance.enqueue(SyncRequest(
+                        provider: 'github',
+                        researcherId: _researcher.id,
+                        label: 'GitHub — ${_researcher.fullName}',
+                        onSaved: _refreshProfile,
+                      ));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Синхронизация GitHub запущена в фоне')),
+                      );
+                    },
+                    tooltip: 'Синхронизировать GitHub',
+                  )
+                : null,
+          ),
+          if (!_isEditing) ...[
+            const Divider(height: 1, indent: 56),
+            _infoRow(
+              context,
+              Icons.travel_explore,
+              'Поиск в интернете',
+              'Краулер по ФИО и открытым данным',
+              trailing: IconButton(
+                icon: const Icon(Icons.sync, color: AppColors.primary),
+                onPressed: () {
+                  SyncNotificationService.instance.enqueue(SyncRequest(
+                    provider: 'crawl_search',
+                    researcherId: _researcher.id,
+                    label: 'Интернет (краулер) — ${_researcher.fullName}',
+                    onSaved: _refreshProfile,
+                  ));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Поиск в интернете запущен в фоне')),
+                  );
+                },
+                tooltip: 'Запустить краулер по интернету',
+              ),
+            ),
+          ],
           if (!_isEditing && _researcher.course != null) ...[
             const Divider(height: 1, indent: 56),
             _infoRow(context, Icons.timeline, 'Курс обучения', '${_researcher.course} курс'),

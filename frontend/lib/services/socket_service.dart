@@ -1,53 +1,81 @@
-import 'package:action_cable/action_cable.dart';
+import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+
+import 'package:web_socket_channel/web_socket_channel.dart';
+
 import '../config.dart';
+import 'action_cable_wire.dart';
 
 class SocketService {
   static final SocketService _instance = SocketService._internal();
   factory SocketService() => _instance;
   SocketService._internal();
 
-  ActionCable? _cable;
+  WebSocketChannel? _channel;
+  StreamSubscription<dynamic>? _sub;
+  var _subscribed = false;
+  String? _identifier;
   final String _baseUrl = '${AppConfig.wsBase}/cable';
 
   void connect({
     required String channel,
-    required Function(Map<String, dynamic>) onMessage,
+    required void Function(Map<String, dynamic>) onMessage,
   }) {
-    if (kIsWeb) {
-      print('ActionCable is not supported on Web in this version');
-      return;
-    }
-    _cable = ActionCable.connect(
-      _baseUrl,
-      onConnected: () => print('Connected to ActionCable'),
-      onConnectionLost: () => print('Connection lost'),
-      onCannotConnect: () => print('Cannot connect'),
-    );
+    disconnect();
+    _identifier = ActionCableWire.encodeChannelId(channel, <String, dynamic>{});
+    _subscribed = false;
+    _channel = WebSocketChannel.connect(Uri.parse(_baseUrl));
 
-    _cable?.subscribe(
-      channel,
-      onMessage: (dynamic data) {
-        if (data is Map) {
-          onMessage(Map<String, dynamic>.from(data));
-        } else if (data is String) {
-          try {
-            final decoded = json.decode(data);
-            if (decoded is Map) {
-              onMessage(Map<String, dynamic>.from(decoded));
-            }
-          } catch (e) {
-            print('Error decoding socket message: $e');
+    _sub = _channel!.stream.listen(
+      (dynamic frame) {
+        final decoded = ActionCableWire.decodeFrame(frame);
+        if (decoded == null) return;
+        if (decoded['type'] != null) {
+          switch (decoded['type']?.toString()) {
+            case 'welcome':
+              if (!_subscribed && _identifier != null) {
+                _subscribed = true;
+                _channel!.sink.add(jsonEncode(<String, dynamic>{
+                  'identifier': _identifier,
+                  'command': 'subscribe',
+                }));
+              }
+              break;
+            case 'ping':
+            case 'confirm_subscription':
+              break;
+            default:
+              break;
+          }
+        } else if (decoded['identifier'] != null && decoded.containsKey('message')) {
+          final raw = decoded['message'];
+          if (raw is Map) {
+            onMessage(Map<String, dynamic>.from(raw));
+          } else if (raw is String) {
+            try {
+              final inner = jsonDecode(raw);
+              if (inner is Map) {
+                onMessage(Map<String, dynamic>.from(inner));
+              }
+            } catch (_) {}
           }
         }
+      },
+      onError: (Object e, StackTrace _) {
+        // ignore: avoid_print
+        print('WebSocket error: $e');
       },
     );
   }
 
-  void disconnect() {
-    if (kIsWeb) return;
-    _cable?.disconnect();
+  Future<void> disconnect() async {
+    await _sub?.cancel();
+    _sub = null;
+    try {
+      await _channel?.sink.close();
+    } catch (_) {}
+    _channel = null;
+    _identifier = null;
+    _subscribed = false;
   }
 }
-

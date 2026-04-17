@@ -1,4 +1,6 @@
 Rails.application.routes.draw do
+  mount ActionCable.server => '/cable'
+
   namespace :api do
     namespace :v1 do
       resources :researchers, except: [:index] do
@@ -42,10 +44,11 @@ Rails.application.routes.draw do
 
       resources :integrations, only: [] do
         collection do
-          get :sync_preview
           post :save_achievements
         end
       end
+
+      resources :integration_sync_jobs, only: %i[create show destroy]
 
       resource :settings, only: [:show, :update], controller: :settings
       resource :sync_results, only: [:show, :update, :destroy], controller: :sync_results
