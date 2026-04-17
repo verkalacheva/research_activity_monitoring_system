@@ -1,0 +1,108 @@
+# Russian UI strings — edit this file to change copy without touching Dart code.
+app:
+  title: Мониторинг НИР
+
+common:
+  cancel: Отмена
+  save: Сохранить
+  delete: Удалить
+  copy: Копировать
+  ok: OK
+
+widgets:
+  profile:
+    label_isu: ИСУ
+
+home:
+  page_not_found: Страница не найдена
+  nav:
+    reports: Отчеты
+    import: Импорт
+    directories: Справочники
+  import:
+    heading: Импорт данных
+    achievements_csv_title: Импорт достижений из CSV
+    achievements_csv_body: >-
+      Загрузите файл CSV с достижениями для автоматического создания
+      сотрудников, сопоставления типов достижений и их полей.
+    achievements_button: Выбрать файл и импортировать достижения
+    researchers_csv_title: Импорт сотрудников из CSV
+    researchers_csv_body: >-
+      Загрузите файл CSV со списком сотрудников (ФИО, Руководитель, Факультет и др.)
+      для массового обновления базы данных.
+    researchers_button: Выбрать файл и импортировать сотрудников
+    dialog_success: "Успешно:"
+    dialog_errors: "Ошибок:"
+    dialog_error_details: "Детали ошибок (первые 5):"
+    dialog_title_achievements: Импорт достижений
+    dialog_title_researchers: Импорт сотрудников
+    error_import: "Ошибка импорта:"
+  directories:
+    employees: Сотрудники
+    projects: Проекты
+    achievement_types: Типы достижений
+    achievement_results: Результаты достижений
+    achievement_statuses: Статусы достижений
+    participation_types: Типы участия
+    dev_activity_types: Типы активности (Dev)
+    dev_project_criteria: Критерии проектов (Dev)
+    settings: Настройки
+
+report:
+  default_title: Отчет
+  titles:
+    researchers_report: Сотрудники
+    teams: Команды
+    dev_teams_report: "Разработка: Команды"
+    dev_researchers_report: "Разработка: Сотрудники"
+  filter_metadata:
+    status:
+      title: Статус
+      url: /api/v1/selectors/achievement_statuses
+    achievement_type:
+      title: Тип достижения
+      url: /api/v1/selectors/achievement_types
+    researcher_id:
+      title: Исследователь
+      url: /api/v1/selectors/researchers
+    leader_id:
+      title: Руководитель
+      url: /api/v1/selectors/researchers
+    team_id:
+      title: Команда
+      url: /api/v1/selectors/teams
+    achievement_result_id:
+      title: Результат
+      url: /api/v1/selectors/achievement_results
+    achievement_participation_id:
+      title: Роль
+      url: /api/v1/selectors/achievement_participations
+    degree_level:
+      title: Ученая степень
+    points:
+      title: Баллы
+    submission_date:
+      title: Дата подачи
+    activity_date:
+      title: Период активности
+  sort_titles:
+    r.surname: Фамилия
+    a.points: Баллы
+    a.created_at: Дата создания
+    id: ID
+    at.title: Достижение
+    s.title: Статус
+    title: Название
+    total_points: Баллы достижений
+    combined_points: Итоговые баллы
+    members_count: Участники
+    team: Команда
+    researcher: Сотрудник
+    total_score: Общий балл
+    criteria_sum: Критерии проекта
+    criteria_list: Выполненные критерии
+    activity_list: Подробности активности
+    activity_sum: Активность сотрудника
+    activity_type: Тип активности
+    activity_points: Баллы по активности
+    dev_points: Баллы разработки

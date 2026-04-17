@@ -1,0 +1,108 @@
+# English UI strings (same keys as ru.yaml).
+app:
+  title: Research activity monitoring
+
+common:
+  cancel: Cancel
+  save: Save
+  delete: Delete
+  copy: Copy
+  ok: OK
+
+widgets:
+  profile:
+    label_isu: ISU
+
+home:
+  page_not_found: Page not found
+  nav:
+    reports: Reports
+    import: Import
+    directories: Reference data
+  import:
+    heading: Data import
+    achievements_csv_title: Import achievements from CSV
+    achievements_csv_body: >-
+      Upload a CSV file with achievements to automatically create
+      researchers, map achievement types and their fields.
+    achievements_button: Choose file and import achievements
+    researchers_csv_title: Import researchers from CSV
+    researchers_csv_body: >-
+      Upload a CSV file with researchers (name, supervisor, faculty, etc.)
+      for bulk database updates.
+    researchers_button: Choose file and import researchers
+    dialog_success: "Success:"
+    dialog_errors: "Errors:"
+    dialog_error_details: "Error details (first 5):"
+    dialog_title_achievements: Import achievements
+    dialog_title_researchers: Import researchers
+    error_import: "Import error:"
+  directories:
+    employees: Researchers
+    projects: Projects
+    achievement_types: Achievement types
+    achievement_results: Achievement results
+    achievement_statuses: Achievement statuses
+    participation_types: Participation types
+    dev_activity_types: Activity types (Dev)
+    dev_project_criteria: Project criteria (Dev)
+    settings: Settings
+
+report:
+  default_title: Report
+  titles:
+    researchers_report: Researchers
+    teams: Teams
+    dev_teams_report: "Development: Teams"
+    dev_researchers_report: "Development: Researchers"
+  filter_metadata:
+    status:
+      title: Status
+      url: /api/v1/selectors/achievement_statuses
+    achievement_type:
+      title: Achievement type
+      url: /api/v1/selectors/achievement_types
+    researcher_id:
+      title: Researcher
+      url: /api/v1/selectors/researchers
+    leader_id:
+      title: Supervisor
+      url: /api/v1/selectors/researchers
+    team_id:
+      title: Team
+      url: /api/v1/selectors/teams
+    achievement_result_id:
+      title: Result
+      url: /api/v1/selectors/achievement_results
+    achievement_participation_id:
+      title: Role
+      url: /api/v1/selectors/achievement_participations
+    degree_level:
+      title: Academic degree
+    points:
+      title: Points
+    submission_date:
+      title: Submission date
+    activity_date:
+      title: Activity period
+  sort_titles:
+    r.surname: Last name
+    a.points: Points
+    a.created_at: Created at
+    id: ID
+    at.title: Achievement
+    s.title: Status
+    title: Title
+    total_points: Achievement points
+    combined_points: Combined points
+    members_count: Members
+    team: Team
+    researcher: Researcher
+    total_score: Total score
+    criteria_sum: Project criteria
+    criteria_list: Completed criteria
+    activity_list: Activity details
+    activity_sum: Researcher activity
+    activity_type: Activity type
+    activity_points: Activity points
+    dev_points: Development points

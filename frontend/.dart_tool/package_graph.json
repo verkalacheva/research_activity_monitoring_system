@@ -15,7 +15,8 @@
         "intl",
         "provider",
         "url_launcher",
-        "web_socket_channel"
+        "web_socket_channel",
+        "yaml"
       ],
       "devDependencies": [
         "flutter_lints",
@@ -460,6 +461,15 @@
       "name": "vm_service",
       "version": "15.0.2",
       "dependencies": []
+    },
+    {
+      "name": "yaml",
+      "version": "3.1.3",
+      "dependencies": [
+        "collection",
+        "source_span",
+        "string_scanner"
+      ]
     }
   ],
   "configVersion": 1
