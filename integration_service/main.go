@@ -19,7 +19,6 @@ import (
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 )
 
@@ -28,7 +27,6 @@ type server struct {
 	registry             *integrations.Registry
 	researcherRepository *repository.ResearcherRepository
 	githubClient         *github.Client
-	crawlerClient        pb.IntegrationServiceClient
 }
 
 func (s *server) FetchOrcidAchievements(ctx context.Context, req *pb.OrcidRequest) (*pb.OrcidResponse, error) {
@@ -179,41 +177,6 @@ func (s *server) SyncAllAchievements(ctx context.Context, req *pb.SyncRequest) (
 	}, nil
 }
 
-func (s *server) CrawlAchievements(ctx context.Context, req *pb.CrawlRequest) (*pb.CrawlResponse, error) {
-	log.Printf("CrawlAchievements for %s (GitHub: %s)", req.ResearcherName, req.GithubUsername)
-
-	var achievements []*pb.Achievement
-	var devActivities []*pb.DevActivity
-	var projectCriteria []string
-
-	// 1. Call crawler_service for web crawling only if needed
-	if s.crawlerClient != nil && (req.Url != "" || req.AutoSearch) {
-		// Prepare request for crawler_service (without github_username to avoid duplication)
-		crawlerReq := *req
-		crawlerReq.GithubUsername = ""
-
-		resp, err := s.crawlerClient.CrawlAchievements(ctx, &crawlerReq)
-		if err == nil {
-			achievements = resp.Achievements
-			devActivities = resp.DevActivities
-			projectCriteria = resp.ProjectCriteriaMet
-		} else {
-			log.Printf("Error calling crawler_service: %v", err)
-		}
-	}
-
-	// 2. GitHub integration in aggregator
-	// We only include GitHub data if a specific URL is provided (handled by crawler)
-	// or if we want to skip user-level aggregation here as per latest requirements.
-	// Individual researcher sync now uses CrawlDevActivity directly.
-
-	return &pb.CrawlResponse{
-		Achievements:       achievements,
-		DevActivities:      devActivities,
-		ProjectCriteriaMet: projectCriteria,
-	}, nil
-}
-
 func (s *server) CrawlDevActivity(ctx context.Context, req *pb.DevActivityRequest) (*pb.DevActivityResponse, error) {
 	log.Printf("CrawlDevActivity for: %s (researcher: %d, team: %d)", req.GithubUsername, req.ResearcherId, req.TeamId)
 
@@ -294,25 +257,11 @@ func main() {
 
 	githubClient := github.NewClient(db)
 
-	crawlerHost := os.Getenv("CRAWLER_SERVICE_HOST")
-	if crawlerHost == "" {
-		crawlerHost = "crawler:50053"
-	}
-	var crawlerClient pb.IntegrationServiceClient
-	conn, err := grpc.NewClient(crawlerHost, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Printf("failed to connect to crawler service: %v", err)
-	} else {
-		defer conn.Close()
-		crawlerClient = pb.NewIntegrationServiceClient(conn)
-	}
-
 	s := grpc.NewServer()
 	pb.RegisterIntegrationServiceServer(s, &server{
 		registry:             registry,
 		researcherRepository: repository.NewResearcherRepository(db),
 		githubClient:         githubClient,
-		crawlerClient:        crawlerClient,
 	})
 
 	log.Printf("Integration Service listening on :%s", port)
