@@ -5,7 +5,7 @@ module Teams
     protected
 
     def list_scope
-      Team.includes(:researchers, :leader).order(:title)
+      Team.kept.includes(:researchers, :leader).order(:title)
     end
 
     def row_serializer_class
@@ -14,6 +14,10 @@ module Teams
 
     def default_limit
       20
+    end
+
+    def total_count_scope(_list_scope)
+      Team.kept
     end
   end
 end

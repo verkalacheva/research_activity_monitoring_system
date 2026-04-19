@@ -5,7 +5,7 @@ module AchievementStatuses
     protected
 
     def list_scope
-      AchievementStatus.select(:id, :title, :points).order(:title)
+      AchievementStatus.kept.select(:id, :title, :points).order(:title)
     end
 
     def row_serializer_class
@@ -17,7 +17,7 @@ module AchievementStatuses
     end
 
     def total_count_scope(_list_scope)
-      AchievementStatus.all
+      AchievementStatus.kept
     end
   end
 end

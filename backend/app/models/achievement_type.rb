@@ -1,6 +1,7 @@
 class AchievementType < ApplicationRecord
   include SoftDeletable
-  has_many :achievement_fields, dependent: :destroy
+  # В API и формах не показываем поля с soft delete.
+  has_many :achievement_fields, -> { kept }, dependent: :destroy, inverse_of: :achievement_type
   has_many :achievements, dependent: :destroy
   
   accepts_nested_attributes_for :achievement_fields, allow_destroy: true

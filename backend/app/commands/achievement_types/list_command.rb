@@ -5,7 +5,7 @@ module AchievementTypes
     protected
 
     def list_scope
-      AchievementType.includes(:achievement_fields).order(:title)
+      AchievementType.kept.includes(:achievement_fields).order(:title)
     end
 
     def row_serializer_class
@@ -17,7 +17,7 @@ module AchievementTypes
     end
 
     def total_count_scope(_list_scope)
-      AchievementType.all
+      AchievementType.kept
     end
   end
 end

@@ -5,7 +5,7 @@ module AchievementParticipations
     protected
 
     def list_scope
-      AchievementParticipation.select(:id, :title, :points).order(:title)
+      AchievementParticipation.kept.select(:id, :title, :points).order(:title)
     end
 
     def row_serializer_class
@@ -17,7 +17,7 @@ module AchievementParticipations
     end
 
     def total_count_scope(_list_scope)
-      AchievementParticipation.all
+      AchievementParticipation.kept
     end
   end
 end
