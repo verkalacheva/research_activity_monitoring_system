@@ -24,7 +24,8 @@ module Researchers
           subject_area: row['Направление']&.strip,
           employment_status: row['Трудоустройство']&.strip,
           isu_number: row['ИСУ']&.strip,
-          github: row['Github']&.strip
+          github: row['Github']&.strip,
+          deleted_at: nil
         )
 
         return failure(:database_error, researcher.errors.full_messages) unless researcher.save

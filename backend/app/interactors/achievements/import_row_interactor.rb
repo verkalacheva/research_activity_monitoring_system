@@ -58,7 +58,9 @@ module Achievements
       name = parts[1] || 'Неизвестно'
       second_name = parts[2..].join(' ') if parts.size > 2
 
-      Researcher.find_or_create_by!(surname: surname, name: name, second_name: second_name)
+      researcher = Researcher.find_or_create_by!(surname: surname, name: name, second_name: second_name)
+      researcher.restore if researcher.deleted?
+      researcher
     end
 
     def find_or_create_status(title)
