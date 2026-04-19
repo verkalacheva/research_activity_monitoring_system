@@ -102,7 +102,7 @@ module Api
         params.require(:researcher).permit(
           :name, :surname, :second_name, :degree_level, :course, :subject_area,
           :email, :telegram, :isu_number, :faculty, :employment_status, :signature_required,
-          :orcid_id, :openalex_id
+          :orcid_id, :openalex_id, :github
         )
       end
     end

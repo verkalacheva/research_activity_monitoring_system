@@ -33,6 +33,8 @@ home:
     researchers_button: Выбрать файл и импортировать сотрудников
     dialog_success: "Успешно:"
     dialog_errors: "Ошибок:"
+    dialog_skipped_duplicates: "Пропущено (уже в базе):"
+    dialog_skipped_deleted_researcher: "Пропущено (сотрудник удалён):"
     dialog_error_details: "Детали ошибок (первые 5):"
     dialog_title_achievements: Импорт достижений
     dialog_title_researchers: Импорт сотрудников

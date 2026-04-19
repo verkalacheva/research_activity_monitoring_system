@@ -19,6 +19,13 @@ import 'package:research_activity_monitoring_system/presentation/widgets/custom_
 import 'package:research_activity_monitoring_system/data/services/achievement_service.dart';
 import 'package:research_activity_monitoring_system/core/l10n/l10n.dart';
 
+int _importResultInt(Map<String, dynamic> map, String key) {
+  final v = map[key];
+  if (v is int) return v;
+  if (v is num) return v.toInt();
+  return 0;
+}
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -149,8 +156,11 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         final importResult = await onImport(path, file.bytes, file.name);
-        
+
         if (mounted) Navigator.pop(context);
+
+        final skippedDup = _importResultInt(importResult, 'skipped_duplicates');
+        final skippedDel = _importResultInt(importResult, 'skipped_deleted_researcher');
 
         if (mounted) {
           showDialog(
@@ -176,6 +186,30 @@ class _HomeScreenState extends State<HomeScreen> {
                       Text('${loc.tr('home.import.dialog_errors')} ${importResult['failure']}'),
                     ],
                   ),
+                  if (skippedDup > 0) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.remove_circle_outline, color: Colors.orange),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text('${loc.tr('home.import.dialog_skipped_duplicates')} $skippedDup'),
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (skippedDel > 0) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.person_off, color: Colors.orange),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text('${loc.tr('home.import.dialog_skipped_deleted_researcher')} $skippedDel'),
+                        ),
+                      ],
+                    ),
+                  ],
                   if (importResult['errors'] != null && (importResult['errors'] as List).isNotEmpty) ...[
                     const SizedBox(height: 16),
                     Text(loc.tr('home.import.dialog_error_details'), style: const TextStyle(fontWeight: FontWeight.bold)),

@@ -7,7 +7,13 @@ module Achievements
       return parsed if parsed.failure?
 
       csv = parsed.value!
-      results = { success: 0, failure: 0, errors: [] }
+      results = {
+        success: 0,
+        failure: 0,
+        skipped_duplicates: 0,
+        skipped_deleted_researcher: 0,
+        errors: []
+      }
 
       csv.each_with_index do |row, index|
         next if row.to_h.values.all?(&:blank?)
@@ -15,7 +21,21 @@ module Achievements
         row_pairs = row.to_a
         result = Achievements::ImportRowInteractor.call(row_pairs: row_pairs)
         if result.success?
-          results[:success] += 1
+          payload = result.value!
+          if payload.is_a?(Hash)
+            case payload[:kind]
+            when :imported
+              results[:success] += 1
+            when :duplicate_skipped
+              results[:skipped_duplicates] += 1
+            when :deleted_researcher_skipped
+              results[:skipped_deleted_researcher] += 1
+            else
+              results[:success] += 1
+            end
+          else
+            results[:success] += 1
+          end
         else
           results[:failure] += 1
           results[:errors] << "Row #{index + 2}: #{import_failure_message(result)}"

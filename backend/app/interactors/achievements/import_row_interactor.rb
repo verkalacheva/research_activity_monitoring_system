@@ -5,7 +5,15 @@ module Achievements
     def call(row_pairs:)
       transaction do
         full_name = find_value(row_pairs, 'Ваше ФИО')
-        researcher = find_or_create_researcher(full_name)
+        researcher, skip_reason = resolve_researcher_for_import(full_name)
+        case skip_reason
+        when :missing_name
+          return failure(:validation_error, 'ФИО обязательно')
+        when :deleted
+          return success({ kind: :deleted_researcher_skipped })
+        when Array
+          return failure(:database_error, skip_reason)
+        end
         return failure(:validation_error, "Researcher '#{full_name}' not found or created") unless researcher
 
         type_title = find_value(row_pairs, 'Тип достижения')
@@ -25,6 +33,13 @@ module Achievements
         participation = find_or_create_participation(participation_title)
 
         submission_date = parse_submission_timestamp(find_value(row_pairs, 'Timestamp'))
+        answers_attrs = build_answers(type, row_pairs)
+
+        if find_duplicate_achievement(
+          researcher.id, type.id, status.id, result_obj.id, participation.id, submission_date, answers_attrs
+        )
+          return success({ kind: :duplicate_skipped })
+        end
 
         achievement_params = {
           achievement_type_id: type.id,
@@ -33,10 +48,13 @@ module Achievements
           achievement_participation_id: participation.id,
           researcher_ids: [researcher.id],
           submission_date: submission_date&.iso8601,
-          achievement_field_answers_attributes: build_answers(type, row_pairs)
+          achievement_field_answers_attributes: answers_attrs
         }
 
-        Achievements::CreateCommand.call(achievement_params)
+        create_result = Achievements::CreateCommand.call(achievement_params)
+        return create_result if create_result.failure?
+
+        success({ kind: :imported, achievement: create_result.value! })
       end
     end
 
@@ -50,17 +68,57 @@ module Achievements
       nil
     end
 
-    def find_or_create_researcher(full_name)
-      return nil if full_name.blank?
+    # Returns [researcher, nil] on success, [nil, :missing_name], [nil, :deleted], or [nil, ActiveModel::Errors-like array]
+    def resolve_researcher_for_import(full_name)
+      return [nil, :missing_name] if full_name.blank?
 
       parts = full_name.strip.split(/\s+/)
       surname = parts[0]
       name = parts[1] || 'Неизвестно'
       second_name = parts[2..].join(' ') if parts.size > 2
 
-      researcher = Researcher.find_or_create_by!(surname: surname, name: name, second_name: second_name)
-      researcher.restore if researcher.deleted?
-      researcher
+      kept = Researcher.kept.find_by(surname: surname, name: name, second_name: second_name)
+      return [kept, nil] if kept
+
+      return [nil, :deleted] if Researcher.deleted.find_by(surname: surname, name: name, second_name: second_name)
+
+      researcher = Researcher.create!(surname: surname, name: name, second_name: second_name)
+      [researcher, nil]
+    rescue ActiveRecord::RecordInvalid => e
+      [nil, e.record.errors.full_messages]
+    end
+
+    def find_duplicate_achievement(researcher_id, type_id, status_id, result_id, participation_id, submission_date, answers_attrs)
+      rel = Achievement.kept
+        .joins(:researchers)
+        .where(researchers: { id: researcher_id })
+        .where(
+          achievement_type_id: type_id,
+          achievement_status_id: status_id,
+          achievement_result_id: result_id,
+          achievement_participation_id: participation_id
+        )
+      rel = submission_date.nil? ? rel.where(submission_date: nil) : rel.where(submission_date: submission_date)
+
+      desired = answers_signature_from_attributes(answers_attrs)
+
+      rel.includes(:achievement_field_answers).find do |ach|
+        answers_signature_from_achievement(ach) == desired
+      end
+    end
+
+    def answers_signature_from_attributes(answers_attrs)
+      answers_attrs.map do |h|
+        id = h[:achievement_field_id] || h['achievement_field_id']
+        val = h[:value] || h['value']
+        [id.to_i, val.to_s.strip]
+      end.sort
+    end
+
+    def answers_signature_from_achievement(achievement)
+      achievement.achievement_field_answers.select(&:kept?).map do |a|
+        [a.achievement_field_id, a.value.to_s.strip]
+      end.sort
     end
 
     def find_or_create_status(title)

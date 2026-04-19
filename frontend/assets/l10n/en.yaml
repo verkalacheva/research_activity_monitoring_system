@@ -33,6 +33,8 @@ home:
     researchers_button: Choose file and import researchers
     dialog_success: "Success:"
     dialog_errors: "Errors:"
+    dialog_skipped_duplicates: "Skipped (already in database):"
+    dialog_skipped_deleted_researcher: "Skipped (researcher deleted):"
     dialog_error_details: "Error details (first 5):"
     dialog_title_achievements: Import achievements
     dialog_title_researchers: Import researchers
