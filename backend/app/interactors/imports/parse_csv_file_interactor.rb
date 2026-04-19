@@ -7,7 +7,8 @@ module Imports
   class ParseCsvFileInteractor < BaseInteractor
     def call(file_path:)
       content = read_utf8_content(file_path)
-      bom = "\xEF\xBB\xBF".force_encoding('UTF-8')
+      # frozen_string_literal makes "\xEF\xBB\xBF" immutable; dup before force_encoding / sub!
+      bom = "\xEF\xBB\xBF".dup.force_encoding('UTF-8')
       content.sub!(bom, '') if content.start_with?(bom)
       content = content.encode('UTF-8', invalid: :replace, undef: :replace, replace: '')
 
@@ -15,7 +16,7 @@ module Imports
       csv = parse_csv_table(content, separator)
       success(csv)
     rescue StandardError => e
-      msg = e.message.to_s.force_encoding('UTF-8')
+      msg = e.message.to_s.dup.force_encoding('UTF-8')
       Rails.logger.error "CSV parse error: #{msg}\n#{e.backtrace&.join("\n")}"
       failure(:import_error, "CSV read/parse failed: #{msg}")
     end

@@ -177,11 +177,9 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_08_120000) do
     t.text "employment_status"
     t.datetime "deleted_at"
     t.text "orcid_id"
-    t.text "elibrary_id"
-    t.string "openalex_id"
+    t.text "openalex_id"
     t.string "github"
     t.index ["deleted_at"], name: "index_researchers_on_deleted_at"
-    t.index ["elibrary_id"], name: "index_researchers_on_elibrary_id", unique: true
     t.index ["openalex_id"], name: "index_researchers_on_openalex_id"
     t.index ["orcid_id"], name: "index_researchers_on_orcid_id", unique: true
   end
