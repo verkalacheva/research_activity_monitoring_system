@@ -3,6 +3,8 @@
 # Ежедневная синхронизация внешних источников:
 # ORCID + OpenAlex (all), GitHub (сотрудники и команды), интернет-краулер по исследователям (crawl_search).
 # Фазы выполняются параллельно (отдельные потоки с собственным соединением к БД).
+# Результаты не пишутся в БД сразу: кладутся в Redis (как после ручного предпросмотра), чтобы в приложении
+# показался колокольчик и окно SyncPreviewDialog с тем же сценарием сохранения.
 # Краулер по командам в эту задачу не входит (только по исследователям).
 # Отключить краулер: ENV DAILY_SYNC_EXCLUDE_CRAWL=true (дорого по LLM/времени).
 class DailyExternalSourcesSyncJob
@@ -10,10 +12,12 @@ class DailyExternalSourcesSyncJob
 
   sidekiq_options queue: :integrations, retry: 1
 
+  DAILY_SYNC_LABEL = 'Ежедневная синхронизация'
+
   def perform
     cancel_proc = -> { false }
-    total_saved = 0
-    total_mutex = Mutex.new
+    all_rows = []
+    rows_mutex = Mutex.new
 
     threads = phases.map do |name, params|
       Thread.new do
@@ -24,16 +28,8 @@ class DailyExternalSourcesSyncJob
             Rails.logger.error "[DailyExternalSourcesSync] phase #{name} failed: #{result.failure.inspect}"
           else
             rows = Array(result.value!['results'])
-            ach, rdev, tdev = split_preview_rows(rows)
-            stats = Integrations::PersistSyncResultsService.call(
-              achievements: ach,
-              researcher_dev_data: rdev,
-              team_dev_data: tdev
-            )
-            saved = stats[:saved_count].to_i
-            total_mutex.synchronize { total_saved += saved }
-            Rails.logger.info "[DailyExternalSourcesSync] phase #{name}: saved #{saved} achievements " \
-                              "(rows: #{rows.size})"
+            rows_mutex.synchronize { all_rows.concat(rows) }
+            Rails.logger.info "[DailyExternalSourcesSync] phase #{name}: preview rows #{rows.size}"
           end
         end
       rescue StandardError => e
@@ -42,7 +38,23 @@ class DailyExternalSourcesSyncJob
     end
 
     threads.each(&:join)
-    Rails.logger.info "[DailyExternalSourcesSync] finished, total new achievements saved: #{total_saved}"
+
+    if all_rows.empty?
+      Rails.logger.info '[DailyExternalSourcesSync] finished, no preview rows (nothing to show)'
+      return
+    end
+
+    entry = {
+      'provider' => 'daily_sync',
+      'label' => DAILY_SYNC_LABEL,
+      'results' => all_rows,
+      'has_error' => false
+    }
+    Integrations::PendingSyncResultsStore.replace_daily_sync_entry(entry)
+    Rails.logger.info "[DailyExternalSourcesSync] finished, #{all_rows.size} preview rows queued for review (Redis)"
+  rescue StandardError => e
+    # Не пробрасываем: повтор джобы заново вызовет все внешние источники.
+    Rails.logger.error "[DailyExternalSourcesSync] failed to store preview: #{e.class}: #{e.message}"
   end
 
   private
@@ -59,44 +71,5 @@ class DailyExternalSourcesSyncJob
 
   def exclude_crawl?
     ENV['DAILY_SYNC_EXCLUDE_CRAWL'].to_s == 'true'
-  end
-
-  # Разбивает строки предпросмотра на аргументы PersistSyncResultsService (как во Flutter sync_preview_dialog).
-  def split_preview_rows(rows)
-    achievements = []
-    researcher_dev_data = []
-    team_dev_data = []
-
-    Array(rows).each do |row|
-      r = row.is_a?(Hash) ? row.stringify_keys : {}
-      rid = r['researcher_id']
-      tid = r['team_id']
-
-      Array(r['achievements']).each do |ach|
-        a = ach.is_a?(Hash) ? ach.stringify_keys : {}
-        a['researcher_id'] ||= rid
-        achievements << a if a['researcher_id'].present?
-      end
-
-      if rid.present? && ((r['dev_activities'].present?) || (r['activity_details'].present?) ||
-          (r['project_criteria_met'].present?))
-        researcher_dev_data << {
-          'researcher_id' => rid,
-          'dev_activities' => r['dev_activities'] || [],
-          'project_criteria_met' => r['project_criteria_met'] || [],
-          'activity_details' => r['activity_details'] || []
-        }
-      end
-
-      next unless tid.present? && ((r['dev_activities'].present?) || (r['project_criteria_met'].present?))
-
-      team_dev_data << {
-        'team_id' => tid,
-        'dev_activities' => r['dev_activities'] || [],
-        'project_criteria_met' => r['project_criteria_met'] || []
-      }
-    end
-
-    [achievements, researcher_dev_data, team_dev_data]
   end
 end
