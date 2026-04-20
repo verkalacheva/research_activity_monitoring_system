@@ -3,3 +3,9 @@
 :queues:
   - integrations
   - default
+# Ежедневная синхронизация внешних источников (23:00 UTC). См. DailyExternalSourcesSyncJob.
+:schedule:
+  daily_external_sources_sync:
+    cron: '00 23 * * *'
+    class: DailyExternalSourcesSyncJob
+    queue: integrations

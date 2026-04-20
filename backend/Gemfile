@@ -21,6 +21,7 @@ gem 'grpc-tools'
 
 gem 'redis', '~> 5.0'
 gem 'sidekiq', '~> 7.0'
+gem 'sidekiq-scheduler', '~> 5.0'
 gem 'connection_pool', '~> 2.4'
 
 group :development, :test do
