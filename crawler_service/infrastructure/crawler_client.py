@@ -512,8 +512,9 @@ class CrawlerClient:
             fb = _default_text_model_fallback()
             print(
                 f"[CrawlerClient] WARNING: '{self.model_name}' не текстовая chat-модель "
-                f"(например Lyria — музыка). Подставляем текстовую: {fb}. "
-                f"Задайте LLM_MODEL_NAME или CRAWL_LLM_TEXT_MODEL_FALLBACK."
+                f"(музыка/картинки/embeddings и т.п.). Подставляем текстовую: {fb}. "
+                f"Для эмбеддингов укажите CRAWL_EMBEDDING_MODEL; для чата — LLM_MODEL_NAME или "
+                f"CRAWL_LLM_TEXT_MODEL_FALLBACK."
             )
             self.model_name = fb
         self._llm_provider = (

@@ -93,64 +93,90 @@ module Api
         team = researcher.teams.first
         return unless team
 
-        activity_details.each do |ad|
-          ext_id = ad[:external_id].to_s
-          act_type = ad[:activity_type].to_s
-          next if ext_id.blank? || act_type.blank?
+        dev_activities = Array(dev_activities).map { |h| integration_row_to_h(h) }
+        activity_details = Array(activity_details).map { |h| integration_row_to_h(h) }
 
-          ResearcherActivityDetail.find_or_create_by(
-            external_id: ext_id,
-            activity_type: act_type,
-            researcher: researcher
-          ) do |d|
-            d.team = team
-            d.title = ad[:title].to_s
-            d.repository = ad[:repository].to_s
-            d.url = ad[:url].to_s
-            d.state = ad[:state].to_s
-            d.date = ad[:date].present? ? (Date.parse(ad[:date]) rescue nil) : nil
+        Researcher.transaction do
+          dev_activities.each do |da|
+            type = DevEmployeeActivityType.find_by(title: da[:activity_type])
+            next unless type
+
+            date = da[:date].present? ? (begin Date.parse(da[:date].to_s); rescue StandardError; Date.current; end) : Date.current
+            new_count = da[:count].to_i
+            # Нет данных по этому типу у сотрудника — не сохраняем строку с count 0.
+            next if new_count.zero?
+
+            if GithubCheckKeys::SNAPSHOT_CHECK_KEYS.include?(type.check_key)
+              # Snapshot metric: GitHub returns the current cumulative total (e.g. "150 followers now").
+              # Compute the delta vs everything already saved (excluding today's row so same-day
+              # re-syncs recalculate correctly without compounding).
+              historical_sum = ResearcherDevActivity
+                .where(researcher: researcher, team: team, dev_employee_activity_type: type)
+                .where.not(date: date)
+                .sum(:count)
+
+              delta = new_count - historical_sum
+              next if delta == 0
+
+              act = ResearcherDevActivity.find_or_initialize_by(
+                researcher: researcher, team: team,
+                dev_employee_activity_type: type, date: date
+              )
+              act.count = delta
+              act.save!
+            else
+              # Event-based metric: GitHub groups real events by their creation date
+              # (e.g. 5 commits on 2024-01-15).  The unique index on
+              # (researcher, team, type, date) already prevents duplicates — a re-sync
+              # on the same day just overwrites the record with the identical value.
+              act = ResearcherDevActivity.find_or_initialize_by(
+                researcher: researcher, team: team,
+                dev_employee_activity_type: type, date: date
+              )
+              act.count = new_count
+              act.save!
+            end
+          end
+
+          # Полная замена «Подробнее» по снимку синхронизации: иначе удалённые на GitHub
+          # события остаются в БД (find_or_create только добавлял).
+          ResearcherActivityDetail.where(researcher_id: researcher.id, team_id: team.id).delete_all
+
+          seen_detail = {}
+          activity_details.each do |ad|
+            ext_id = ad[:external_id].to_s
+            act_type = ad[:activity_type].to_s
+            next if ext_id.blank? || act_type.blank?
+
+            dedupe_key = [act_type, ext_id]
+            next if seen_detail[dedupe_key]
+
+            seen_detail[dedupe_key] = true
+
+            ResearcherActivityDetail.create!(
+              researcher: researcher,
+              team: team,
+              external_id: ext_id,
+              activity_type: act_type,
+              title: ad[:title].to_s,
+              repository: ad[:repository].to_s,
+              url: ad[:url].to_s,
+              state: ad[:state].to_s,
+              date: ad[:date].present? ? (Date.parse(ad[:date].to_s) rescue nil) : nil
+            )
           end
         end
+      end
 
-        dev_activities.each do |da|
-          type = DevEmployeeActivityType.find_by(title: da[:activity_type])
-          next unless type
+      def integration_row_to_h(row)
+        return {} if row.nil?
 
-          date = da[:date].present? ? (begin Date.parse(da[:date]); rescue; Date.current; end) : Date.current
-          new_count = da[:count].to_i
-          # Нет данных по этому типу у сотрудника — не сохраняем строку с count 0.
-          next if new_count.zero?
-
-          if GithubCheckKeys::SNAPSHOT_CHECK_KEYS.include?(type.check_key)
-            # Snapshot metric: GitHub returns the current cumulative total (e.g. "150 followers now").
-            # Compute the delta vs everything already saved (excluding today's row so same-day
-            # re-syncs recalculate correctly without compounding).
-            historical_sum = ResearcherDevActivity
-              .where(researcher: researcher, team: team, dev_employee_activity_type: type)
-              .where.not(date: date)
-              .sum(:count)
-
-            delta = new_count - historical_sum
-            next if delta == 0
-
-            act = ResearcherDevActivity.find_or_initialize_by(
-              researcher: researcher, team: team,
-              dev_employee_activity_type: type, date: date
-            )
-            act.count = delta
-            act.save
-          else
-            # Event-based metric: GitHub groups real events by their creation date
-            # (e.g. 5 commits on 2024-01-15).  The unique index on
-            # (researcher, team, type, date) already prevents duplicates — a re-sync
-            # on the same day just overwrites the record with the identical value.
-            act = ResearcherDevActivity.find_or_initialize_by(
-              researcher: researcher, team: team,
-              dev_employee_activity_type: type, date: date
-            )
-            act.count = new_count
-            act.save
-          end
+        if row.is_a?(ActionController::Parameters)
+          row.permit!.to_unsafe_h.symbolize_keys
+        elsif row.respond_to?(:to_unsafe_h)
+          row.to_unsafe_h.symbolize_keys
+        else
+          row.to_h.symbolize_keys
         end
       end
 

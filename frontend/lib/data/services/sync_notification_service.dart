@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:http/http.dart' as http;
 import 'package:research_activity_monitoring_system/core/config.dart';
 import 'integration_service.dart' show IntegrationService;
@@ -144,6 +145,10 @@ class SyncNotificationService extends ChangeNotifier {
   void dismissCompleted() {
     _requests.removeWhere((r) => r.isCompleted);
     notifyListeners();
+    // После закрытия диалога колокольчик в MaterialApp.builder может не перерисоваться в том же кадре.
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
     _deleteFromRedis();
   }
 

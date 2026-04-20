@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:research_activity_monitoring_system/data/services/integration_service.dart';
+import 'package:research_activity_monitoring_system/data/services/sync_notification_service.dart';
 import 'package:research_activity_monitoring_system/presentation/screens/settings/settings_screen.dart';
 import 'package:research_activity_monitoring_system/core/theme/app_colors.dart';
 import 'package:research_activity_monitoring_system/core/theme/app_text_styles.dart';
@@ -46,6 +47,11 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
       final criteria = res['project_criteria_met'] as List? ?? [];
       return devActs.isNotEmpty || criteria.isNotEmpty;
     });
+  }
+
+  /// Закрыть окно без сохранения (для фоновых результатов очистку делает [PopScope.onPopInvokedWithResult]).
+  void _closePreviewWithoutSaving() {
+    if (mounted) Navigator.of(context).pop(false);
   }
 
   @override
@@ -155,7 +161,7 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              Navigator.pop(context);
+              Navigator.pop(context, false);
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const SettingsScreen()),
@@ -186,7 +192,7 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              Navigator.pop(context);
+              Navigator.pop(context, false);
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const SettingsScreen()),
@@ -272,8 +278,16 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
     // Для исследователей кнопка активна если выбраны ачивки или есть данные по разработке
     final bool canSave = _selectedAchievements.isNotEmpty || widget.teamId != null || widget.scope == 'teams' || _hasDevData();
 
-    return Dialog(
-      child: Container(
+    return PopScope<bool?>(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) return;
+        if (widget.preloadedResults != null && result != true) {
+          SyncNotificationService.instance.dismissCompleted();
+        }
+      },
+      child: Dialog(
+        child: Container(
         width: 800,
         height: 600,
         padding: const EdgeInsets.all(24),
@@ -316,7 +330,7 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
                   ],
                 ),
                 IconButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: _closePreviewWithoutSaving,
                   icon: const Icon(Icons.close),
                 ),
               ],
@@ -360,7 +374,7 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
                     ),
                   ),
                 OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: _closePreviewWithoutSaving,
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   ),
@@ -378,6 +392,7 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
               ],
             ),
           ],
+        ),
         ),
       ),
     );

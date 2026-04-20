@@ -43,7 +43,7 @@ class _SyncNotificationBellState extends State<SyncNotificationBell>
     final results = service.mergedResults;
     if (results.isEmpty) return;
 
-    showDialog(
+    showDialog<bool?>(
       context: navContext,
       barrierDismissible: false,
       builder: (_) => SyncPreviewDialog(
@@ -54,7 +54,13 @@ class _SyncNotificationBellState extends State<SyncNotificationBell>
           service.dismissCompleted();
         },
       ),
-    );
+    ).then((saved) {
+      // Закрытие крестиком, «Отмена» или системной кнопкой «Назад» без сохранения:
+      // очистить Redis и убрать колокольчик (успешное сохранение даёт saved == true).
+      if (saved != true) {
+        service.dismissCompleted();
+      }
+    });
   }
 
   @override
