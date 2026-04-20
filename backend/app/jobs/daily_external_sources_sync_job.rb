@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
-# Ежедневная синхронизация внешних источников по всем исследователям и командам:
-# ORCID + OpenAlex (all), GitHub (сотрудники и команды), интернет-краулер по всем исследователям (crawl_search).
+# Ежедневная синхронизация внешних источников:
+# ORCID + OpenAlex (all), GitHub (сотрудники и команды), интернет-краулер по исследователям (crawl_search).
+# Фазы выполняются параллельно (отдельные потоки с собственным соединением к БД).
+# Краулер по командам в эту задачу не входит (только по исследователям).
 # Отключить краулер: ENV DAILY_SYNC_EXCLUDE_CRAWL=true (дорого по LLM/времени).
 class DailyExternalSourcesSyncJob
   include Sidekiq::Job
@@ -11,29 +13,35 @@ class DailyExternalSourcesSyncJob
   def perform
     cancel_proc = -> { false }
     total_saved = 0
+    total_mutex = Mutex.new
 
-    phases.each do |name, params|
-      merged = params.merge(cancel_proc: cancel_proc)
-      result = Integrations::SyncPreviewCommand.call(merged)
-      if result.failure?
-        Rails.logger.error "[DailyExternalSourcesSync] phase #{name} failed: #{result.failure.inspect}"
-        next
+    threads = phases.map do |name, params|
+      Thread.new do
+        ActiveRecord::Base.connection_pool.with_connection do
+          merged = params.merge(cancel_proc: cancel_proc)
+          result = Integrations::SyncPreviewCommand.call(merged)
+          if result.failure?
+            Rails.logger.error "[DailyExternalSourcesSync] phase #{name} failed: #{result.failure.inspect}"
+          else
+            rows = Array(result.value!['results'])
+            ach, rdev, tdev = split_preview_rows(rows)
+            stats = Integrations::PersistSyncResultsService.call(
+              achievements: ach,
+              researcher_dev_data: rdev,
+              team_dev_data: tdev
+            )
+            saved = stats[:saved_count].to_i
+            total_mutex.synchronize { total_saved += saved }
+            Rails.logger.info "[DailyExternalSourcesSync] phase #{name}: saved #{saved} achievements " \
+                              "(rows: #{rows.size})"
+          end
+        end
+      rescue StandardError => e
+        Rails.logger.error "[DailyExternalSourcesSync] phase #{name} error: #{e.class}: #{e.message}"
       end
-
-      rows = Array(result.value!['results'])
-      ach, rdev, tdev = split_preview_rows(rows)
-      stats = Integrations::PersistSyncResultsService.call(
-        achievements: ach,
-        researcher_dev_data: rdev,
-        team_dev_data: tdev
-      )
-      total_saved += stats[:saved_count].to_i
-      Rails.logger.info "[DailyExternalSourcesSync] phase #{name}: saved #{stats[:saved_count]} achievements " \
-                        "(rows: #{rows.size})"
-    rescue StandardError => e
-      Rails.logger.error "[DailyExternalSourcesSync] phase #{name} error: #{e.class}: #{e.message}"
     end
 
+    threads.each(&:join)
     Rails.logger.info "[DailyExternalSourcesSync] finished, total new achievements saved: #{total_saved}"
   end
 
@@ -46,17 +54,11 @@ class DailyExternalSourcesSyncJob
       ['github_teams', { provider: 'github', scope: 'teams' }]
     ]
     list << ['crawl_researchers', { provider: 'crawl_search' }] unless exclude_crawl?
-    list.concat(team_crawl_phases) unless exclude_crawl?
     list
   end
 
   def exclude_crawl?
     ENV['DAILY_SYNC_EXCLUDE_CRAWL'].to_s == 'true'
-  end
-
-  # Краулер по командам (в SyncPreview нет scope: teams для crawl, только по team_id).
-  def team_crawl_phases
-    Team.pluck(:id).map { |tid| ["crawl_team_#{tid}", { provider: 'crawl_search', team_id: tid }] }
   end
 
   # Разбивает строки предпросмотра на аргументы PersistSyncResultsService (как во Flutter sync_preview_dialog).

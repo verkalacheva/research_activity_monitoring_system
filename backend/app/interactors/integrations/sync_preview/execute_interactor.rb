@@ -174,33 +174,52 @@ module Integrations
               r[:warnings].blank?
           end
         else
-          researchers = Researcher.all
+          researchers = Researcher.all.to_a
           results = []
-          researchers.each do |r|
-            break if @cancel_proc.call
-            begin
-              resp = Integrations::Client.crawl(nil, r.id, r.fullName, true, llm_provider, r.github, cancel_proc: @cancel_proc)
-              next unless resp
+          results_mutex = Mutex.new
+          work_mutex = Mutex.new
+          concurrency = begin
+            n = ENV.fetch('DAILY_CRAWL_CONCURRENCY', '4').to_i
+            n < 1 ? 1 : n
+          end
+          workers = concurrency.times.map do
+            Thread.new do
+              ActiveRecord::Base.connection_pool.with_connection do
+                loop do
+                  break if @cancel_proc.call
 
-              new_achievements = filter_new_achievements(r.id, resp.achievements)
-              dev_acts = resp.dev_activities.map { |da| { activity_type: da.activity_type, count: da.count, date: da.date } }
-              warns = resp.warnings.to_a
+                  r = work_mutex.synchronize { researchers.shift }
+                  break unless r
 
-              next if new_achievements.empty? && dev_acts.empty? && warns.empty?
+                  begin
+                    resp = Integrations::Client.crawl(nil, r.id, r.fullName, true, llm_provider, r.github,
+                                                      cancel_proc: @cancel_proc)
+                    next unless resp
 
-              results << {
-                researcher_id: r.id,
-                researcher_name: r.fullName,
-                achievements: new_achievements,
-                dev_activities: dev_acts,
-                project_criteria_met: resp.project_criteria_met.to_a,
-                warnings: warns
-              }
-            rescue StandardError => e
-              msg = e.message.to_s.force_encoding('UTF-8')
-              Rails.logger.error "Failed to sync for #{r.fullName}: #{msg}"
+                    new_achievements = filter_new_achievements(r.id, resp.achievements)
+                    dev_acts = resp.dev_activities.map { |da| { activity_type: da.activity_type, count: da.count, date: da.date } }
+                    warns = resp.warnings.to_a
+
+                    next if new_achievements.empty? && dev_acts.empty? && warns.empty?
+
+                    row = {
+                      researcher_id: r.id,
+                      researcher_name: r.fullName,
+                      achievements: new_achievements,
+                      dev_activities: dev_acts,
+                      project_criteria_met: resp.project_criteria_met.to_a,
+                      warnings: warns
+                    }
+                    results_mutex.synchronize { results << row }
+                  rescue StandardError => e
+                    msg = e.message.to_s.force_encoding('UTF-8')
+                    Rails.logger.error "Failed to sync for #{r.fullName}: #{msg}"
+                  end
+                end
+              end
             end
           end
+          workers.each(&:join)
           results
         end
       end
