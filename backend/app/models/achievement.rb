@@ -13,13 +13,7 @@ class Achievement < ApplicationRecord
   accepts_nested_attributes_for :achievement_field_answers
 
   before_save :calculate_points
-  after_commit :broadcast_dashboard_update, on: [:create, :update, :destroy]
-
   private
-
-  def broadcast_dashboard_update
-    Reports::GenerateCommand.call(report_type: 'dashboard_overview', report_format: 'json')
-  end
 
   def calculate_points
     type_p = achievement_type&.points || 0

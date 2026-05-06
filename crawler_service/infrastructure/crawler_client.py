@@ -44,54 +44,28 @@ def _litellm_failure_handler(kwargs, completion_response, start_time, end_time):
 litellm.failure_callback = [_litellm_failure_handler]
 
 
-class KeyPool:
-    """Циклический пул API-ключей с ротацией при исчерпании лимита."""
-
-    def __init__(self, keys: List[str]):
-        self._keys = keys
-        self._index = 0
-        self._rotations = 0
-
-    @classmethod
-    def from_env(cls, *env_vars: str) -> "KeyPool":
-        keys = []
-        for var in env_vars:
-            val = os.getenv(var, "")
-            keys.extend(k.strip() for k in val.split(",") if k.strip())
-        return cls(keys or ["no-key"])
-
-    @classmethod
-    def from_value(cls, value: str) -> "KeyPool":
-        keys = [k.strip() for k in value.split(",") if k.strip()]
-        return cls(keys or ["no-key"])
-
-    def current(self) -> str:
-        return self._keys[self._index]
-
-    def rotate(self) -> bool:
-        self._rotations += 1
-        if self._rotations >= len(self._keys):
-            print("[KeyPool] All keys exhausted, no more rotation.")
-            return False
-        self._index = (self._index + 1) % len(self._keys)
-        print(f"[KeyPool] Rotated to key index {self._index}")
-        return True
-
-    def reset_rotations(self):
-        self._rotations = 0
-
-    def __len__(self):
-        return len(self._keys)
+def _require_llm_api_key(raw: str) -> str:
+    s = (raw or "").strip()
+    if not s:
+        raise ValueError(
+            "Не задан API-ключ LLM: поле «API-ключ LLM» в настройках приложения "
+            "(или переменные окружения CRAWLER_LLM_API_KEY, LLM_API_KEY, OPENROUTER_API_KEY в контейнере краулера)."
+        )
+    # Одно значение: при старых настройках «key1, key2» ротация снята — берётся первый сегмент.
+    first = s.split(",")[0].strip()
+    if not first:
+        raise ValueError(
+            "Не задан API-ключ LLM: поле «API-ключ LLM» или CRAWLER_LLM_API_KEY / LLM_API_KEY."
+        )
+    return first
 
 
-# Module-level ENV-based key pool for OpenRouter
-_openrouter_env_pool: Optional[KeyPool] = None
+def _llm_api_key_from_settings(settings: dict) -> str:
+    """Ключ из app_settings БД либо из env при сбое запроса к БД или для docker-secrets."""
+    s = settings or {}
+    raw = (s.get("llm_api_key") or "").strip()
 
-def _get_openrouter_env_pool() -> KeyPool:
-    global _openrouter_env_pool
-    if _openrouter_env_pool is None:
-        _openrouter_env_pool = KeyPool.from_env("OPENROUTER_API_KEYS", "OPENROUTER_API_KEY")
-    return _openrouter_env_pool
+    return _require_llm_api_key(raw)
 
 
 class RateLimiter:
@@ -476,20 +450,9 @@ def _looks_like_non_text_completion_model(model_id: str) -> bool:
     return any(h in m for h in _NON_TEXT_COMPLETION_MODEL_HINTS)
 
 
-def _default_text_model_fallback() -> str:
-    """Не читает LLM_MODEL_NAME — там может быть та же ошибочная Lyria и т.п."""
-    explicit = (os.getenv("CRAWL_LLM_TEXT_MODEL_FALLBACK") or "").strip()
-    if explicit and not _looks_like_non_text_completion_model(explicit):
-        return explicit
-    return "google/gemini-2.0-flash-001"
-
-
-def _resolve_llm_api_base(llm_provider: str) -> str:
-    """HTTP endpoint для LiteLLM. Приоритет: LLM_API_BASE → OPENROUTER_BASE_URL → дефолт по провайдеру."""
-    explicit = (
-        (os.getenv("LLM_API_BASE") or "").strip()
-        or (os.getenv("OPENROUTER_BASE_URL") or "").strip()
-    )
+def _resolve_llm_api_base(settings: dict, llm_provider: str) -> str:
+    """HTTP endpoint для LiteLLM: только app_settings (llm_api_base) либо фиксированные URL по провайдеру, без process env."""
+    explicit = (settings.get("llm_api_base") or "").strip()
     if explicit:
         return explicit.rstrip("/")
     p = (llm_provider or "openrouter").lower().strip()
@@ -503,35 +466,23 @@ def _resolve_llm_api_base(llm_provider: str) -> str:
 class CrawlerClient:
     def __init__(self, model: str = None, settings: dict = None, **_ignored):
         s = settings or {}
-        self.model_name = (
-            (model or "").strip()
-            or (s.get("llm_model_name") or "").strip()
-            or os.getenv("LLM_MODEL_NAME", "google/gemini-2.0-flash-001")
-        )
-        if _looks_like_non_text_completion_model(self.model_name):
-            fb = _default_text_model_fallback()
-            print(
-                f"[CrawlerClient] WARNING: '{self.model_name}' не текстовая chat-модель "
-                f"(музыка/картинки/embeddings и т.п.). Подставляем текстовую: {fb}. "
-                f"Для эмбеддингов укажите CRAWL_EMBEDDING_MODEL; для чата — LLM_MODEL_NAME или "
-                f"CRAWL_LLM_TEXT_MODEL_FALLBACK."
+        self.model_name = (model or "").strip() or (s.get("llm_model_name") or "").strip()
+        if not self.model_name:
+            raise ValueError(
+                "Не задана модель LLM: укажите «Модель LLM» в настройках приложения (UI) "
+                "или передайте модель в вызове краулера."
             )
-            self.model_name = fb
-        self._llm_provider = (
-            s.get("llm_provider") or
-            os.getenv("LLM_PROVIDER", "openrouter")
-        ).strip()
+        if _looks_like_non_text_completion_model(self.model_name):
+            raise ValueError(
+                f"Модель «{self.model_name}» не подходит для извлечения текста (чат/JSON). "
+                "В настройках укажите текстовую chat-модель в поле модели LLM."
+            )
+        self._llm_provider = (s.get("llm_provider") or "openrouter").strip()
         self._settings = s
         self.warnings: List[str] = []
-        # Build key pool: DB value > ENV
-        db_key = s.get("openrouter_api_key")
-        self._key_pool: KeyPool = (
-            KeyPool.from_value(db_key) if db_key
-            else _get_openrouter_env_pool()
-        )
         self.provider_string = f"{self._llm_provider}/{self.model_name}"
-        self.base_url = _resolve_llm_api_base(self._llm_provider)
-        self.api_key = self._key_pool.current()
+        self.base_url = _resolve_llm_api_base(s, self._llm_provider)
+        self.api_key = _llm_api_key_from_settings(s)
         print(
             f"[CrawlerClient] provider={self._llm_provider} model={self.model_name} → "
             f"{self.provider_string} | api_base={self.base_url}"
@@ -1222,22 +1173,7 @@ class CrawlerClient:
                     return []
 
                 if self._is_rate_limit_error(result.extracted_content):
-                    print(f"[CrawlerClient] Rate limit hit for key index {self._key_pool._index}")
-                    if len(self._key_pool) > 1 and self._key_pool.rotate():
-                        self.api_key = self._key_pool.current()
-                        self._build_llm_config()
-                        next_delay = _next_rate_limit_delay(_rate_limit_delay)
-                        return await self.crawl_and_extract(
-                            url,
-                            schema,
-                            instruction,
-                            retries,
-                            next_delay,
-                            chunk_token_threshold,
-                            retrieval_queries=retrieval_queries,
-                        )
-                    # All keys exhausted — wait and retry if budget allows
-                    self._key_pool.reset_rotations()
+                    print("[CrawlerClient] Rate limit hit for LLM")
                     next_delay = _next_rate_limit_delay(_rate_limit_delay)
                     if retries > 0:
                         return await self.crawl_and_extract(

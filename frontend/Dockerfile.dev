@@ -9,7 +9,6 @@ RUN flutter pub get
 
 COPY . .
 
-ENV API_BASE_URL=http://localhost:3000
+ENV API_BASE_URL=
 
-CMD flutter run -d web-server --web-port 80 --web-hostname 0.0.0.0 \
-    --dart-define=API_BASE_URL=${API_BASE_URL}
+CMD ["sh", "-c", "flutter run -d web-server --web-port 80 --web-hostname 0.0.0.0 --dart-define=API_BASE_URL=$API_BASE_URL"]

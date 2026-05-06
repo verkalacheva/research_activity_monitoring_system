@@ -7,6 +7,7 @@ module Researchers
     def list_scope
       Researcher.kept.select(
         :id, :surname, :name, :second_name, :degree_level, :subject_area,
+        :orcid_id, :openalex_id,
         '(EXISTS (SELECT 1 FROM teams WHERE teams.leader_id = researchers.id)) AS is_leader'
       ).order(:surname, :name, :second_name)
     end

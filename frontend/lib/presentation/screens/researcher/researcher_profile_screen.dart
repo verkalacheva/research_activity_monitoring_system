@@ -776,7 +776,7 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
           const Divider(height: 1, indent: 56),
           _infoRow(context, Icons.fingerprint, context.strings.tr('widgets.profile.label_isu'), _researcher.isuNumber ?? 'Не указано', controller: _isuNumberController),
           const Divider(height: 1, indent: 56),
-          _infoRow(context, Icons.work, 'Трудоустройство', _researcher.employmentStatus ?? 'Не указано', controller: _employmentStatusController),
+          _infoRow(context, Icons.work, 'Трудоустройство (дата/период)', _researcher.employmentStatus ?? 'Не указано', controller: _employmentStatusController),
           const Divider(height: 1, indent: 56),
           _infoRow(
             context,

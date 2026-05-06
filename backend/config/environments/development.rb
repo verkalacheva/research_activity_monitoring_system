@@ -22,6 +22,13 @@ Rails.application.configure do
   # Ensure changes are picked up in docker
   config.file_watcher = ActiveSupport::FileUpdateChecker
 
+  # Flutter web на хосте (напр. localhost:8080) ходит в API ws://localhost:3000 — Origin страницы
+  # ≠ хост API; без этого Action Cable: "Request origin not allowed" и задачи не ждём по WS.
+  config.action_cable.allowed_request_origins = [
+    %r{\Ahttp://localhost:\d+\z},
+    %r{\Ahttp://127\.0\.0\.1:\d+\z},
+  ]
+
   config.action_cable.disable_request_forgery_protection = true
 end
 

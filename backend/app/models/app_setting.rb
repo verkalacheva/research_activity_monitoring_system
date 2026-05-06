@@ -3,6 +3,7 @@ class AppSetting < ApplicationRecord
 
   SENSITIVE_KEYS = %w[
     github_token
+    llm_api_key
     openrouter_api_key
   ].freeze
 

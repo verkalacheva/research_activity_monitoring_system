@@ -36,15 +36,9 @@ def _chunk_token_target() -> int:
 
 
 def _retrieval_top_k() -> int:
-    try:
-        from infrastructure.crawl_heuristics import retrieval_top_k_effective
+    from infrastructure.crawl_heuristics import retrieval_top_k_effective
 
-        return retrieval_top_k_effective()
-    except Exception:
-        try:
-            return max(1, min(20, int(os.getenv("CRAWL_RETRIEVAL_TOP_K", "5"))))
-        except ValueError:
-            return 5
+    return retrieval_top_k_effective()
 
 
 def _max_prompt_chars_from_chunks() -> int:
@@ -73,10 +67,14 @@ def _embedding_model_env() -> str:
 
 
 def _embedding_prefilter_chunks() -> int:
+    """Сколько лучших чанков по BM25 подавать в эмбеддинги; по умолчанию без лимита."""
+    raw = (os.getenv("CRAWL_EMBEDDING_PREFILTER", "") or "").strip()
+    if not raw:
+        return 10**9
     try:
-        return max(8, min(80, int(os.getenv("CRAWL_EMBEDDING_PREFILTER", "28"))))
+        return max(1, int(raw))
     except ValueError:
-        return 28
+        return 10**9
 
 
 @dataclass
@@ -391,6 +389,23 @@ def prepare_text_for_llm(
         body_parts.append(block)
         total += len(block) + 40
 
+    # Fill remaining capacity with zero-score chunks — they may contain achievements
+    # that BM25 missed because they lack researcher-name or type keywords.
+    if positive and total < max_prompt:
+        selected_set = set(top_idx)
+        for idx, sc in ranked:
+            if sc > 0 or idx in selected_set:
+                continue
+            block = chunks[idx]
+            if total + len(block) + 40 > max_prompt:
+                remain = max_prompt - total - 80
+                if remain > 200:
+                    body_parts.append(block[:remain] + "\n[...]")
+                break
+            body_parts.append(block)
+            total += len(block) + 40
+            selected_set.add(idx)
+
     if not body_parts:
         body_parts = [selected[0][: max_prompt - 100]] if selected else [text[:max_prompt]]
 
@@ -527,14 +542,14 @@ async def prepare_text_for_llm_async(
     if not queries:
         queries = [text[:500]]
 
+    base = (embedding_api_base or "").strip()
     runtime = EmbeddingRuntime(
         model=model,
         api_key=embedding_api_key or "",
-        api_base=(embedding_api_base or "").strip()
-        or os.getenv("LLM_API_BASE", "").strip()
-        or os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
+        api_base=base,
     )
-    if not runtime.api_key:
+    # Ключ и base приходят из CrawlerClient (настройки UI), без os.getenv.
+    if not runtime.api_key or not runtime.api_base:
         return prepare_text_for_llm(cleaned_page_text, retrieval_queries)
 
     try:
@@ -576,6 +591,22 @@ async def prepare_text_for_llm_async(
             body_parts.append(block)
             total += len(block) + 40
 
+        # Fill remaining capacity with unselected chunks (BM25 score ≤ 0)
+        if total < max_prompt:
+            selected_set = set(top_idx)
+            for idx, _ in ranked:
+                if idx in selected_set:
+                    continue
+                block = chunks[idx]
+                if total + len(block) + 40 > max_prompt:
+                    remain = max_prompt - total - 80
+                    if remain > 200:
+                        body_parts.append(block[:remain] + "\n[...]")
+                    break
+                body_parts.append(block)
+                total += len(block) + 40
+                selected_set.add(idx)
+
         if not body_parts:
             body_parts = [selected[0][: max_prompt - 100]] if selected else [text[:max_prompt]]
 
@@ -598,7 +629,12 @@ def build_retrieval_queries(
     if name:
         out.append(name)
         out.append(f"{name} публикации ORCID")
-        out.append(f"{name} грант статья конференция")
+        types = [t for t in (achievement_type_titles or []) if t and t.lower() != "другое"]
+        if types:
+            types_words = " ".join(types)
+            out.append(f"{name} {types_words}")
+        else:
+            out.append(f"{name} достижения публикации гранты стипендии хакатоны конференции статьи РИДы стажировки наставничества")
     extra = build_auto_search_queries(
         name,
         profile,

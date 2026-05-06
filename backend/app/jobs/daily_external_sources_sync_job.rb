@@ -2,7 +2,7 @@
 
 # Ежедневная синхронизация внешних источников:
 # ORCID + OpenAlex (all), GitHub (сотрудники и команды), интернет-краулер по исследователям (crawl_search).
-# Фазы выполняются параллельно (отдельные потоки с собственным соединением к БД).
+# Фазы выполняются параллельно (отдельные потоки; внешние вызовы не удерживают пул соединений БД).
 # Результаты не пишутся в БД сразу: кладутся в Redis (как после ручного предпросмотра), чтобы в приложении
 # показался колокольчик и окно SyncPreviewDialog с тем же сценарием сохранения.
 # Краулер по командам в эту задачу не входит (только по исследователям).
@@ -21,7 +21,7 @@ class DailyExternalSourcesSyncJob
 
     threads = phases.map do |name, params|
       Thread.new do
-        ActiveRecord::Base.connection_pool.with_connection do
+        begin
           merged = params.merge(cancel_proc: cancel_proc)
           result = Integrations::SyncPreviewCommand.call(merged)
           if result.failure?
@@ -31,9 +31,9 @@ class DailyExternalSourcesSyncJob
             rows_mutex.synchronize { all_rows.concat(rows) }
             Rails.logger.info "[DailyExternalSourcesSync] phase #{name}: preview rows #{rows.size}"
           end
+        rescue StandardError => e
+          Rails.logger.error "[DailyExternalSourcesSync] phase #{name} error: #{e.class}: #{e.message}"
         end
-      rescue StandardError => e
-        Rails.logger.error "[DailyExternalSourcesSync] phase #{name} error: #{e.class}: #{e.message}"
       end
     end
 

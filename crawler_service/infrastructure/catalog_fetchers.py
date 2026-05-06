@@ -8,20 +8,15 @@ from typing import Any, Dict, List, Optional
 import httpx
 
 _OPENALEX = "https://api.openalex.org"
-
-
-def _mailto_for_openalex() -> str:
-    m = (os.getenv("OPENALEX_MAILTO") or "mailto:openalex@example.org").strip()
-    if m.startswith("mailto:"):
-        return m[8:]
-    return m
+# Контакт в User-Agent (рекомендация OpenAlex); не через env
+_OPENALEX_UA_EMAIL = "openalex@example.org"
 
 
 def _openalex_headers() -> Dict[str, str]:
     return {
         "User-Agent": (
             f"ResearchActivityMonitor/1.0 "
-            f"(https://github.com/; mailto:{_mailto_for_openalex()})"
+            f"(https://github.com/; mailto:{_OPENALEX_UA_EMAIL})"
         ),
         "Accept": "application/json",
     }
@@ -101,19 +96,18 @@ async def _openalex_resolve_author_id_from_orcid(orcid_clean: str) -> Optional[s
 
 async def _openalex_fetch_work_urls_for_author(
     author_id_short: str,
-    max_works: int,
 ) -> List[str]:
-    """author_id_short like A1234567890."""
+    """author_id_short like A1234567890; все страницы works по cursor, пока API отдаёт."""
     urls: List[str] = []
     cursor: Optional[str] = None
-    per = min(200, max(1, max_works))
+    per_page = 200  # макс. per_page у OpenAlex API
 
     try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            while len(urls) < max_works:
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            while True:
                 params: Dict[str, Any] = {
                     "filter": f"author.id:{author_id_short}",
-                    "per_page": per,
+                    "per_page": per_page,
                     "select": "id,doi,primary_location,open_access,best_oa_location",
                 }
                 if cursor:
@@ -131,15 +125,13 @@ async def _openalex_fetch_work_urls_for_author(
                     u = _work_landing_url(w if isinstance(w, dict) else {})
                     if u and u not in urls:
                         urls.append(u)
-                    if len(urls) >= max_works:
-                        break
                 cursor = (data.get("meta") or {}).get("next_cursor")
                 if not cursor:
                     break
     except Exception as e:
         print(f"[catalog] OpenAlex works fetch error: {e}")
 
-    return urls[:max_works]
+    return urls
 
 
 async def fetch_catalog_landing_urls(profile: Optional[Dict[str, Any]]) -> List[str]:
@@ -156,11 +148,6 @@ async def fetch_catalog_landing_urls(profile: Optional[Dict[str, Any]]) -> List[
         return []
 
     p = profile or {}
-    try:
-        max_works = max(1, int(os.getenv("OPENALEX_MAX_WORKS", "50")))
-    except ValueError:
-        max_works = 50
-
     author_id = _normalize_openalex_author_id(str(p.get("openalex_id") or ""))
     oid = _normalize_orcid(str(p.get("orcid_id") or ""))
 
@@ -169,7 +156,7 @@ async def fetch_catalog_landing_urls(profile: Optional[Dict[str, Any]]) -> List[
 
     out: List[str] = []
     if author_id:
-        out = await _openalex_fetch_work_urls_for_author(author_id, max_works)
+        out = await _openalex_fetch_work_urls_for_author(author_id)
 
     # ORCID public record: profile page as seed (optional)
     if oid and (os.getenv("CRAWL_ORCID_PROFILE_URL", "1") or "1").strip().lower() not in (

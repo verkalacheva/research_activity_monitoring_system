@@ -51,13 +51,17 @@ func (r *Repository) FetchData(req *pb.ReportRequest) ([]DataRow, int32, map[str
 
 	baseQuery := "SELECT t.id, t.title, " +
 		"TRIM(CONCAT_WS(' ', r.surname, r.name, r.second_name)) as leader_name, " +
-		"(SELECT COUNT(*) FROM researchers_teams rt WHERE rt.team_id = t.id) as members_count, " +
+		"(SELECT COUNT(*) FROM researchers_teams rt " +
+		" JOIN researchers r2 ON r2.id = rt.researcher_id AND r2.deleted_at IS NULL " +
+		" WHERE rt.team_id = t.id) as members_count, " +
 		"COALESCE((" +
 		"    SELECT ROUND(SUM(a.points)::numeric, 1) " +
 		"    FROM achievements a " +
 		"    JOIN researcher_achievements ra ON a.id = ra.achievement_id " +
 		"    JOIN researchers_teams rt ON ra.researcher_id = rt.researcher_id " +
+		"    JOIN researchers r3 ON r3.id = rt.researcher_id AND r3.deleted_at IS NULL " +
 		"    WHERE rt.team_id = t.id" + achievDateCond + " " +
+		"      AND a.deleted_at IS NULL " +
 		"), 0) as total_points, " +
 		"COALESCE((" +
 		"    SELECT SUM(dpc.points) FROM team_dev_criteria tdc " +

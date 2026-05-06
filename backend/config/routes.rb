@@ -1,4 +1,8 @@
 Rails.application.routes.draw do
+  get "health/live", to: "health#live"
+  get "health/ready", to: "health#ready"
+  get "health", to: "health#live"
+
   mount ActionCable.server => '/cable'
 
   namespace :api do

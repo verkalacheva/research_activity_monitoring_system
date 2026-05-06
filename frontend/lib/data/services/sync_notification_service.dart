@@ -16,6 +16,9 @@ class SyncRequest {
   final String label;
   final VoidCallback? onSaved;
 
+  /// Три последовательных этапа с экрана «Сотрудники» (ORCID/all, github, crawlall).
+  final bool employeesListBulkStages;
+
   List<dynamic>? results;
   bool isCompleted = false;
   bool hasError = false;
@@ -29,6 +32,7 @@ class SyncRequest {
     this.url,
     this.scope,
     this.onSaved,
+    this.employeesListBulkStages = false,
   });
 
   Map<String, dynamic> toJson() => {
@@ -41,6 +45,7 @@ class SyncRequest {
         'results': results,
         'has_error': hasError,
         'error_message': errorMessage,
+        'employees_list_bulk_stages': employeesListBulkStages,
       };
 
   /// Restores a completed request from Redis. The [onSaved] callback is not
@@ -53,6 +58,7 @@ class SyncRequest {
       teamId: json['team_id'] as int?,
       url: json['url'] as String?,
       scope: json['scope'] as String?,
+      employeesListBulkStages: json['employees_list_bulk_stages'] == true,
     );
     req.results = json['results'] as List<dynamic>?;
     req.isCompleted = true;
@@ -67,6 +73,7 @@ class SyncNotificationService extends ChangeNotifier {
 
   SyncNotificationService._() {
     _loadFromRedis();
+    _syncUiValueNotifiers();
   }
 
   final IntegrationService _service = IntegrationService();
@@ -79,7 +86,77 @@ class SyncNotificationService extends ChangeNotifier {
   /// Текущая фоновая задача на бэкенде (для DELETE /integration_sync_jobs/:id при «Стоп»).
   String? _activeSyncJobId;
 
-  bool get isSyncing => _isRunning;
+  /// Дубликаты состояния для надёжных перерисовок (в т.ч. web/builder): [ChangeNotifier] иногда теряет кадр.
+  final ValueNotifier<bool> uiSyncing = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> uiBulkStagesPending =
+      ValueNotifier<bool>(false);
+  /// Тикает каждые 500 ms, пока идёт «СИНХРОНИЗАЦИЯ ВСЕХ», чтобы подпись/спиннер не «замирали» на одном кадре (web).
+  final ValueNotifier<int> employeesBulkUiTick = ValueNotifier<int>(0);
+
+  Timer? _employeesBulkUiTickTimer;
+
+  Listenable? _mergedListenables;
+
+  Listenable get mergedListenables =>
+      _mergedListenables ??= Listenable.merge(<Listenable>[
+        this,
+        uiSyncing,
+        uiBulkStagesPending,
+      ]);
+
+  void _syncUiValueNotifiers() {
+    final sync = _isRunning || _requests.any((r) => !r.isCompleted);
+    if (uiSyncing.value != sync) uiSyncing.value = sync;
+    final bulk = _requests
+        .any((r) => !r.isCompleted && r.employeesListBulkStages);
+    if (uiBulkStagesPending.value != bulk) {
+      uiBulkStagesPending.value = bulk;
+    }
+    if (bulk) {
+      if (_employeesBulkUiTickTimer == null) {
+        _employeesBulkUiTickTimer =
+            Timer.periodic(const Duration(milliseconds: 500), (_) {
+          final v = employeesBulkUiTick.value;
+          employeesBulkUiTick.value =
+              v < 2000000000 ? v + 1 : 0; // trigger Listenable
+        });
+      }
+    } else {
+      _employeesBulkUiTickTimer?.cancel();
+      _employeesBulkUiTickTimer = null;
+    }
+  }
+
+  @override
+  void notifyListeners() {
+    _syncUiValueNotifiers();
+    super.notifyListeners();
+  }
+
+  bool get isSyncing =>
+      _isRunning || _requests.any((r) => !r.isCompleted);
+
+  /// Незавершённые этапы «СИНХРОНИЗАЦИЯ ВСЕХ» (учёт нескольких заявок без гонки notify при enqueue подряд).
+  bool get hasEmployeesBulkStagesPending =>
+      _requests.any((r) => !r.isCompleted && r.employeesListBulkStages);
+
+  /// Текущий незавершённый этап «всех сотрудников» (подпись кнопки AppBar).
+  String? get employeesBulkCurrentStageLabel {
+    for (final r in _requests) {
+      if (!r.isCompleted && r.employeesListBulkStages) {
+        return r.label;
+      }
+    }
+    return null;
+  }
+
+  /// Сколько этапов из очереди «всех сотрудников» уже завершено / всего (для «2/3» на кнопке).
+  ({int done, int total}) get employeesBulkStagesCounts {
+    final stages = _requests.where((r) => r.employeesListBulkStages).toList();
+    final total = stages.length;
+    final done = stages.where((r) => r.isCompleted).length;
+    return (done: done, total: total);
+  }
 
   bool get hasPendingResults => _requests.any(
         (r) => r.isCompleted && !r.hasError && (r.results?.isNotEmpty ?? false),
@@ -103,10 +180,14 @@ class SyncNotificationService extends ChangeNotifier {
     return all;
   }
 
-  void enqueue(SyncRequest request) {
-    _requests.add(request);
-    notifyListeners();
+  void enqueueBulk(Iterable<SyncRequest> batch) {
+    _requests.addAll(batch);
     _processNext();
+    notifyListeners();
+  }
+
+  void enqueue(SyncRequest request) {
+    enqueueBulk([request]);
   }
 
   /// Stops the current HTTP request (if any) and drops all tasks that are not finished yet.
@@ -212,9 +293,7 @@ class SyncNotificationService extends ChangeNotifier {
 
   Future<void> _processNext() async {
     if (_isRunning) return;
-
-    final pending = _requests.where((r) => !r.isCompleted).toList();
-    if (pending.isEmpty) return;
+    if (!_requests.any((r) => !r.isCompleted)) return;
 
     _isRunning = true;
     _cancelRequested = false;
@@ -223,12 +302,15 @@ class SyncNotificationService extends ChangeNotifier {
     _activeHttpClient = http.Client();
 
     try {
-      for (final request in pending) {
-        if (_cancelRequested) {
-          _removePendingIncomplete();
-          break;
+      while (!_cancelRequested) {
+        SyncRequest? request;
+        for (final r in _requests) {
+          if (!r.isCompleted) {
+            request = r;
+            break;
+          }
         }
-        if (request.isCompleted) continue;
+        if (request == null) break;
 
         _cancelCompleter = Completer<void>();
         final cancelSentinel = Object();
@@ -296,8 +378,9 @@ class SyncNotificationService extends ChangeNotifier {
       await _saveToRedis();
     }
 
+    // Задачи догрузили между итерациями — второй вход (без дырки по _isRunning)
     if (_requests.any((r) => !r.isCompleted)) {
-      _processNext();
+      unawaited(_processNext());
     }
   }
 }

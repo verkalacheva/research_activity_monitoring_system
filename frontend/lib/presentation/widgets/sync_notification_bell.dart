@@ -66,7 +66,7 @@ class _SyncNotificationBellState extends State<SyncNotificationBell>
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: SyncNotificationService.instance,
+      listenable: SyncNotificationService.instance.mergedListenables,
       builder: (context, _) {
         final service = SyncNotificationService.instance;
         final isSyncing = service.isSyncing;
@@ -147,14 +147,51 @@ class _BellButton extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
               ],
-              if (isSyncing && !hasPending)
-                const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: Colors.white,
-                  ),
+              if (isSyncing)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: Colors.white,
+                      ),
+                    ),
+                    if (hasPending) ...[
+                      const SizedBox(width: 8),
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          const Icon(Icons.notifications_outlined, color: Colors.white, size: 20),
+                          if (count > 0)
+                            Positioned(
+                              top: -4,
+                              right: -4,
+                              child: Container(
+                                width: 12,
+                                height: 12,
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    count > 9 ? '9+' : '$count',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 7,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ],
                 )
               else
                 Stack(
@@ -188,10 +225,8 @@ class _BellButton extends StatelessWidget {
                 ),
               const SizedBox(width: 10),
               Text(
-                isSyncing && !hasPending
-                    ? (pendingCount > 1
-                        ? 'Синхронизация… ($pendingCount)'
-                        : 'Синхронизация…')
+                isSyncing
+                    ? (pendingCount > 1 ? 'Синхронизация… ($pendingCount)' : 'Синхронизация…')
                     : 'Результаты синхронизации',
                 style: const TextStyle(
                   color: Colors.white,

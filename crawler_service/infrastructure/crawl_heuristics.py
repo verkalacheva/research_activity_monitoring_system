@@ -29,13 +29,14 @@ def pipeline_mode() -> str:
 
 
 def retrieval_top_k_effective() -> int:
+    """Без верхней границы по числу чанков (кроме явного CRAWL_RETRIEVAL_TOP_K); итог режет CRAWL_MAX_RETRIEVAL_PROMPT_CHARS."""
     try:
         raw = (os.getenv("CRAWL_RETRIEVAL_TOP_K", "") or "").strip()
         if raw:
-            return max(1, min(20, int(raw)))
+            return max(1, int(raw))
     except ValueError:
         pass
-    return 2 if pipeline_mode() == "fast" else 5
+    return 10**9
 
 
 def embedding_model_effective() -> str:
@@ -80,20 +81,28 @@ def sentence_boost_filter_enabled() -> bool:
 _RE_YEAR = re.compile(r"\b(19|20)\d{2}\b")
 _RE_SIGNAL = re.compile(
     r"(публикац|стать|конференц|грант|стипенд|наград|диссертац|патент|РИД|"
-    r"publication|proceedings|journal|grant|award|patent|ORCID|DOI|хакатон|hackathon)",
+    r"стажировк|наставнич|менторств|упомян|упоминан|СМИ|медиа|"
+    r"publication|proceedings|journal|grant|award|patent|ORCID|DOI|хакатон|hackathon|"
+    r"internship|mentoring|media)",
     re.I,
 )
 
 
 def compress_text_for_llm_signals(text: str, max_chars: int) -> str:
-    """Урезать шум: приоритет абзацам с годом или ключевыми словами."""
+    """Урезать шум: приоритет абзацам с годом или ключевыми словами.
+
+    Алгоритм: сначала помещаем высокосигнальные абзацы (в порядке документа),
+    затем добираем оставшейся ёмкостью низкосигнальные (тоже в порядке документа).
+    Порядок внутри каждой группы сохраняется — LLM лучше читает связный текст.
+    """
     if not sentence_boost_filter_enabled() or not (text or "").strip():
         return text
     paras = [p.strip() for p in re.split(r"\n\s*\n+", text) if p.strip()]
     if len(paras) <= 3:
         return text[:max_chars]
-    scored: list[tuple[float, str]] = []
-    for p in paras:
+    # Score each paragraph; keep original position index for order restoration
+    scored: list[tuple[float, int, str]] = []
+    for i, p in enumerate(paras):
         s = 0.0
         if _RE_YEAR.search(p):
             s += 3.0
@@ -101,14 +110,26 @@ def compress_text_for_llm_signals(text: str, max_chars: int) -> str:
             s += 2.0
         if len(p) > 120:
             s += 0.5
-        scored.append((s, p))
-    scored.sort(key=lambda x: -x[0])
+        scored.append((s, i, p))
+    # High-signal paragraphs first (original doc order within group),
+    # then fill remaining capacity with low-signal ones (also in doc order).
+    high = sorted([(s, i, p) for s, i, p in scored if s > 0], key=lambda x: x[1])
+    low = sorted([(s, i, p) for s, i, p in scored if s <= 0], key=lambda x: x[1])
     out: list[str] = []
     n = 0
-    for score, p in scored:
-        if score <= 0 and len(scored) > 8:
-            continue
-        if n + len(p) > max_chars:
+    for _, _, p in high:
+        if n + len(p) + 2 > max_chars:
+            remain = max_chars - n - 4
+            if remain > 80:
+                out.append(p[:remain] + "…")
+            break
+        out.append(p)
+        n += len(p) + 2
+    for _, _, p in low:
+        if n + len(p) + 2 > max_chars:
+            remain = max_chars - n - 4
+            if remain > 80:
+                out.append(p[:remain] + "…")
             break
         out.append(p)
         n += len(p) + 2

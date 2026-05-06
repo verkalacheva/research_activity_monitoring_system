@@ -10,6 +10,8 @@ class ResearcherListRowSerializer < BaseSerializer
       second_name: object.second_name,
       degree_level: object.degree_level,
       subject_area: object.subject_area,
+      orcid_id: object.try(:orcid_id),
+      openalex_id: object.try(:openalex_id),
       is_leader: ActiveModel::Type::Boolean.new.cast(object.try(:is_leader))
     }
   end

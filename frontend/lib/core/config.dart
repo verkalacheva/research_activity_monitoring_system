@@ -1,15 +1,9 @@
-/// Runtime-configurable base URLs.
-///
-/// Pass values at build/run time via --dart-define:
-///   flutter run --dart-define=API_BASE_URL=http://localhost:3000
-///   flutter build web --dart-define=API_BASE_URL=https://api.example.com
+/// Runtime-configurable base URLs (сборка: --dart-define=API_BASE_URL=...; в Docker — build-arg).
 class AppConfig {
   AppConfig._();
 
-  static const String apiBase = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://localhost:3000',
-  );
+  /// Задаётся только через --dart-define=API_BASE_URL=... (CI/Docker build-arg).
+  static const String apiBase = String.fromEnvironment('API_BASE_URL');
 
   static const String apiV1 = '$apiBase/api/v1';
 

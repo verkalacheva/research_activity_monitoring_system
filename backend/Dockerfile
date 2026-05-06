@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # Stage 1: build gems (needs compiler + libpq headers)
 FROM ruby:3.2.2-slim AS builder
 
@@ -11,7 +12,10 @@ COPY Gemfile Gemfile.lock ./
 RUN gem install bundler -v 2.4.22 && \
     bundle config set --local without 'development test' && \
     bundle config set --local path vendor/bundle && \
-    bundle install --jobs 4 --retry 3
+    bundle config set --local cache_path '/bundle_cache'
+
+RUN --mount=type=cache,target=/bundle_cache \
+    bundle install --jobs 4 --retry 5
 
 COPY . .
 
@@ -19,15 +23,26 @@ COPY . .
 FROM ruby:3.2.2-slim
 
 RUN apt-get update -qq && \
-    apt-get install -y --no-install-recommends libpq5 && \
+    apt-get install -y --no-install-recommends libpq5 curl && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 COPY --from=builder /app .
 
-ENV BUNDLE_PATH=vendor/bundle
+RUN gem install bundler -v 2.4.22 --no-document
+
+ENV BUNDLE_DEPLOYMENT="true"
+ENV BUNDLE_PATH="vendor/bundle"
+# Дубль настройки сборки — на случай перезаписи .bundle или старого кеша слоёв
+ENV BUNDLE_WITHOUT="development:test"
+ENV RAILS_LOG_TO_STDOUT=true
+ENV RAILS_ENV=production
 
 EXPOSE 3000
+ENV PORT=3000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+  CMD /bin/sh -c 'curl -fsS "http://$HEALTHCHECK_HOST:$PORT/health/live" || exit 1'
 
 CMD ["bundle", "exec", "rails", "s", "-p", "3000", "-b", "0.0.0.0", "-e", "production"]

@@ -4,15 +4,65 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
+	"regexp"
 	"strings"
 	"time"
 
 	"integration_service/pb"
 )
 
+var (
+	reOrcidSandboxURL = regexp.MustCompile(`(?i)^https?://sandbox\.orcid\.org/+`)
+	reOrcidProdURL    = regexp.MustCompile(`(?i)^https?://(?:www\.)?orcid\.org/+`)
+	reOrcidBare       = regexp.MustCompile(`(?i)^(\d{4}-\d{4}-\d{4}-\d{3}[\dX])$`)
+	reOrcidFind       = regexp.MustCompile(`(?i)\b(\d{4}-\d{4}-\d{4}-\d{3}[\dX])\b`)
+	reOrcidSpaces     = regexp.MustCompile(`\s+`)
+)
+
+// NormalizeOrcidID mirrors backend import normalization: canonical lowercase id or empty if invalid.
+func NormalizeOrcidID(raw string) string {
+	s := strings.TrimPrefix(strings.TrimSpace(raw), "\uFEFF")
+	if s == "" {
+		return ""
+	}
+	s = reOrcidSandboxURL.ReplaceAllString(s, "")
+	s = reOrcidProdURL.ReplaceAllString(s, "")
+	s = strings.NewReplacer(
+		"\u2013", "-",
+		"\u2014", "-",
+		"\u2212", "-",
+	).Replace(s)
+	s = reOrcidSpaces.ReplaceAllString(s, "")
+	s = strings.TrimRight(s, "/")
+	if m := reOrcidBare.FindStringSubmatch(s); len(m) > 1 {
+		return strings.ToLower(m[1])
+	}
+	if m := reOrcidFind.FindStringSubmatch(s); len(m) > 1 {
+		return strings.ToLower(m[1])
+	}
+	return ""
+}
+
+// EnvOrcidPubAPIBase is the public ORCID REST root (no trailing slash), e.g. https://pub.orcid.org/v3.0.
+// Override via ORCID_PUB_API_BASE (e.g. sandbox: https://pub.sandbox.orcid.org/v3.0).
+const EnvOrcidPubAPIBase = "ORCID_PUB_API_BASE"
+
+const defaultOrcidPubAPIBase = "https://pub.orcid.org/v3.0"
+
+func PubAPIBaseFromEnv() string {
+	v := strings.TrimSpace(os.Getenv(EnvOrcidPubAPIBase))
+	if v == "" {
+		return defaultOrcidPubAPIBase
+	}
+	return strings.TrimRight(v, "/")
+}
+
 type Client struct {
 	httpClient *http.Client
+	pubAPIBase string // e.g. https://pub.orcid.org/v3.0
 }
 
 func NewClient() *Client {
@@ -20,6 +70,7 @@ func NewClient() *Client {
 		httpClient: &http.Client{
 			Timeout: 15 * time.Second,
 		},
+		pubAPIBase: PubAPIBaseFromEnv(),
 	}
 }
 
@@ -76,9 +127,15 @@ type OrcidDetailResponse struct {
 }
 
 func (c *Client) FetchWorks(orcidID string) ([]*pb.Achievement, error) {
+	canonical := NormalizeOrcidID(orcidID)
+	if canonical == "" {
+		return nil, fmt.Errorf("invalid or empty ORCID after normalization")
+	}
+	orcidID = canonical
+
 	// 1. Get summaries to get put-codes
-	summaryUrl := fmt.Sprintf("https://pub.orcid.org/v3.0/%s/works", orcidID)
-	req, err := http.NewRequest("GET", summaryUrl, nil)
+	summaryURL := fmt.Sprintf("%s/%s/works", c.pubAPIBase, orcidID)
+	req, err := http.NewRequest("GET", summaryURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -90,6 +147,10 @@ func (c *Client) FetchWorks(orcidID string) ([]*pb.Achievement, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == http.StatusNotFound {
+		log.Printf("[orcid] summary 404 for %s — not in public registry, private, or invalid; skipping", orcidID)
+		return []*pb.Achievement{}, nil
+	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("orcid summary api returned status %d", resp.StatusCode)
 	}
@@ -116,8 +177,8 @@ func (c *Client) FetchWorks(orcidID string) ([]*pb.Achievement, error) {
 	}
 
 	// 2. Get full details in bulk to get contributors
-	detailUrl := fmt.Sprintf("https://pub.orcid.org/v3.0/%s/works/%s", orcidID, strings.Join(putCodes, ","))
-	req, err = http.NewRequest("GET", detailUrl, nil)
+	detailURL := fmt.Sprintf("%s/%s/works/%s", c.pubAPIBase, orcidID, strings.Join(putCodes, ","))
+	req, err = http.NewRequest("GET", detailURL, nil)
 	if err != nil {
 		return nil, err
 	}

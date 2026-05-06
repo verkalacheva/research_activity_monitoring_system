@@ -19,53 +19,54 @@ module Integrations
 
     def call
       saved_count = 0
+      ::Achievement.transaction do
+        @achievements_params.each do |attr|
+          res_id = attr[:researcher_id]
+          next unless res_id
 
-      @achievements_params.each do |attr|
-        res_id = attr[:researcher_id]
-        next unless res_id
+          type = map_type(attr[:type])
+          status = map_status(attr[:title], attr[:description], attr[:url])
+          result = map_result(attr[:title], attr[:description])
+          participation = map_participation(attr[:title], attr[:author_count], attr[:description], attr[:journal_title])
 
-        type = map_type(attr[:type])
-        status = map_status(attr[:title], attr[:description], attr[:url])
-        result = map_result(attr[:title], attr[:description])
-        participation = map_participation(attr[:title], attr[:author_count], attr[:description], attr[:journal_title])
+          achievement = build_achievement(
+            type: type,
+            status: status,
+            result: result,
+            participation: participation,
+            date_raw: attr[:date]
+          )
 
-        achievement = Achievement.new(
-          achievement_type: type,
-          achievement_status: status,
-          achievement_result: result,
-          achievement_participation: participation,
-          submission_date: attr[:date].present? ? (parse_achievement_date(attr[:date]) rescue Time.current) : Time.current
-        )
+          if achievement.save
+            ResearcherAchievement.create!(researcher_id: res_id, achievement: achievement)
 
-        if achievement.save
-          ResearcherAchievement.create!(researcher_id: res_id, achievement: achievement)
+            extra_fields = attr[:extra_fields].presence || {}
 
-          extra_fields = attr[:extra_fields].presence || {}
+            type.achievement_fields.each do |field|
+              value = extra_fields[field.title].presence
 
-          type.achievement_fields.each do |field|
-            value = extra_fields[field.title].presence
+              value ||= case field.title
+                        when /полное название статьи/i, /название рид/i, /название темы выступления/i,
+                             /полное название хакатона/i, /полное название конкурса/i,
+                             /название программы/i, /название достижения/i
+                          attr[:title]
+                        when /полное название журнала/i, /полное название мероприятия/i,
+                             /юридическое название организации/i, /название сми/i
+                          attr[:journal_title].presence || attr[:description]
+                        when /дата/i
+                          attr[:date].present? ? parse_achievement_date(attr[:date]).to_s : nil
+                        when /ссылка/i, /документ/i, /библиографическая/i
+                          attr[:url].presence || attr[:external_id]
+                        when /степень участия/i, /полное описание/i, /упоминание/i
+                          attr[:description]
+                        end
 
-            value ||= case field.title
-                      when /полное название статьи/i, /название рид/i, /название темы выступления/i,
-                           /полное название хакатона/i, /полное название конкурса/i,
-                           /название программы/i, /название достижения/i
-                        attr[:title]
-                      when /полное название журнала/i, /полное название мероприятия/i,
-                           /юридическое название организации/i, /название сми/i
-                        attr[:journal_title].presence || attr[:description]
-                      when /дата/i
-                        attr[:date].present? ? parse_achievement_date(attr[:date]).to_s : nil
-                      when /ссылка/i, /документ/i, /библиографическая/i
-                        attr[:url].presence || attr[:external_id]
-                      when /степень участия/i, /полное описание/i, /упоминание/i
-                        attr[:description]
-                      end
-
-            if value.present?
-              achievement.achievement_field_answers.create!(achievement_field: field, value: value)
+              if value.present?
+                achievement.achievement_field_answers.create!(achievement_field: field, value: value)
+              end
             end
+            saved_count += 1
           end
-          saved_count += 1
         end
       end
 
@@ -81,6 +82,21 @@ module Integrations
     end
 
     private
+
+    def build_achievement(type:, status:, result:, participation:, date_raw:)
+      klass = ::Achievement
+      unless klass < ApplicationRecord
+        raise "Expected ::Achievement to be AR model, got #{klass.inspect}"
+      end
+
+      klass.new(
+        achievement_type: type,
+        achievement_status: status,
+        achievement_result: result,
+        achievement_participation: participation,
+        submission_date: date_raw.present? ? (parse_achievement_date(date_raw) rescue Time.current) : Time.current
+      )
+    end
 
     def normalize_row(row)
       return {} if row.nil?
@@ -264,12 +280,14 @@ module Integrations
         AchievementStatus.find_by(title: 'Scopus/Web of Science')
       elsif text.include?('international') || text.include?('международн')
         AchievementStatus.find_by(title: 'Международный')
-      elsif text.include?('ваг') || text.include?('vak')
+      elsif text.include?('вак') || text.include?('vak')
         AchievementStatus.find_by(title: 'ВАК')
       elsif text.include?('rsci')
         AchievementStatus.find_by(title: 'RSCI')
+      elsif text.include?('университет') || text.include?('university')
+        AchievementStatus.find_by(title: 'Университетский')
       else
-        AchievementStatus.find_by(title: 'Не указано') || AchievementStatus.find_by(title: 'Университетский') || AchievementStatus.first
+        AchievementStatus.find_by(title: 'Не указано')
       end
     end
 

@@ -210,7 +210,10 @@ class _ResearcherFormScreenState extends State<ResearcherFormScreen> {
             const SizedBox(height: AppDimensions.paddingMedium),
             TextFormField(
               controller: _employmentStatusController,
-              decoration: const InputDecoration(labelText: 'Трудоустройство (статус)'),
+              decoration: const InputDecoration(
+                labelText: 'Трудоустройство',
+                helperText: 'Укажите дату поступления или период (напр. март 2025, 01.09.2024)',
+              ),
             ),
             const SizedBox(height: AppDimensions.paddingMedium),
             TextFormField(

@@ -3,11 +3,14 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"integration_service/internal/github"
 	"integration_service/internal/integrations"
@@ -30,15 +33,19 @@ type server struct {
 }
 
 func (s *server) FetchOrcidAchievements(ctx context.Context, req *pb.OrcidRequest) (*pb.OrcidResponse, error) {
-	log.Printf("Received ORCID request for ID: %s", req.OrcidId)
+	canon := orcid.NormalizeOrcidID(req.OrcidId)
+	if canon == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid or empty ORCID")
+	}
+	log.Printf("Received ORCID request for ID: %s (canonical: %s)", req.OrcidId, canon)
 
 	// Check if researcher exists in base
-	exists, err := s.researcherRepository.ExistsByOrcidID(req.OrcidId)
+	exists, err := s.researcherRepository.ExistsByOrcidID(canon)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "database error: %v", err)
 	}
 	if !exists {
-		return nil, status.Errorf(codes.NotFound, "researcher with ORCID %s not found in database", req.OrcidId)
+		return nil, status.Errorf(codes.NotFound, "researcher with ORCID %s not found in database", canon)
 	}
 
 	provider, err := s.registry.GetProvider("orcid")
@@ -46,7 +53,7 @@ func (s *server) FetchOrcidAchievements(ctx context.Context, req *pb.OrcidReques
 		return nil, status.Errorf(codes.Internal, "provider error: %v", err)
 	}
 
-	achievements, err := provider.FetchAchievements(ctx, req.OrcidId)
+	achievements, err := provider.FetchAchievements(ctx, canon)
 	if err != nil {
 		log.Printf("Error fetching ORCID achievements: %v", err)
 		return nil, status.Errorf(codes.Unavailable, "external api error: %v", err)
@@ -128,7 +135,7 @@ func (s *server) SyncAllAchievements(ctx context.Context, req *pb.SyncRequest) (
 				var extID string
 				switch pName {
 				case "orcid":
-					extID = r.OrcidID.String
+					extID = orcid.NormalizeOrcidID(r.OrcidID.String)
 				case "openalex":
 					extID = r.OpenAlexID.String
 				}
@@ -228,6 +235,28 @@ func deduplicate(achievements []*pb.Achievement) []*pb.Achievement {
 	return result
 }
 
+func startHealthHTTPServer(db *sql.DB, addr string) *http.Server {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/health/live", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	mux.HandleFunc("/health/ready", func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+		defer cancel()
+		if err := db.PingContext(ctx); err != nil {
+			http.Error(w, fmt.Sprintf("db: %v", err), http.StatusServiceUnavailable)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Printf("health http: %v", err)
+		}
+	}()
+	return srv
+}
 
 func main() {
 	dbURL := os.Getenv("DATABASE_URL")
@@ -240,6 +269,16 @@ func main() {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
 	defer db.Close()
+	if err := db.Ping(); err != nil {
+		log.Fatalf("database ping: %v", err)
+	}
+
+	healthPort := os.Getenv("HEALTH_HTTP_PORT")
+	if healthPort == "" {
+		healthPort = "8080"
+	}
+	startHealthHTTPServer(db, ":"+healthPort)
+	log.Printf("Health HTTP on :%s (live, ready)", healthPort)
 
 	port := os.Getenv("PORT")
 	if port == "" {

@@ -1,8 +1,11 @@
 class Researcher < ApplicationRecord
   include SoftDeletable
 
+  # Синхронизировано с выпадающим списком во frontend (researcher_form_screen.dart).
+  DEGREE_LEVELS = %w[к.т.н. д.т.н. к.ф.-м.н. д.ф.-м.н. аспирант бакалавр магистрант].freeze
+
   has_many :researchers_teams, dependent: :destroy
-  has_many :teams, through: :researchers_teams
+  has_many :teams, -> { where(teams: { deleted_at: nil }) }, through: :researchers_teams
   has_many :led_teams, class_name: 'Team', foreign_key: 'leader_id', dependent: :nullify
   has_many :researcher_achievements, dependent: :destroy
   has_many :achievements, -> { where(achievements: { deleted_at: nil }) }, through: :researcher_achievements

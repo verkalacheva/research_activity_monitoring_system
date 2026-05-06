@@ -11,7 +11,7 @@ import 'sync_preview_exceptions.dart';
 class IntegrationSyncJobSocket {
   IntegrationSyncJobSocket._();
 
-  /// [wsUrl] — полный URL, например `ws://localhost:3000/cable`.
+  /// [wsUrl] — полный WebSocket URL (как правило apiBase → ws/wss + путь `/cable`).
   static Future<List<dynamic>> waitForCompletion({
     required String wsUrl,
     required String jobId,

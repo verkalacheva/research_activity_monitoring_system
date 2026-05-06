@@ -1,27 +1,46 @@
 import os
 import asyncpg
-import re
 from typing import List, Dict, Any, Optional
 
+# Таймаут установления TCP/TLS к БД (сек), чтобы не висеть при неверном хосте/порте
+_DEFAULT_CONNECT_TIMEOUT = 15.0
+
+
 def _normalize_dsn(dsn: str) -> str:
+    """Только схема URI; sslmode и остальные query оставляем (asyncpg понимает libpq-строку)."""
     if dsn.startswith("postgres://"):
         dsn = dsn.replace("postgres://", "postgresql://", 1)
-    if "sslmode=" in dsn:
-        dsn = re.sub(r'[?&]sslmode=[^&]*', '', dsn)
     return dsn
+
 
 class DbClient:
     def __init__(self):
         raw = os.getenv("DATABASE_URL")
+        self._raw_dsn = raw
         self.dsn = _normalize_dsn(raw) if raw else None
+        # Last successfully loaded app_settings snapshot.
+        # Used as a resilience fallback when DB has transient timeouts.
+        self._settings_cache: Dict[str, str] = {}
+
+    def _connect_timeout(self) -> float:
+        try:
+            return float(os.getenv("DB_CONNECT_TIMEOUT_SEC", str(_DEFAULT_CONNECT_TIMEOUT)))
+        except ValueError:
+            return _DEFAULT_CONNECT_TIMEOUT
+
+    async def _connect(self):
+        """Один таймаут на connect; DSN с ?sslmode= из docker-compose не режем."""
+        if not self.dsn:
+            raise RuntimeError("DATABASE_URL is not set")
+        return await asyncpg.connect(self.dsn, timeout=self._connect_timeout())
 
     async def fetch_project_criteria(self) -> List[str]:
         if not self.dsn:
             return []
-        
+
         conn = None
         try:
-            conn = await asyncpg.connect(self.dsn)
+            conn = await self._connect()
             rows = await conn.fetch("SELECT title FROM dev_project_criteria")
             return [row["title"] for row in rows]
         except Exception as e:
@@ -34,10 +53,10 @@ class DbClient:
     async def fetch_activity_types(self) -> List[str]:
         if not self.dsn:
             return []
-        
+
         conn = None
         try:
-            conn = await asyncpg.connect(self.dsn)
+            conn = await self._connect()
             rows = await conn.fetch("SELECT title FROM dev_employee_activity_types")
             return [row["title"] for row in rows]
         except Exception as e:
@@ -54,7 +73,7 @@ class DbClient:
 
         conn = None
         try:
-            conn = await asyncpg.connect(self.dsn)
+            conn = await self._connect()
             try:
                 type_rows = await conn.fetch(
                     "SELECT id, title, description, icon_name FROM achievement_types "
@@ -101,7 +120,7 @@ class DbClient:
 
         conn = None
         try:
-            conn = await asyncpg.connect(self.dsn)
+            conn = await self._connect()
             row = await conn.fetchrow(
                 "SELECT id, name, surname, second_name, orcid_id, openalex_id, github, "
                 "faculty, subject_area FROM researchers WHERE id = $1 AND deleted_at IS NULL",
@@ -129,21 +148,54 @@ class DbClient:
             if conn:
                 await conn.close()
 
-    async def fetch_settings(self) -> Dict[str, str]:
-        """Return all app_settings as {key: value} dict, ignoring NULL/empty values."""
+    async def ping(self) -> bool:
         if not self.dsn:
-            return {}
-
+            return True
         conn = None
         try:
-            conn = await asyncpg.connect(self.dsn)
-            rows = await conn.fetch(
-                "SELECT key, value FROM app_settings WHERE value IS NOT NULL AND value != ''"
-            )
-            return {row["key"]: row["value"] for row in rows}
-        except Exception as e:
-            print(f"[DbClient] Error fetching settings: {e}")
-            return {}
+            conn = await self._connect()
+            await conn.execute("SELECT 1")
+            return True
+        except Exception:
+            return False
         finally:
             if conn:
                 await conn.close()
+
+    async def fetch_settings(self) -> Dict[str, str]:
+        """Ключ LLM и прочие app_settings — единственный источник с UI (таблица app_settings)."""
+        if not self.dsn:
+            print("[DbClient] fetch_settings: DATABASE_URL is not set")
+            return {}
+
+        attempts = 2
+        for attempt in range(1, attempts + 1):
+            conn = None
+            try:
+                conn = await self._connect()
+                rows = await conn.fetch(
+                    "SELECT key, value FROM app_settings WHERE value IS NOT NULL AND value != ''"
+                )
+                data = {row["key"]: row["value"] for row in rows}
+                self._settings_cache = data
+                return data
+            except Exception as e:
+                detail = str(e).strip() or repr(e)
+                dsn_hint = (self._raw_dsn or "")[:80]
+                print(
+                    f"[DbClient] Error fetching settings (attempt {attempt}/{attempts}): {detail} "
+                    f"(dsn_host_ok={bool(self.dsn)}, dsn_prefix={dsn_hint!r})"
+                )
+                if attempt < attempts:
+                    await asyncio.sleep(0.25)
+                    continue
+                if self._settings_cache:
+                    print(
+                        "[DbClient] Using cached app_settings due to DB timeout/error "
+                        f"({len(self._settings_cache)} keys)"
+                    )
+                    return dict(self._settings_cache)
+                return {}
+            finally:
+                if conn:
+                    await conn.close()

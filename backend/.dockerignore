@@ -1,5 +1,7 @@
 .git
 .gitignore
+# Иначе COPY . . затирает .bundle/config после bundle install — пропадает without development test
+.bundle
 log/*
 tmp/*
 !tmp/pids/

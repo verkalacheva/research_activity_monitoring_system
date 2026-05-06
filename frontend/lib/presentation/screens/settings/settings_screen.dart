@@ -22,11 +22,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // LLM / Crawler
   final _llmProviderCtrl = TextEditingController();
   final _llmModelCtrl = TextEditingController();
-  final _openrouterKeyCtrl = TextEditingController();
+  final _llmApiBaseCtrl = TextEditingController();
+  final _llmApiKeyCtrl = TextEditingController();
 
   final Map<String, bool> _obscured = {
     'github_token': true,
-    'openrouter_api_key': true,
+    'llm_api_key': true,
   };
 
   @override
@@ -40,7 +41,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _githubTokenCtrl.dispose();
     _llmProviderCtrl.dispose();
     _llmModelCtrl.dispose();
-    _openrouterKeyCtrl.dispose();
+    _llmApiBaseCtrl.dispose();
+    _llmApiKeyCtrl.dispose();
     super.dispose();
   }
 
@@ -51,7 +53,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _githubTokenCtrl.text = s.githubToken ?? '';
       _llmProviderCtrl.text = s.llmProvider ?? '';
       _llmModelCtrl.text = s.llmModelName ?? '';
-      _openrouterKeyCtrl.text = s.openrouterApiKey ?? '';
+      _llmApiBaseCtrl.text = s.llmApiBase ?? '';
+      _llmApiKeyCtrl.text = s.llmApiKey ?? '';
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -70,7 +73,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         'github_token': _githubTokenCtrl.text.trim().isEmpty ? null : _githubTokenCtrl.text.trim(),
         'llm_provider': _llmProviderCtrl.text.trim().isEmpty ? null : _llmProviderCtrl.text.trim(),
         'llm_model_name': _llmModelCtrl.text.trim().isEmpty ? null : _llmModelCtrl.text.trim(),
-        'openrouter_api_key': _openrouterKeyCtrl.text.trim().isEmpty ? null : _openrouterKeyCtrl.text.trim(),
+        'llm_api_base': _llmApiBaseCtrl.text.trim().isEmpty ? null : _llmApiBaseCtrl.text.trim(),
+        'llm_api_key': _llmApiKeyCtrl.text.trim().isEmpty ? null : _llmApiKeyCtrl.text.trim(),
+        'openrouter_api_key': null,
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -139,15 +144,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const SizedBox(height: AppDimensions.paddingLarge),
                       _buildSection(
                         icon: Icons.smart_toy,
-                        title: 'OpenRouter / Краулер',
+                        title: 'LLM / Краулер',
                         subtitle: 'Настройки языковой модели для автоматического извлечения достижений',
                         children: [
                           _buildSecretField(
-                            controller: _openrouterKeyCtrl,
-                            label: 'OpenRouter API Key',
-                            hint: 'sk-or-v1-xxxxxxxxxxxxxxxxxxxx',
-                            obscureKey: 'openrouter_api_key',
-                            helper: 'Получите на openrouter.ai. Можно указать несколько ключей через запятую для ротации.',
+                            controller: _llmApiKeyCtrl,
+                            label: 'API-ключ LLM',
+                            hint: 'Ключ провайдера (OpenAI, OpenRouter, DeepSeek и т.д.)',
+                            obscureKey: 'llm_api_key',
+                            helper: 'Формат зависит от выбранного провайдера и endpoint (см. базовый URL и модель).',
                           ),
                           const SizedBox(height: AppDimensions.paddingMedium),
                           _buildTextField(
@@ -157,16 +162,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             helper: 'Префикс провайдера для LiteLLM. '
                                 'Для OpenRouter: openrouter. '
                                 'Другие варианты: anthropic, google, openai. '
-                                'По умолчанию: openrouter',
+                                'По умолчанию — openrouter.',
+                          ),
+                          const SizedBox(height: AppDimensions.paddingMedium),
+                          _buildTextField(
+                            controller: _llmApiBaseCtrl,
+                            label: 'Базовый URL API (опционально)',
+                            hint: 'https://openrouter.ai/api/v1',
+                            helper: 'По умолчанию — выбирается по провайдеру (OpenRouter, DeepSeek, OpenAI).',
                           ),
                           const SizedBox(height: AppDimensions.paddingMedium),
                           _buildTextField(
                             controller: _llmModelCtrl,
                             label: 'Модель',
                             hint: 'google/gemini-2.0-flash-001',
-                            helper: 'Название модели без префикса провайдера. '
-                                'Итоговая строка: <провайдер>/<модель>. '
-                                'По умолчанию: google/gemini-2.0-flash-001',
+                            helper: 'Идентификатор модели без префикса провайдера. '
+                                'Итог для API: <провайдер>/<модель>.',
                           ),
                         ],
                       ),

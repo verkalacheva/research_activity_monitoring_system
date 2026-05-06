@@ -7,7 +7,7 @@ module Integrations
     TTL = 24 * 60 * 60
 
     def self.redis
-      @redis ||= Redis.new(url: ENV.fetch('REDIS_URL', 'redis://localhost:6379/0'))
+      @redis ||= Redis.new(url: ENV.fetch('REDIS_URL'))
     end
 
     def self.key(id)

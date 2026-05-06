@@ -31,7 +31,9 @@ func (r *Repository) FetchData(req *pb.ReportRequest) ([]DataRow, int32, map[str
 		"JOIN dev_project_criteria dpc2 ON tdc2.dev_project_criterion_id = dpc2.id WHERE tdc2.team_id = rt2.team_id) AS cs, " +
 		"(SELECT COALESCE(SUM(rda2.count * deat2.points), 0) FROM researcher_dev_activities rda2 " +
 		"JOIN dev_employee_activity_types deat2 ON rda2.dev_employee_activity_type_id = deat2.id WHERE rda2.researcher_id = r.id AND rda2.team_id = rt2.team_id) AS als " +
-		"FROM researchers_teams rt2 WHERE rt2.researcher_id = r.id) dp) AS dev_points"
+		"FROM researchers_teams rt2 " +
+		"JOIN teams t2 ON t2.id = rt2.team_id AND t2.deleted_at IS NULL " +
+		"WHERE rt2.researcher_id = r.id) dp) AS dev_points"
 
 	baseQuery := "SELECT a.id AS achievement_id, r.id AS researcher_id, " +
 		"TRIM(CONCAT_WS(' ', r.surname, r.name, r.second_name)) AS researcher_name, " +
@@ -67,7 +69,7 @@ func (r *Repository) FetchData(req *pb.ReportRequest) ([]DataRow, int32, map[str
 		case "team_id":
 			// For team_id, we still need the subquery but we can use BuildFilterCondition for the inner part
 			innerCond, innerVal := reports.BuildFilterCondition("team_id", f.Operator, argCount, f.Value, true)
-			cond = fmt.Sprintf("r.id IN (SELECT researcher_id FROM researchers_teams WHERE %s)", innerCond)
+			cond = fmt.Sprintf("r.id IN (SELECT rt.researcher_id FROM researchers_teams rt JOIN teams t ON t.id = rt.team_id AND t.deleted_at IS NULL WHERE %s)", innerCond)
 			val = innerVal
 		case "achievement_result_id":
 			cond, val = reports.BuildFilterCondition("res.id", f.Operator, argCount, f.Value, true)

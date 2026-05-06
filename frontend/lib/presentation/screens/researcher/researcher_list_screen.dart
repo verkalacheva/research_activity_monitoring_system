@@ -54,21 +54,26 @@ class _ResearcherListScreenState extends State<ResearcherListScreen> {
   }
 
   void _syncAllEmployees() {
-    SyncNotificationService.instance.enqueue(SyncRequest(
-      provider: 'all',
-      label: 'ORCID и OpenAlex — все сотрудники',
-      onSaved: _onSavedAfterGlobalSync,
-    ));
-    SyncNotificationService.instance.enqueue(SyncRequest(
-      provider: 'github',
-      label: 'GitHub — все сотрудники',
-      onSaved: _onSavedAfterGlobalSync,
-    ));
-    SyncNotificationService.instance.enqueue(SyncRequest(
-      provider: 'crawl_search',
-      label: 'Интернет (краулер) — все сотрудники',
-      onSaved: _onSavedAfterGlobalSync,
-    ));
+    SyncNotificationService.instance.enqueueBulk([
+      SyncRequest(
+        provider: 'all',
+        label: 'ORCID и OpenAlex — все сотрудники',
+        onSaved: _onSavedAfterGlobalSync,
+        employeesListBulkStages: true,
+      ),
+      SyncRequest(
+        provider: 'github',
+        label: 'GitHub — все сотрудники',
+        onSaved: _onSavedAfterGlobalSync,
+        employeesListBulkStages: true,
+      ),
+      SyncRequest(
+        provider: 'crawl_search',
+        label: 'Интернет (краулер) — все сотрудники',
+        onSaved: _onSavedAfterGlobalSync,
+        employeesListBulkStages: true,
+      ),
+    ]);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -124,17 +129,44 @@ class _ResearcherListScreenState extends State<ResearcherListScreen> {
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: Builder(
-              builder: (context) => OutlinedButton.icon(
-                onPressed: _syncAllEmployees,
-                icon: const Icon(Icons.sync, size: 18),
-                label: const Text('СИНХРОНИЗАЦИЯ ВСЕХ'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  side: const BorderSide(color: AppColors.primary),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                ),
-              ),
+            child: ListenableBuilder(
+              listenable: Listenable.merge(<Listenable>[
+                SyncNotificationService.instance.uiBulkStagesPending,
+                SyncNotificationService.instance.employeesBulkUiTick,
+              ]),
+              builder: (context, _) {
+                final svc = SyncNotificationService.instance;
+                final bulkBusy = svc.hasEmployeesBulkStagesPending;
+                final counts = svc.employeesBulkStagesCounts;
+                final stage = svc.employeesBulkCurrentStageLabel;
+                String busyLabel = 'СИНХРОНИЗАЦИЯ…';
+                if (counts.total > 0) {
+                  busyLabel = 'СИНХРОНИЗАЦИЯ ${counts.done}/${counts.total}';
+                  if (stage != null && stage.isNotEmpty) {
+                    busyLabel = '$busyLabel · $stage';
+                  }
+                }
+                return OutlinedButton.icon(
+                  onPressed: bulkBusy ? null : _syncAllEmployees,
+                  icon: bulkBusy
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                        )
+                      : const Icon(Icons.sync, size: 18),
+                  label: Text(
+                    bulkBusy ? busyLabel : 'СИНХРОНИЗАЦИЯ ВСЕХ',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(color: AppColors.primary),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                );
+              },
             ),
           ),
           const SizedBox(width: 24),

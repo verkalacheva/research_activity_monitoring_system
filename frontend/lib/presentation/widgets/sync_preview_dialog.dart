@@ -35,6 +35,7 @@ class SyncPreviewDialog extends StatefulWidget {
 class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
   final IntegrationService _service = IntegrationService();
   bool _isLoading = false;
+  bool _isSaving = false;
   List<dynamic> _results = [];
   final Set<Map<String, dynamic>> _selectedAchievements = {};
 
@@ -46,6 +47,28 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
       final devActs = res['dev_activities'] as List? ?? [];
       final criteria = res['project_criteria_met'] as List? ?? [];
       return devActs.isNotEmpty || criteria.isNotEmpty;
+    });
+  }
+
+  List<Map<String, dynamic>> _allAchievements() {
+    return _results
+        .expand((res) => (res['achievements'] as List? ?? []))
+        .whereType<Map<String, dynamic>>()
+        .toList();
+  }
+
+  void _toggleSelectAllAchievements() {
+    final all = _allAchievements();
+    if (all.isEmpty) return;
+
+    setState(() {
+      if (_selectedAchievements.length == all.length) {
+        _selectedAchievements.clear();
+      } else {
+        _selectedAchievements
+          ..clear()
+          ..addAll(all);
+      }
     });
   }
 
@@ -72,6 +95,7 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
   Future<void> _loadPreview() async {
     setState(() {
       _isLoading = true;
+      _isSaving = false;
       _results = [];
       _selectedAchievements.clear();
     });
@@ -102,13 +126,17 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
       setState(() {
         _results = enrichedResults;
         _isLoading = false;
+        _isSaving = false;
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         _showCrawlModelWarnings(_collectWarnings(enrichedResults));
       });
     } catch (e) {
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+        _isSaving = false;
+      });
       if (mounted) {
         if (_isRateLimitError(e.toString())) {
           _showRateLimitWarning();
@@ -210,7 +238,10 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
     // Сохранение разрешено если выбраны ачивки, или есть dev-данные, или это команда
     if (_selectedAchievements.isEmpty && widget.teamId == null && !_hasDevData()) return;
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _isSaving = true;
+    });
     try {
       // Собираем dev-данные для всех исследователей из результатов
       final researcherDevData = _results
@@ -253,7 +284,10 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
         );
       }
     } catch (e) {
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+        _isSaving = false;
+      });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Ошибка сохранения: $e')),
@@ -277,6 +311,9 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
     // Для команд кнопка активна всегда, так как dev_data сохраняется сразу
     // Для исследователей кнопка активна если выбраны ачивки или есть данные по разработке
     final bool canSave = _selectedAchievements.isNotEmpty || widget.teamId != null || widget.scope == 'teams' || _hasDevData();
+    final allAchievements = _allAchievements();
+    final hasAchievements = allAchievements.isNotEmpty;
+    final allSelected = hasAchievements && _selectedAchievements.length == allAchievements.length;
 
     return PopScope<bool?>(
       canPop: true,
@@ -346,12 +383,19 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
                           const CircularProgressIndicator(),
                           const SizedBox(height: 24),
                           Text(
-                            _isInternetCrawl
-                                ? 'Краулер ищет информацию в интернете по сотрудникам...'
-                                : 'Запрашиваем данные по API...',
+                            _isSaving
+                                ? 'Сохраняем результаты синхронизации...'
+                                : (_isInternetCrawl
+                                    ? 'Краулер ищет информацию в интернете по сотрудникам...'
+                                    : 'Запрашиваем данные по API...'),
                             style: AppTextStyles.bodySecondary,
                           ),
-                          const Text('Это может занять до минуты', style: AppTextStyles.caption),
+                          Text(
+                            _isSaving
+                                ? 'Пожалуйста, подождите. Идёт массовое сохранение.'
+                                : 'Это может занять до минуты',
+                            style: AppTextStyles.caption,
+                          ),
                         ],
                       ),
                     )
@@ -362,16 +406,21 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
             const SizedBox(height: 24),
             const Divider(),
             const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+            Wrap(
+              alignment: WrapAlignment.end,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
               children: [
+                TextButton.icon(
+                  onPressed: hasAchievements ? _toggleSelectAllAchievements : null,
+                  icon: Icon(allSelected ? Icons.deselect : Icons.select_all),
+                  label: const Text('ВЫБРАТЬ ВСЕ'),
+                ),
                 if (_selectedAchievements.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 16),
-                    child: Text(
-                      'Выбрано достижений: ${_selectedAchievements.length}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
-                    ),
+                  Text(
+                    'Выбрано достижений: ${_selectedAchievements.length}',
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
                   ),
                 OutlinedButton(
                   onPressed: _closePreviewWithoutSaving,
@@ -380,14 +429,13 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
                   ),
                   child: const Text('ОТМЕНА'),
                 ),
-                const SizedBox(width: 16),
                 ElevatedButton(
                   onPressed: !canSave ? null : _saveSelected,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   ),
-                  child: const Text('СОХРАНИТЬ', style: const TextStyle(color: AppColors.textOnPrimary)),
+                  child: const Text('СОХРАНИТЬ', style: TextStyle(color: AppColors.textOnPrimary)),
                 ),
               ],
             ),

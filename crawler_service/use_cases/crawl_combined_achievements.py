@@ -49,6 +49,18 @@ DATE_HINT = (
     "or YYYY if only the year is known. Never leave it blank if any date is visible."
 )
 
+_ATTRIBUTION_HINT_TEMPLATE = (
+    "ATTRIBUTION RULES (apply per achievement, not per page):\n"
+    "1. CO-AUTHORSHIP IS VALID: if the researcher '{name}' (or abbreviated '{abbrev}') is listed as "
+    "one of several authors, co-authors, co-presenters, or co-participants of an achievement, "
+    "extract it — co-authored works are full personal achievements.\n"
+    "2. STRICT NAME CHECK: for each achievement you consider extracting, verify that "
+    "'{name}' or '{abbrev}' actually appears on this page in connection with that specific item. "
+    "If the researcher's name is absent from the page entirely, return {{\"achievements\": []}}. "
+    "For multi-author collections or proceedings listing many different people, "
+    "include ONLY items where this person is explicitly named; skip items by other authors."
+)
+
 DUPLICATE_HINT = (
     "Do not output the same real-world achievement twice under different wording. "
     "If the same work appears in multiple sections of the page, keep a single entry with the best date."
@@ -113,6 +125,16 @@ TYPE_DISAMBIGUATION_HINT = (
 )
 
 
+def _abbreviated_name(full_name: str) -> str:
+    """'Фамилия Имя Отчество' → 'Фамилия И.О.' для подсказки LLM."""
+    parts = (full_name or "").strip().split()
+    if len(parts) >= 3:
+        return f"{parts[0]} {parts[1][0].upper()}.{parts[2][0].upper()}."
+    if len(parts) == 2:
+        return f"{parts[0]} {parts[1][0].upper()}."
+    return full_name
+
+
 def _inter_url_delay() -> float:
     try:
         return max(0.0, float(os.getenv("CRAWL_INTER_URL_DELAY_SEC", "15")))
@@ -148,10 +170,10 @@ def _effective_html_page_hint() -> str:
 
 
 def _max_urls_per_sync() -> int:
-    """CRAWL_MAX_URLS_PER_SYNC — верхняя граница URL за один прогон (0 = без лимита)."""
+    """CRAWL_MAX_URLS_PER_SYNC — верхняя граница URL за один прогон (0 = без лимита, по умолчанию 0)."""
     raw = (os.getenv("CRAWL_MAX_URLS_PER_SYNC", "") or "").strip()
     if not raw:
-        return 5
+        return 0
     try:
         return max(0, int(raw))
     except ValueError:
@@ -197,6 +219,40 @@ class CrawlAchievementsUseCase:
         self.search_client = search_client
         self.crawler_client = crawler_client
         self.db_client = DbClient()
+        self._accumulated: List[Achievement] = []
+        self._achievement_type_titles: List[str] = list(FALLBACK_ACHIEVEMENT_TYPES)
+        self._type_fields_map: Dict[str, List[Dict]] = {}
+
+    def partial_result(self) -> "CrawlResult":
+        """Return whatever was collected before cancellation, deduplicated."""
+        normalized: List[Achievement] = []
+        for a in self._accumulated:
+            nt = fuzzy_match_type(a.type, self._achievement_type_titles)
+            fields = filter_fields_for_type(a.extra_fields, nt, self._type_fields_map)
+            normalized.append(
+                Achievement(
+                    title=a.title, type=nt, url=a.url, date=a.date,
+                    description=a.description, author_count=a.author_count,
+                    journal_title=a.journal_title, extra_fields=fields,
+                )
+            )
+        unique_map: Dict[str, Achievement] = {}
+        for a in normalized:
+            key = normalize_title_key(a.title)
+            if not key:
+                continue
+            if key not in unique_map or len(a.description or "") > len(unique_map[key].description or ""):
+                unique_map[key] = a
+        warnings = list(dict.fromkeys(
+            self.crawler_client.warnings
+            + ["Краулер прерван gRPC-дедлайном: возвращены частичные результаты."]
+        ))
+        return CrawlResult(
+            achievements=list(unique_map.values()),
+            dev_activities=[],
+            project_criteria_met=[],
+            warnings=warnings,
+        )
 
     @staticmethod
     def _collect_achievements_from_extracted(
@@ -260,6 +316,9 @@ class CrawlAchievementsUseCase:
             achievement_type_titles = list(FALLBACK_ACHIEVEMENT_TYPES)
             type_fields_map = {}
             type_synopsis = ""
+        self._achievement_type_titles = achievement_type_titles
+        self._type_fields_map = type_fields_map
+        self._accumulated = []
 
         if not _grpc_still_active(cancel_check):
             return CrawlResult(
@@ -392,6 +451,7 @@ class CrawlAchievementsUseCase:
         )
 
         fields_hint = _build_fields_hint(type_fields_map)
+
         type_hint = (
             "For the 'type' field use ONLY one of these exact values (in Russian): "
             + ", ".join(f'"{t}"' for t in achievement_type_titles)
@@ -431,8 +491,14 @@ class CrawlAchievementsUseCase:
             "required": ["achievements"]
         }
 
+        abbrev_name = _abbreviated_name(researcher_name)
+        attribution_hint = _ATTRIBUTION_HINT_TEMPLATE.format(
+            name=researcher_name, abbrev=abbrev_name
+        )
         instruction = (
-            f"Extract research achievements for {researcher_name}. "
+            f"Extract research achievements for {researcher_name} "
+            f"(also written as {abbrev_name}). "
+            f"{attribution_hint} "
             f"{_effective_html_page_hint()} "
             f"{TYPE_COVERAGE_HINT} "
             f"{TYPE_JSON_HINT} "
@@ -458,11 +524,11 @@ class CrawlAchievementsUseCase:
                 extracted = await self._extract_with_optional_chunk(
                     target_url, schema, instruction, chunk_th, retrieval_queries
                 )
-                achievements.extend(
-                    self._collect_achievements_from_extracted(
-                        extracted, target_url, type_fields_map
-                    )
+                batch = self._collect_achievements_from_extracted(
+                    extracted, target_url, type_fields_map
                 )
+                achievements.extend(batch)
+                self._accumulated.extend(batch)
         else:
             if delay > 0:
                 print(
@@ -482,37 +548,43 @@ class CrawlAchievementsUseCase:
                         extracted, target_url, type_fields_map
                     )
 
-            pending = {asyncio.create_task(_one_url(u)) for u in urls_to_crawl}
+            pending: set = {asyncio.create_task(_one_url(u)) for u in urls_to_crawl}
             n_err = 0
-            while pending:
-                if not _grpc_still_active(cancel_check):
-                    n_cancel = len(pending)
-                    for t in pending:
-                        t.cancel()
-                    await asyncio.gather(*pending, return_exceptions=True)
-                    append_audit(
-                        {
-                            "event": "crawl_parallel_cancelled",
-                            "researcher_id": researcher_id,
-                            "cancelled_tasks": n_cancel,
-                        }
+            try:
+                while pending:
+                    if not _grpc_still_active(cancel_check):
+                        n_cancel = len(pending)
+                        for t in pending:
+                            t.cancel()
+                        await asyncio.gather(*pending, return_exceptions=True)
+                        append_audit(
+                            {
+                                "event": "crawl_parallel_cancelled",
+                                "researcher_id": researcher_id,
+                                "cancelled_tasks": n_cancel,
+                            }
+                        )
+                        break
+                    done, pending = await asyncio.wait(
+                        pending,
+                        timeout=0.35,
+                        return_when=asyncio.FIRST_COMPLETED,
                     )
-                    break
-                done, pending = await asyncio.wait(
-                    pending,
-                    timeout=0.35,
-                    return_when=asyncio.FIRST_COMPLETED,
-                )
-                for t in done:
-                    try:
-                        batch = t.result()
-                    except asyncio.CancelledError:
-                        continue
-                    except Exception as e:
-                        n_err += 1
-                        print(f"[CrawlAchievements] URL task error: {e}")
-                        continue
-                    achievements.extend(batch)
+                    for t in done:
+                        try:
+                            batch = t.result()
+                        except asyncio.CancelledError:
+                            continue
+                        except Exception as e:
+                            n_err += 1
+                            print(f"[CrawlAchievements] URL task error: {e}")
+                            continue
+                        achievements.extend(batch)
+                        self._accumulated.extend(batch)
+            except asyncio.CancelledError:
+                for t in pending:
+                    t.cancel()
+                raise
             if n_err:
                 append_audit(
                     {

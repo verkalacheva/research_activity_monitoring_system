@@ -3,9 +3,11 @@ module Api
     class SettingsController < BaseController
       ALLOWED_KEYS = %w[
         github_token
+        llm_api_key
         openrouter_api_key
         llm_model_name
         llm_provider
+        llm_api_base
       ].freeze
 
       def show

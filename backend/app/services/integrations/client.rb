@@ -4,14 +4,28 @@ module Integrations
   class Client
     CANCELLED = GRPC::Core::StatusCodes::CANCELLED
 
+    @grpc_stub_mx = Mutex.new
+    @grpc_stubs_by_host = {}
+
+    # Один Stub/Channel на host: при десятках параллельных crawl/github не порождаем отдельные HTTP/2 с независимыми PING каждые 10 s.
+    def self.grpc_stub(host)
+      @grpc_stub_mx.synchronize do
+        @grpc_stubs_by_host[host] ||= ::Integrations::IntegrationService::Stub.new(
+          host,
+          :this_channel_is_insecure,
+          channel_args: ::ServiceGrpc::CHANNEL_ARGS
+        )
+      end
+    end
+
     def self.sync_all(provider = 'orcid', cancel_proc: nil)
       return nil unless ::Integrations::SyncRequest
 
       host = ENV.fetch('INTEGRATION_SERVICE_HOST', 'integration:50052')
-      stub = ::Integrations::IntegrationService::Stub.new(host, :this_channel_is_insecure)
+      stub = grpc_stub(host)
 
       request = ::Integrations::SyncRequest.new(provider: provider)
-      unary_rpc(stub, :sync_all_achievements, request, cancel_proc)
+      unary_rpc(stub, :sync_all_achievements, request, cancel_proc, deadline: ::Time.now + ::ServiceGrpc::DEADLINE_INTEGRATION)
     end
 
     def self.fetch_orcid_achievements(orcid_id, cancel_proc: nil)
@@ -19,9 +33,9 @@ module Integrations
       return nil if orcid_id.to_s.strip.empty?
 
       host = ENV.fetch('INTEGRATION_SERVICE_HOST', 'integration:50052')
-      stub = ::Integrations::IntegrationService::Stub.new(host, :this_channel_is_insecure)
+      stub = grpc_stub(host)
       request = ::Integrations::OrcidRequest.new(orcid_id: orcid_id.to_s)
-      unary_rpc(stub, :fetch_orcid_achievements, request, cancel_proc)
+      unary_rpc(stub, :fetch_orcid_achievements, request, cancel_proc, deadline: ::Time.now + ::ServiceGrpc::DEADLINE_INTEGRATION)
     end
 
     def self.fetch_open_alex_achievements(openalex_id, cancel_proc: nil)
@@ -29,16 +43,16 @@ module Integrations
       return nil if openalex_id.to_s.strip.empty?
 
       host = ENV.fetch('INTEGRATION_SERVICE_HOST', 'integration:50052')
-      stub = ::Integrations::IntegrationService::Stub.new(host, :this_channel_is_insecure)
+      stub = grpc_stub(host)
       request = ::Integrations::OpenAlexRequest.new(openalex_id: openalex_id.to_s)
-      unary_rpc(stub, :fetch_open_alex_achievements, request, cancel_proc)
+      unary_rpc(stub, :fetch_open_alex_achievements, request, cancel_proc, deadline: ::Time.now + ::ServiceGrpc::DEADLINE_INTEGRATION)
     end
 
     def self.crawl(url, researcher_id, researcher_name = nil, auto_search = false, llm_provider = nil, github_username = nil, cancel_proc: nil)
       return nil unless ::Integrations::CrawlRequest
 
       host = ENV.fetch('CRAWLER_SERVICE_HOST', 'crawler:50053')
-      stub = ::Integrations::IntegrationService::Stub.new(host, :this_channel_is_insecure)
+      stub = grpc_stub(host)
 
       resolved_provider = llm_provider.presence || AppSetting.get('llm_provider_name').presence || ''
       resolved_model    = AppSetting.get('llm_model_name').presence || ''
@@ -54,7 +68,7 @@ module Integrations
       }
 
       request = ::Integrations::CrawlRequest.new(params)
-      unary_rpc(stub, :crawl_achievements, request, cancel_proc)
+      unary_rpc(stub, :crawl_achievements, request, cancel_proc, deadline: ::Time.now + ::ServiceGrpc::DEADLINE_CRAWL)
     end
 
     # Метрики GitHub через integration_service (прямой GitHub API). Не использует CRAWLER_SERVICE_HOST.
@@ -62,7 +76,7 @@ module Integrations
       return nil unless ::Integrations::DevActivityRequest
 
       host = ENV.fetch('INTEGRATION_SERVICE_HOST', 'integration:50052')
-      stub = ::Integrations::IntegrationService::Stub.new(host, :this_channel_is_insecure)
+      stub = grpc_stub(host)
 
       params = {
         github_username: github_username.to_s,
@@ -71,15 +85,17 @@ module Integrations
       }
 
       request = ::Integrations::DevActivityRequest.new(params)
-      unary_rpc(stub, :crawl_dev_activity, request, cancel_proc)
+      unary_rpc(stub, :crawl_dev_activity, request, cancel_proc, deadline: ::Time.now + ::ServiceGrpc::DEADLINE_INTEGRATION)
     end
 
     # Runs a unary RPC; when cancel_proc returns true, calls Operation#cancel (client disconnect).
-    def self.unary_rpc(stub, rpc_name, request_msg, cancel_proc)
-      return stub.send(rpc_name, request_msg) unless cancel_proc
+    def self.unary_rpc(stub, rpc_name, request_msg, cancel_proc, deadline: nil)
+      deadline_time = deadline || (Time.now + ::ServiceGrpc::DEADLINE_INTEGRATION)
+      return stub.send(rpc_name, request_msg, deadline: deadline_time) unless cancel_proc
 
-      op = stub.send(rpc_name, request_msg, return_op: true)
+      op = stub.send(rpc_name, request_msg, return_op: true, deadline: deadline_time)
       worker = Thread.new do
+        Thread.current.report_on_exception = false
         begin
           op.execute
         rescue GRPC::Cancelled

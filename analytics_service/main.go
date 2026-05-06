@@ -3,9 +3,12 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
+	"time"
 
 	"analytics_service/internal/reports"
 	"analytics_service/internal/reports/dashboard_overview"
@@ -22,6 +25,29 @@ import (
 type server struct {
 	pb.UnimplementedAnalyticsServiceServer
 	registry *reports.Registry
+}
+
+func startHealthHTTPServer(db *sql.DB, addr string) *http.Server {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/health/live", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	mux.HandleFunc("/health/ready", func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+		defer cancel()
+		if err := db.PingContext(ctx); err != nil {
+			http.Error(w, fmt.Sprintf("db: %v", err), http.StatusServiceUnavailable)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Printf("health http: %v", err)
+		}
+	}()
+	return srv
 }
 
 func (s *server) GenerateReport(ctx context.Context, req *pb.ReportRequest) (*pb.ReportResponse, error) {
@@ -47,6 +73,16 @@ func main() {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
 	defer db.Close()
+	if err := db.Ping(); err != nil {
+		log.Fatalf("database ping: %v", err)
+	}
+
+	healthPort := os.Getenv("HEALTH_HTTP_PORT")
+	if healthPort == "" {
+		healthPort = "8080"
+	}
+	startHealthHTTPServer(db, ":"+healthPort)
+	log.Printf("Health HTTP on :%s (live, ready)", healthPort)
 
 	// Initialize registry and register handlers
 	registry := reports.NewRegistry()

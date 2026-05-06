@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -15,6 +16,49 @@ import (
 	"github.com/google/go-github/v60/github"
 	"golang.org/x/oauth2"
 )
+
+const EnvGitHubAPIBase = "GITHUB_API_BASE_URL"
+const EnvGitHubUploadURL = "GITHUB_UPLOAD_URL"
+
+// applyGitHubAPIBase overrides go-github URLs for GitHub Enterprise etc.
+// Defaults: unset → standard api.github.com (library default left intact when env empty).
+func applyGitHubAPIBase(c *github.Client) {
+	baseStr := strings.TrimSpace(os.Getenv(EnvGitHubAPIBase))
+	if baseStr == "" {
+		return
+	}
+	if !strings.HasSuffix(baseStr, "/") {
+		baseStr += "/"
+	}
+	base, err := url.Parse(baseStr)
+	if err != nil {
+		log.Printf("invalid %s: %v", EnvGitHubAPIBase, err)
+		return
+	}
+	c.BaseURL = base
+
+	upStr := strings.TrimSpace(os.Getenv(EnvGitHubUploadURL))
+	switch {
+	case upStr != "":
+		if !strings.HasSuffix(upStr, "/") {
+			upStr += "/"
+		}
+		up, err := url.Parse(upStr)
+		if err != nil {
+			log.Printf("invalid %s: %v", EnvGitHubUploadURL, err)
+			return
+		}
+		c.UploadURL = up
+	default:
+		if strings.Contains(base.Path, "/api/v3") {
+			dup := *base
+			dup.Path = strings.Replace(base.Path, "/api/v3", "/api/uploads", 1)
+			c.UploadURL = &dup
+		} else {
+			c.UploadURL = base
+		}
+	}
+}
 
 type activityTypeDef struct {
 	CheckKey string
@@ -43,22 +87,23 @@ func NewClient(db *sql.DB) *Client {
 	} else {
 		tc = github.NewClient(nil)
 	}
+	applyGitHubAPIBase(tc)
 	return &Client{client: tc, db: db}
 }
 
-// resolveToken returns the GitHub token from app_settings DB table,
-// falling back to the GITHUB_TOKEN environment variable.
+// resolveToken returns the GitHub token from app_settings (UI / API настроек), без process env.
 func resolveToken(db *sql.DB) string {
-	if db != nil {
-		var value string
-		err := db.QueryRow(
-			"SELECT value FROM app_settings WHERE key = 'github_token' AND value IS NOT NULL AND value != '' LIMIT 1",
-		).Scan(&value)
-		if err == nil && value != "" {
-			return value
-		}
+	if db == nil {
+		return ""
 	}
-	return os.Getenv("GITHUB_TOKEN")
+	var value string
+	err := db.QueryRow(
+		"SELECT value FROM app_settings WHERE key = 'github_token' AND value IS NOT NULL AND value != '' LIMIT 1",
+	).Scan(&value)
+	if err == nil && value != "" {
+		return value
+	}
+	return ""
 }
 
 // refreshClient re-creates the underlying GitHub API client using the latest token.
@@ -72,6 +117,7 @@ func (c *Client) refreshClient() {
 	} else {
 		c.client = github.NewClient(nil)
 	}
+	applyGitHubAPIBase(c.client)
 }
 
 // repoFromURL extracts "owner/repo" from a GitHub HTML URL.
@@ -234,19 +280,19 @@ func (c *Client) GetUserActivity(ctx context.Context, username string) ([]*pb.De
 				setCriterion(criteriaSet, "has_releases")
 				setActivity(activities, "releases", now, int32(len(rels)))
 				checkReleasesThreshold(len(rels), criteriaSet)
-			for _, rel := range rels {
-				date := now
-				if t := rel.GetPublishedAt(); !t.Time.IsZero() {
-					date = t.Time.Format("2006-01-02")
-				}
-				details = append(details, &pb.ActivityDetail{
-					ActivityType: "releases",
-					ExternalId:   rel.GetTagName(),
-					Title:        rel.GetName(),
-					Repository:   repo.GetFullName(),
-					Url:          rel.GetHTMLURL(),
-					Date:         date,
-				})
+				for _, rel := range rels {
+					date := now
+					if t := rel.GetPublishedAt(); !t.Time.IsZero() {
+						date = t.Time.Format("2006-01-02")
+					}
+					details = append(details, &pb.ActivityDetail{
+						ActivityType: "releases",
+						ExternalId:   rel.GetTagName(),
+						Title:        rel.GetName(),
+						Repository:   repo.GetFullName(),
+						Url:          rel.GetHTMLURL(),
+						Date:         date,
+					})
 				}
 			}
 		}
@@ -359,19 +405,19 @@ func (c *Client) GetRepoActivity(ctx context.Context, repoURL string) ([]*pb.Dev
 		if len(rels) > 0 {
 			setCriterion(criteriaSet, "has_releases")
 			checkReleasesThreshold(len(rels), criteriaSet)
-		for _, rel := range rels {
-			date := now
-			if t := rel.GetPublishedAt(); !t.Time.IsZero() {
-				date = t.Time.Format("2006-01-02")
-			}
-			details = append(details, &pb.ActivityDetail{
-				ActivityType: "releases",
-				ExternalId:   rel.GetTagName(),
-				Title:        rel.GetName(),
-				Repository:   repoFull,
-				Url:          rel.GetHTMLURL(),
-				Date:         date,
-			})
+			for _, rel := range rels {
+				date := now
+				if t := rel.GetPublishedAt(); !t.Time.IsZero() {
+					date = t.Time.Format("2006-01-02")
+				}
+				details = append(details, &pb.ActivityDetail{
+					ActivityType: "releases",
+					ExternalId:   rel.GetTagName(),
+					Title:        rel.GetName(),
+					Repository:   repoFull,
+					Url:          rel.GetHTMLURL(),
+					Date:         date,
+				})
 			}
 		}
 	}

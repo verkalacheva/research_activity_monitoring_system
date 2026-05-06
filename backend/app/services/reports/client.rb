@@ -7,9 +7,22 @@ require 'grpc_reports/reports_services_pb'
 
 module Reports
   class Client
+    @grpc_mx = Mutex.new
+    @grpc_stub_host = {}
+
+    def self.analytics_stub(host)
+      @grpc_mx.synchronize do
+        @grpc_stub_host[host] ||= GrpcReports::AnalyticsService::Stub.new(
+          host,
+          :this_channel_is_insecure,
+          channel_args: ::ServiceGrpc::CHANNEL_ARGS
+        )
+      end
+    end
+
     def self.generate(params)
       host = ENV.fetch('ANALYTICS_SERVICE_HOST', 'analytics:50051')
-      stub = GrpcReports::AnalyticsService::Stub.new(host, :this_channel_is_insecure)
+      stub = analytics_stub(host)
       
       request = GrpcReports::ReportRequest.new({
         report_type: params[:report_type].to_s,
@@ -20,7 +33,7 @@ module Reports
         format: params[:format].to_s
       })
       
-      stub.generate_report(request)
+      stub.generate_report(request, deadline: Time.now + ::ServiceGrpc::DEADLINE_ANALYTICS)
     end
   end
 end
