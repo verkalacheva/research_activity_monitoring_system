@@ -330,49 +330,68 @@ jobs:
 
       - name: Generate coverage summary
         run: |
+          set -euo pipefail
+          # upload-artifact keeps repo-relative paths under coverage-artifacts/<artifact-name>/
+          find_backend_json() {
+            [ -d coverage-artifacts/backend-coverage ] || { echo ""; return; }
+            find coverage-artifacts/backend-coverage -name coverage.json -type f 2>/dev/null | head -1
+          }
+          find_crawler_xml() {
+            [ -d coverage-artifacts/crawler-coverage ] || { echo ""; return; }
+            find coverage-artifacts/crawler-coverage -name coverage.xml -type f 2>/dev/null | head -1
+          }
+          find_go_cover_txt() {
+            local dir="$1"
+            [ -d "coverage-artifacts/${dir}" ] || { echo ""; return; }
+            find "coverage-artifacts/${dir}" -path '*/coverage/coverage.txt' -type f 2>/dev/null | head -1
+          }
+
           echo "# Test Coverage Report" > coverage_summary.md
           echo "" >> coverage_summary.md
           echo "Generated: $(date -u '+%Y-%m-%d %H:%M UTC')" >> coverage_summary.md
           echo "" >> coverage_summary.md
 
           echo "## backend (Ruby/RSpec)" >> coverage_summary.md
-          if [ -f coverage-artifacts/backend-coverage/coverage.json ]; then
-            python3 - <<'EOF' >> coverage_summary.md
-          import json, sys
+          BACKEND_JSON="$(find_backend_json)"
+          if [ -n "$BACKEND_JSON" ] && [ -f "$BACKEND_JSON" ]; then
+            export BACKEND_JSON
+            python3 -c 'import json, os
+          path = os.environ["BACKEND_JSON"]
           try:
-              with open("coverage-artifacts/backend-coverage/coverage.json") as f:
+              with open(path) as f:
                   data = json.load(f)
               pct = data.get("metrics", {}).get("covered_percent", "N/A")
-              print(f"- Line coverage: **{pct:.1f}%**" if isinstance(pct, float) else f"- Line coverage: {pct}")
+              print("- Line coverage: **{:.1f}%**".format(pct) if isinstance(pct, float) else "- Line coverage: {}".format(pct))
           except Exception as e:
-              print(f"- Coverage data unavailable: {e}")
-          EOF
+              print("- Coverage data unavailable: {}".format(e))
+          ' >> coverage_summary.md
           else
             echo "- Coverage artifact not available" >> coverage_summary.md
           fi
 
           echo "" >> coverage_summary.md
           echo "## crawler_service (Python/pytest)" >> coverage_summary.md
-          if [ -f coverage-artifacts/crawler-coverage/coverage/coverage.xml ]; then
-            python3 - <<'EOF' >> coverage_summary.md
-          import xml.etree.ElementTree as ET
-          try:
-              tree = ET.parse("coverage-artifacts/crawler-coverage/coverage/coverage.xml")
-              root = tree.getroot()
-              rate = float(root.get("line-rate", 0)) * 100
-              print(f"- Line coverage: **{rate:.1f}%**")
-          except Exception as e:
-              print(f"- Coverage data unavailable: {e}")
-          EOF
+          CRAWLER_XML="$(find_crawler_xml)"
+          if [ -n "$CRAWLER_XML" ] && [ -f "$CRAWLER_XML" ]; then
+            export CRAWLER_XML
+            python3 -c 'import os, xml.etree.ElementTree as ET
+            path = os.environ["CRAWLER_XML"]
+            try:
+                root = ET.parse(path).getroot()
+                rate = float(root.get("line-rate", 0)) * 100
+                print("- Line coverage: **{:.1f}%**".format(rate))
+            except Exception as e:
+                print("- Coverage data unavailable: {}".format(e))
+            ' >> coverage_summary.md
           else
             echo "- Coverage artifact not available" >> coverage_summary.md
           fi
 
           echo "" >> coverage_summary.md
           echo "## integration_service (Go)" >> coverage_summary.md
-          if [ -f coverage-artifacts/integration-coverage/coverage/coverage.txt ]; then
-            grep '^total' coverage-artifacts/integration-coverage/coverage/coverage.txt \
-              | awk '{print "- Total coverage: **" $3 "**"}' >> coverage_summary.md || \
+          INT_TXT="$(find_go_cover_txt integration-coverage)"
+          if [ -n "$INT_TXT" ] && [ -f "$INT_TXT" ]; then
+            grep '^total' "$INT_TXT" | awk '{print "- Total coverage: **" $NF "**"}' >> coverage_summary.md || \
               echo "- Coverage data unavailable" >> coverage_summary.md
           else
             echo "- Coverage artifact not available" >> coverage_summary.md
@@ -380,9 +399,9 @@ jobs:
 
           echo "" >> coverage_summary.md
           echo "## analytics_service (Go)" >> coverage_summary.md
-          if [ -f coverage-artifacts/analytics-coverage/coverage/coverage.txt ]; then
-            grep '^total' coverage-artifacts/analytics-coverage/coverage/coverage.txt \
-              | awk '{print "- Total coverage: **" $3 "**"}' >> coverage_summary.md || \
+          ANA_TXT="$(find_go_cover_txt analytics-coverage)"
+          if [ -n "$ANA_TXT" ] && [ -f "$ANA_TXT" ]; then
+            grep '^total' "$ANA_TXT" | awk '{print "- Total coverage: **" $NF "**"}' >> coverage_summary.md || \
               echo "- Coverage data unavailable" >> coverage_summary.md
           else
             echo "- Coverage artifact not available" >> coverage_summary.md
