@@ -355,16 +355,7 @@ jobs:
           BACKEND_JSON="$(find_backend_json)"
           if [ -n "$BACKEND_JSON" ] && [ -f "$BACKEND_JSON" ]; then
             export BACKEND_JSON
-            python3 -c 'import json, os
-          path = os.environ["BACKEND_JSON"]
-          try:
-              with open(path) as f:
-                  data = json.load(f)
-              pct = data.get("metrics", {}).get("covered_percent", "N/A")
-              print("- Line coverage: **{:.1f}%**".format(pct) if isinstance(pct, float) else "- Line coverage: {}".format(pct))
-          except Exception as e:
-              print("- Coverage data unavailable: {}".format(e))
-          ' >> coverage_summary.md
+            python3 -c "import json,os;d=json.load(open(os.environ['BACKEND_JSON']));p=d.get('metrics',{}).get('covered_percent','N/A');print('- Line coverage: **{:.1f}%**'.format(p) if isinstance(p,float) else '- Line coverage: {}'.format(p))" >> coverage_summary.md || echo "- Coverage data unavailable" >> coverage_summary.md
           else
             echo "- Coverage artifact not available" >> coverage_summary.md
           fi
@@ -374,15 +365,7 @@ jobs:
           CRAWLER_XML="$(find_crawler_xml)"
           if [ -n "$CRAWLER_XML" ] && [ -f "$CRAWLER_XML" ]; then
             export CRAWLER_XML
-            python3 -c 'import os, xml.etree.ElementTree as ET
-            path = os.environ["CRAWLER_XML"]
-            try:
-                root = ET.parse(path).getroot()
-                rate = float(root.get("line-rate", 0)) * 100
-                print("- Line coverage: **{:.1f}%**".format(rate))
-            except Exception as e:
-                print("- Coverage data unavailable: {}".format(e))
-            ' >> coverage_summary.md
+            python3 -c "import os,xml.etree.ElementTree as ET;r=ET.parse(os.environ['CRAWLER_XML']).getroot();rate=float(r.get('line-rate',0))*100;print('- Line coverage: **{:.1f}%**'.format(rate))" >> coverage_summary.md || echo "- Coverage data unavailable" >> coverage_summary.md
           else
             echo "- Coverage artifact not available" >> coverage_summary.md
           fi
