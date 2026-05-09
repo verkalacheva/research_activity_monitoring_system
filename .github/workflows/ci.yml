@@ -11,8 +11,8 @@ env:
   HEALTHCHECK_HOST: ${{ vars.HEALTHCHECK_HOST }}
   REDIS_URL: ${{ vars.REDIS_URL }}
   # Test DB URLs: repository Variables, or default URL for the postgres service in this workflow.
-  DATABASE_URL: ${{ vars.DATABASE_URL || 'postgres://postgres:password@localhost:5432/research_activity_monitoring_system_test' }}
-  TEST_DATABASE_URL: ${{ vars.TEST_DATABASE_URL || vars.DATABASE_URL || 'postgres://postgres:password@localhost:5432/research_activity_monitoring_system_test' }}
+  DATABASE_URL: ${{ vars.DATABASE_URL || 'postgres://postgres:password@localhost:5432/research_activity_monitoring_system_test?sslmode=disable' }}
+  TEST_DATABASE_URL: ${{ vars.TEST_DATABASE_URL || vars.DATABASE_URL || 'postgres://postgres:password@localhost:5432/research_activity_monitoring_system_test?sslmode=disable' }}
 
 jobs:
   # ─── Ruby / Rails backend ───────────────────────────────────────────────────
@@ -107,7 +107,7 @@ jobs:
           cache-dependency-path: crawler_service/requirements.txt
 
       - name: Install dependencies
-        run: pip install pytest pytest-cov pytest-asyncio anyio httpx
+        run: pip install -r requirements.txt pytest pytest-asyncio
 
       - name: Run pytest with coverage
         run: |

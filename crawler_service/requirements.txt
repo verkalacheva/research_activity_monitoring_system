@@ -12,6 +12,7 @@ typing-extensions>=4.10.0
 python-dotenv
 openai
 anthropic
+litellm
 ddgs
 python-multipart
 asyncpg
