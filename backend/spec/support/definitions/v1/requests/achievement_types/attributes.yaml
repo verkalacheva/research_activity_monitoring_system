@@ -1,0 +1,44 @@
+type: object
+required:
+  - achievement_type
+properties:
+  achievement_type:
+    type: object
+    required:
+      - title
+    properties:
+      title:
+        type: string
+      points:
+        type: [number, string]
+        nullable: true
+      icon_name:
+        type: string
+        nullable: true
+      achievement_fields_attributes:
+        type: array
+        items:
+          type: object
+          required:
+            - title
+            - field_type
+            - is_required
+          properties:
+            id:
+              type: integer
+              nullable: true
+            title:
+              type: string
+            field_type:
+              type: string
+              description: "text | number | date | select | multiselect"
+            is_required:
+              type: boolean
+            options:
+              type: array
+              nullable: true
+              items:
+                type: string
+            _destroy:
+              type: boolean
+              nullable: true

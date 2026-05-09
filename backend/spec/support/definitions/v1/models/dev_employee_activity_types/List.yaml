@@ -1,0 +1,32 @@
+type: object
+required:
+  - items
+  - pagination
+properties:
+  items:
+    type: array
+    items:
+      type: object
+      required:
+        - id
+        - title
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        check_key:
+          type: string
+          nullable: true
+        points:
+          type: [number, string]
+          nullable: true
+  pagination:
+    type: object
+    properties:
+      total:
+        type: integer
+      limit:
+        type: integer
+      offset:
+        type: integer

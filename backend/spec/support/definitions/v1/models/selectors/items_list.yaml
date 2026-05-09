@@ -1,0 +1,30 @@
+type: object
+properties:
+  items:
+    type: array
+    items:
+      type: object
+      properties:
+        id:
+          type: integer
+        label:
+          type: string
+        value:
+          description: Обычно ID записи
+  data:
+    type: array
+    items:
+      type: object
+      properties:
+        id:
+          type: integer
+        label:
+          type: string
+        value:
+          description: Обычно ID записи
+  total_count:
+    type: integer
+  limit:
+    type: integer
+  offset:
+    type: integer

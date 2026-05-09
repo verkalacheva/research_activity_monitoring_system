@@ -28,6 +28,16 @@ group :development, :test do
   gem 'debug', platforms: [:mri, :mingw, :x64_mingw]
   gem 'listen', '~> 3.3'
   gem 'ffi', '>= 1.17.4'
+  gem 'rspec-rails', '~> 6.0'
+  gem 'factory_bot_rails'
+  gem 'faker'
+end
+
+group :test do
+  gem 'database_cleaner-active_record'
+  gem 'simplecov', require: false
+  gem 'simplecov-json', require: false
+  gem 'rswag-specs'
 end
 
 group :development do

@@ -1,0 +1,54 @@
+# After a push to main/develop, updates the server working copy over SSH (git fetch / checkout / pull).
+#
+# Public repository: keep credentials in Secrets, not Variables (vars are visible to collaborators and are
+# not masked in logs). Prefer GitHub Environments (required reviewers / wait timer) for deploy jobs.
+# This job does not run on forked copies of the repo (github.event.repository.fork == false).
+#
+# Enable: Repository → Settings → Secrets and variables → Actions → Variables:
+#   DEPLOY_ENABLED = true
+#   DEPLOY_PATH    = absolute path to this repo on the server (e.g. /srv/research_activity_monitoring_system)
+# Optional Variables:
+#   DEPLOY_SSH_PORT = 22 (default if unset)
+#   DEPLOY_POST_PULL = one line to run after pull (e.g. docker compose --env-file .env up -d --build)
+#
+# Secrets (Actions → Secrets):
+#   DEPLOY_HOST    = server hostname or IP
+#   DEPLOY_USER    = SSH user
+#   DEPLOY_SSH_KEY = private key (PEM), full file contents including BEGIN/END lines
+
+name: Deploy
+
+on:
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  server-git-sync:
+    runs-on: ubuntu-latest
+    if: vars.DEPLOY_ENABLED == 'true' && github.event.repository.fork == false
+
+    steps:
+      - name: Pull latest on server
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ vars.DEPLOY_SSH_PORT || 22 }}
+          command_timeout: 20m
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd "${{ vars.DEPLOY_PATH }}"
+            git fetch origin "${{ github.ref_name }}"
+            git checkout "${{ github.ref_name }}"
+            git pull --ff-only origin "${{ github.ref_name }}"
+            ${{ vars.DEPLOY_POST_PULL }}

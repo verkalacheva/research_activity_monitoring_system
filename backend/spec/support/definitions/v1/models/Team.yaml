@@ -1,0 +1,50 @@
+type: object
+required:
+  - id
+  - title
+properties:
+  id:
+    type: integer
+  title:
+    type: string
+  github_repo_url:
+    type: string
+    nullable: true
+  leader_id:
+    type: integer
+    nullable: true
+  dev_criteria_sum:
+    type: [number, string]
+  dev_activities_sum:
+    type: [number, string]
+  dev_project_criteria:
+    type: array
+    items:
+      type: object
+  leader:
+    type: object
+    nullable: true
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      surname:
+        type: string
+  researchers:
+    type: array
+    items:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        surname:
+          type: string
+  created_at:
+    type: string
+    format: date-time
+  updated_at:
+    type: string
+    format: date-time

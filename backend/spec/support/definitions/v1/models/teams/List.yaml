@@ -1,0 +1,32 @@
+type: object
+required:
+  - items
+  - pagination
+properties:
+  items:
+    type: array
+    items:
+      type: object
+      required:
+        - id
+        - title
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        github_repo_url:
+          type: string
+          nullable: true
+        leader_id:
+          type: integer
+          nullable: true
+  pagination:
+    type: object
+    properties:
+      total:
+        type: integer
+      limit:
+        type: integer
+      offset:
+        type: integer

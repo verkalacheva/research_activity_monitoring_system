@@ -1,0 +1,39 @@
+type: object
+required:
+  - id
+  - title
+properties:
+  id:
+    type: integer
+  title:
+    type: string
+  points:
+    type: [number, string]
+    nullable: true
+  icon_name:
+    type: string
+    nullable: true
+  achievement_fields:
+    type: array
+    items:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        field_type:
+          type: string
+        is_required:
+          type: boolean
+        options:
+          type: array
+          nullable: true
+          items:
+            type: string
+  created_at:
+    type: string
+    format: date-time
+  updated_at:
+    type: string
+    format: date-time

@@ -5,7 +5,10 @@
 class IntegrationSyncJobChannel < ApplicationCable::Channel
   def subscribed
     job_id = (params[:job_id] || params['job_id']).to_s
-    reject_subscription if job_id.blank?
+    if job_id.blank?
+      reject
+      return
+    end
 
     @job_id = job_id
     stream_from "integration_sync_job:#{@job_id}"

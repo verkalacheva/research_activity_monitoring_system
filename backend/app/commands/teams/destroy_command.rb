@@ -5,6 +5,8 @@ module Teams
       cleanup_relations(team)
       team.update_columns(deleted_at: Time.current)
       success(team)
+    rescue Dry::Monads::Do::Halt
+      raise
     rescue StandardError => e
       failure(:database_error, e.message)
     end

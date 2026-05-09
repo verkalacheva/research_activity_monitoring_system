@@ -1,0 +1,25 @@
+type: object
+required:
+  - settings
+properties:
+  settings:
+    type: object
+    properties:
+      github_token:
+        type: string
+        nullable: true
+      llm_api_key:
+        type: string
+        nullable: true
+      openrouter_api_key:
+        type: string
+        nullable: true
+      llm_model_name:
+        type: string
+        nullable: true
+      llm_provider:
+        type: string
+        nullable: true
+      llm_api_base:
+        type: string
+        nullable: true

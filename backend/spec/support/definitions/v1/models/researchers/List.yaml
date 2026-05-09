@@ -1,0 +1,46 @@
+type: object
+required:
+  - items
+  - pagination
+properties:
+  items:
+    type: array
+    items:
+      type: object
+      required:
+        - id
+        - name
+        - surname
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        surname:
+          type: string
+        second_name:
+          type: string
+          nullable: true
+        degree_level:
+          type: string
+          nullable: true
+        subject_area:
+          type: string
+          nullable: true
+        orcid_id:
+          type: string
+          nullable: true
+        openalex_id:
+          type: string
+          nullable: true
+        is_leader:
+          type: boolean
+  pagination:
+    type: object
+    properties:
+      total:
+        type: integer
+      limit:
+        type: integer
+      offset:
+        type: integer

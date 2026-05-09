@@ -35,7 +35,7 @@ func NormalizeOrcidID(raw string) string {
 		"\u2014", "-",
 		"\u2212", "-",
 	).Replace(s)
-	s = reOrcidSpaces.ReplaceAllString(s, "")
+	s = reOrcidSpaces.ReplaceAllString(s, "-")
 	s = strings.TrimRight(s, "/")
 	if m := reOrcidBare.FindStringSubmatch(s); len(m) > 1 {
 		return strings.ToLower(m[1])

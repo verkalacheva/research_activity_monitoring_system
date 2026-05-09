@@ -1,0 +1,44 @@
+type: object
+required:
+  - achievement
+properties:
+  achievement:
+    type: object
+    required:
+      - achievement_type_id
+      - achievement_status_id
+      - achievement_result_id
+      - achievement_participation_id
+    properties:
+      achievement_type_id:
+        type: integer
+      achievement_status_id:
+        type: integer
+      achievement_result_id:
+        type: integer
+      achievement_participation_id:
+        type: integer
+      submission_date:
+        type: string
+        format: date
+        nullable: true
+      researcher_ids:
+        type: array
+        items:
+          type: integer
+        description: ID исследователей, связанных с достижением
+      achievement_field_answers_attributes:
+        type: array
+        items:
+          type: object
+          required:
+            - achievement_field_id
+          properties:
+            id:
+              type: integer
+              nullable: true
+            achievement_field_id:
+              type: integer
+            value:
+              type: string
+              nullable: true

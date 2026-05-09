@@ -1,0 +1,51 @@
+type: object
+required:
+  - id
+  - achievement_type_id
+  - achievement_status_id
+  - achievement_result_id
+  - achievement_participation_id
+properties:
+  id:
+    type: integer
+  achievement_type_id:
+    type: integer
+  achievement_status_id:
+    type: integer
+  achievement_result_id:
+    type: integer
+  achievement_participation_id:
+    type: integer
+  points:
+    type: [number, string]
+    nullable: true
+  submission_date:
+    type: string
+    format: date
+    nullable: true
+  created_at:
+    type: string
+    format: date-time
+  updated_at:
+    type: string
+    format: date-time
+  achievement_type:
+    type: object
+    nullable: true
+    properties:
+      id:
+        type: integer
+      title:
+        type: string
+  achievement_field_answers:
+    type: array
+    items:
+      type: object
+      properties:
+        id:
+          type: integer
+        achievement_field_id:
+          type: integer
+        value:
+          type: string
+          nullable: true

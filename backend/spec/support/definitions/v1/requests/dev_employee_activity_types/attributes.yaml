@@ -1,0 +1,17 @@
+type: object
+required:
+  - dev_employee_activity_type
+properties:
+  dev_employee_activity_type:
+    type: object
+    required:
+      - title
+    properties:
+      title:
+        type: string
+      check_key:
+        type: string
+        nullable: true
+      points:
+        type: [number, string]
+        nullable: true

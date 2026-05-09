@@ -1,0 +1,14 @@
+type: object
+required:
+  - dev_activity
+properties:
+  dev_activity:
+    type: object
+    properties:
+      count:
+        type: integer
+        nullable: true
+      date:
+        type: string
+        format: date
+        nullable: true

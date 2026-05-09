@@ -1,0 +1,18 @@
+type: object
+required:
+  - id
+  - title
+properties:
+  id:
+    type: integer
+  title:
+    type: string
+  points:
+    type: [number, string]
+    nullable: true
+  created_at:
+    type: string
+    format: date-time
+  updated_at:
+    type: string
+    format: date-time

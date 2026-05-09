@@ -232,6 +232,159 @@ services:
         max-size: "20m"
         max-file: "5"
 
+  # ─── Test profile ─────────────────────────────────────────────────────────
+  # Общая тестовая БД: сервис db-test (POSTGRES_DB=research_activity_monitoring_system_test).
+  # Схема: test-db-schema (rails db:schema:load + migrate), затем RSpec / Go-тесты подключаются к той же БД
+  # (TEST_DATABASE_URL или DB_HOST=db-test + database из config/database.yml).
+  # Запуск: docker-compose --profile test run --rm backend-test
+  #         или через: make test-backend
+
+  db-test:
+    profiles: [test]
+    image: postgres:14
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: research_activity_monitoring_system_test
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis-test:
+    profiles: [test]
+    image: redis:7-alpine
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  test-db-schema:
+    profiles: [test]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    working_dir: /app
+    command:
+      - bash
+      - -c
+      - |
+        set -e
+        bundle exec rails db:schema:load
+        bundle exec rails db:migrate
+    environment:
+      RAILS_ENV: test
+      DB_HOST: db-test
+      DB_USERNAME: postgres
+      DB_PASSWORD: password
+      REDIS_URL: redis://redis-test:6379/1
+      SECRET_KEY_BASE: test_secret_key_base_for_ci_only
+    depends_on:
+      db-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+
+  backend-test:
+    profiles: [test]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    working_dir: /app
+    command:
+      - bash
+      - -c
+      - |
+        set -e
+        COVERAGE=1 bundle exec rspec \
+          --format progress \
+          --format documentation --out coverage/rspec_results.txt \
+          --format json --out coverage/rspec_results.json
+    environment:
+      RAILS_ENV: test
+      DB_HOST: db-test
+      DB_USERNAME: postgres
+      DB_PASSWORD: password
+      REDIS_URL: redis://redis-test:6379/1
+      SECRET_KEY_BASE: test_secret_key_base_for_ci_only
+      RAILS_LOG_TO_STDOUT: "true"
+      RAILS_LOG_LEVEL: warn
+    volumes:
+      - ./backend:/app
+      - ./backend/coverage:/app/coverage
+    depends_on:
+      db-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+      test-db-schema:
+        condition: service_completed_successfully
+
+  # integration_service: go test ./... ; в coverpkg не входят сгенерированные pb/proto (иначе 0% на codegen тянет total вниз).
+  integration-test:
+    profiles: [test]
+    image: golang:1.25-alpine
+    working_dir: /app
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        go mod tidy
+        mkdir -p coverage
+        PKGS=$$(go list ./... | grep -vE '/(pb|proto)$$' | tr '\n' ',')
+        go test -p 1 -tags go1.21 -coverpkg="$${PKGS%,}" -coverprofile=coverage/coverage.out ./... &&
+        go tool cover -html=coverage/coverage.out -o coverage/coverage.html &&
+        go tool cover -func=coverage/coverage.out | tee coverage/coverage.txt
+    environment:
+      CGO_ENABLED: "0"
+      # Общая тестовая БД (та же, что и у backend-test / RAILS test).
+      TEST_DATABASE_URL: postgres://postgres:password@db-test:5432/research_activity_monitoring_system_test?sslmode=disable
+    depends_on:
+      db-test:
+        condition: service_healthy
+      test-db-schema:
+        condition: service_completed_successfully
+    volumes:
+      - ./integration_service:/app
+      - go_mod_cache:/root/go/pkg/mod
+
+  # analytics_service: -p 1 — один пакет за раз, иначе TRUNCATE на общей БД даёт deadlock и гонки FK между пакетами.
+  analytics-test:
+    profiles: [test]
+    image: golang:1.25-alpine
+    working_dir: /app
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        go mod tidy
+        mkdir -p coverage
+        PKGS=$$(go list ./internal/... | tr '\n' ',')
+        go test -p 1 -tags go1.21 -coverpkg="$${PKGS%,}" -coverprofile=coverage/coverage.out ./internal/... &&
+        go tool cover -html=coverage/coverage.out -o coverage/coverage.html &&
+        go tool cover -func=coverage/coverage.out | tee coverage/coverage.txt
+    environment:
+      CGO_ENABLED: "0"
+      TEST_DATABASE_URL: postgres://postgres:password@db-test:5432/research_activity_monitoring_system_test?sslmode=disable
+    depends_on:
+      db-test:
+        condition: service_healthy
+      test-db-schema:
+        condition: service_completed_successfully
+    volumes:
+      - ./analytics_service:/app
+      - go_mod_cache:/root/go/pkg/mod
+
 volumes:
   pgdata:
   redis_data:
+  go_mod_cache:

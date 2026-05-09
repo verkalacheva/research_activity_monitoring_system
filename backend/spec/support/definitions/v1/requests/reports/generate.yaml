@@ -1,0 +1,37 @@
+type: object
+properties:
+  report_type:
+    type: string
+    description: "researchers_report | teams | dashboard_overview | dev_teams_report | dev_researchers_report"
+  report_format:
+    type: string
+    description: "json | xlsx | csv"
+    nullable: true
+  limit:
+    type: integer
+    nullable: true
+  offset:
+    type: integer
+    nullable: true
+  filters:
+    type: array
+    nullable: true
+    items:
+      type: object
+      properties:
+        field:
+          type: string
+        operator:
+          type: string
+        value:
+          type: string
+  sorts:
+    type: array
+    nullable: true
+    items:
+      type: object
+      properties:
+        field:
+          type: string
+        descending:
+          type: boolean

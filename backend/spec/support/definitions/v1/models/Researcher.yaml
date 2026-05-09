@@ -1,0 +1,61 @@
+type: object
+required:
+  - id
+  - name
+  - surname
+properties:
+  id:
+    type: integer
+  name:
+    type: string
+  surname:
+    type: string
+  second_name:
+    type: string
+    nullable: true
+  fullName:
+    type: string
+    description: Полное ФИО (surname + name + second_name)
+  degree_level:
+    type: string
+    nullable: true
+  course:
+    type: integer
+    nullable: true
+  subject_area:
+    type: string
+    nullable: true
+  email:
+    type: string
+    nullable: true
+  telegram:
+    type: string
+    nullable: true
+  isu_number:
+    type: string
+    nullable: true
+  faculty:
+    type: string
+    nullable: true
+  employment_status:
+    type: string
+    nullable: true
+  orcid_id:
+    type: string
+    nullable: true
+  openalex_id:
+    type: string
+    nullable: true
+  github:
+    type: string
+    nullable: true
+  is_leader:
+    type: boolean
+  total_dev_points:
+    type: [number, string]
+  created_at:
+    type: string
+    format: date-time
+  updated_at:
+    type: string
+    format: date-time

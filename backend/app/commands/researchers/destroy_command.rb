@@ -5,6 +5,8 @@ module Researchers
       cleanup_relations(researcher)
       researcher.update_columns(deleted_at: Time.current)
       success(researcher)
+    rescue Dry::Monads::Do::Halt
+      raise
     rescue StandardError => e
       failure(:database_error, e.message)
     end

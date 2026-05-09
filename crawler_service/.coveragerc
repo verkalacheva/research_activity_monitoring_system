@@ -1,0 +1,15 @@
+[run]
+source = .
+omit =
+    tests/*
+    pb/*
+    */__pycache__/*
+    */.*
+    eval/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    raise NotImplementedError
+    \.\.\.

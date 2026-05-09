@@ -1,0 +1,33 @@
+type: object
+required:
+  - id
+  - researcher_id
+properties:
+  id:
+    type: integer
+  researcher_id:
+    type: integer
+  dev_employee_activity_type_id:
+    type: integer
+    nullable: true
+  count:
+    type: integer
+    nullable: true
+  date:
+    type: string
+    format: date
+    nullable: true
+  dev_employee_activity_type:
+    type: object
+    nullable: true
+    properties:
+      id:
+        type: integer
+      title:
+        type: string
+  created_at:
+    type: string
+    format: date-time
+  updated_at:
+    type: string
+    format: date-time

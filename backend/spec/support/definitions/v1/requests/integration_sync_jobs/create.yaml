@@ -1,0 +1,21 @@
+type: object
+properties:
+  provider:
+    type: string
+    nullable: true
+    description: "Источник данных (openalex, orcid и т.д.)"
+  researcher_id:
+    type: integer
+    nullable: true
+  team_id:
+    type: integer
+    nullable: true
+  scope:
+    type: string
+    nullable: true
+  url:
+    type: string
+    nullable: true
+  llm_provider:
+    type: string
+    nullable: true

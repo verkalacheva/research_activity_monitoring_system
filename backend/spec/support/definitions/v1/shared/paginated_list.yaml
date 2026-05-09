@@ -1,0 +1,21 @@
+type: object
+required:
+  - data
+  - total_count
+  - limit
+  - offset
+properties:
+  data:
+    type: array
+    description: Массив элементов текущей страницы
+    items:
+      type: object
+  total_count:
+    type: integer
+    description: Общее количество записей
+  limit:
+    type: integer
+    description: Размер страницы
+  offset:
+    type: integer
+    description: Смещение от начала списка

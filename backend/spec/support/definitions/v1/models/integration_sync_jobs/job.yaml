@@ -1,0 +1,20 @@
+type: object
+required:
+  - status
+properties:
+  job_id:
+    type: string
+    format: uuid
+    nullable: true
+  status:
+    type: string
+    description: "queued | running | done | cancelled | error"
+  error:
+    type: string
+    nullable: true
+  rate_limit:
+    type: boolean
+  results:
+    type: array
+    items:
+      type: object

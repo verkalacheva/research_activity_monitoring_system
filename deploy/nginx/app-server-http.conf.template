@@ -1,0 +1,57 @@
+upstream research_frontend {
+    server ${NGINX_UPSTREAM_FRONTEND};
+    keepalive ${NGINX_UPSTREAM_KEEPALIVE};
+}
+
+upstream research_backend {
+    server ${NGINX_UPSTREAM_BACKEND};
+    keepalive ${NGINX_UPSTREAM_KEEPALIVE};
+}
+
+server {
+    listen ${NGINX_HTTP_PORT};
+    listen [::]:${NGINX_HTTP_PORT};
+    server_name ${NGINX_SERVER_NAME};
+
+    location /.well-known/acme-challenge/ {
+        root ${NGINX_ACME_WEBROOT};
+    }
+
+    location /api/ {
+        proxy_pass http://research_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host ${DOLLAR}host;
+        proxy_set_header X-Real-IP ${DOLLAR}remote_addr;
+        proxy_set_header X-Forwarded-For ${DOLLAR}proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto ${DOLLAR}scheme;
+        proxy_read_timeout ${NGINX_PROXY_READ_TIMEOUT_API};
+    }
+
+    location /health {
+        proxy_pass http://research_backend;
+        proxy_set_header Host ${DOLLAR}host;
+        proxy_set_header X-Forwarded-For ${DOLLAR}proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto ${DOLLAR}scheme;
+    }
+
+    location /cable {
+        proxy_pass http://research_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host ${DOLLAR}host;
+        proxy_set_header X-Real-IP ${DOLLAR}remote_addr;
+        proxy_set_header X-Forwarded-For ${DOLLAR}proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto ${DOLLAR}scheme;
+        proxy_set_header Upgrade ${DOLLAR}http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout ${NGINX_PROXY_READ_TIMEOUT_CABLE};
+    }
+
+    location / {
+        proxy_pass http://research_frontend;
+        proxy_http_version 1.1;
+        proxy_set_header Host ${DOLLAR}host;
+        proxy_set_header X-Real-IP ${DOLLAR}remote_addr;
+        proxy_set_header X-Forwarded-For ${DOLLAR}proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto ${DOLLAR}scheme;
+    }
+}

@@ -25,11 +25,24 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+func databaseURLFromEnv() string {
+	if u := strings.TrimSpace(os.Getenv("DATABASE_URL")); u != "" {
+		return u
+	}
+	return "postgres://postgres:password@db:5432/research_activity_monitoring_system_development?sslmode=disable"
+}
+
+// githubDevActivityClient limits what the gRPC server needs from the GitHub integration (test doubles).
+type githubDevActivityClient interface {
+	GetUserActivity(ctx context.Context, username string) ([]*pb.DevActivity, []*pb.ActivityDetail, []string, error)
+	GetRepoActivity(ctx context.Context, repoURL string) ([]*pb.DevActivity, []*pb.ActivityDetail, []string, error)
+}
+
 type server struct {
 	pb.UnimplementedIntegrationServiceServer
 	registry             *integrations.Registry
 	researcherRepository *repository.ResearcherRepository
-	githubClient         *github.Client
+	githubClient         githubDevActivityClient
 }
 
 func (s *server) FetchOrcidAchievements(ctx context.Context, req *pb.OrcidRequest) (*pb.OrcidResponse, error) {
@@ -259,10 +272,7 @@ func startHealthHTTPServer(db *sql.DB, addr string) *http.Server {
 }
 
 func main() {
-	dbURL := os.Getenv("DATABASE_URL")
-	if dbURL == "" {
-		dbURL = "postgres://postgres:password@db:5432/research_activity_monitoring_system_development?sslmode=disable"
-	}
+	dbURL := databaseURLFromEnv()
 
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {

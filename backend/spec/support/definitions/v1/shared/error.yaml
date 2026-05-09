@@ -1,0 +1,21 @@
+type: object
+properties:
+  errors:
+    description: Хеш ошибок валидации или массив/строка сообщений
+    oneOf:
+      - type: object
+        additionalProperties:
+          type: array
+          items:
+            type: string
+      - type: string
+      - type: array
+        items:
+          type: string
+  type:
+    type: string
+    description: Тип ошибки (validation_error, not_found, bad_request и т.д.)
+  message:
+    type: string
+    nullable: true
+    description: Человекочитаемое сообщение об ошибке

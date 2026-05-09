@@ -1,0 +1,55 @@
+type: object
+required:
+  - researcher
+properties:
+  researcher:
+    type: object
+    required:
+      - name
+      - surname
+    properties:
+      name:
+        type: string
+        description: Имя
+      surname:
+        type: string
+        description: Фамилия
+      second_name:
+        type: string
+        nullable: true
+        description: Отчество
+      degree_level:
+        type: string
+        nullable: true
+        description: "Учёная степень (к.т.н., д.т.н. и т.д.)"
+      course:
+        type: integer
+        nullable: true
+        description: Курс (для студентов/аспирантов)
+      subject_area:
+        type: string
+        nullable: true
+      email:
+        type: string
+        nullable: true
+      telegram:
+        type: string
+        nullable: true
+      isu_number:
+        type: string
+        nullable: true
+      faculty:
+        type: string
+        nullable: true
+      employment_status:
+        type: string
+        nullable: true
+      orcid_id:
+        type: string
+        nullable: true
+      openalex_id:
+        type: string
+        nullable: true
+      github:
+        type: string
+        nullable: true

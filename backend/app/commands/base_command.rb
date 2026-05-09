@@ -9,16 +9,24 @@ class BaseCommand < BaseInteractor
     if record.save
       success(record)
     else
-      failure(:database_error, record.errors.full_messages)
+      failure(:validation_error, record.errors.messages)
     end
+  rescue ActiveRecord::RecordNotFound => e
+    failure(:not_found, e.message)
+  rescue ActiveRecord::RecordNotUnique
+    failure(:validation_error, { base: ['has already been taken'] })
   end
 
   def update_record(record, attributes)
     if record.update(attributes)
       success(record)
     else
-      failure(:database_error, record.errors.full_messages)
+      failure(:validation_error, record.errors.messages)
     end
+  rescue ActiveRecord::RecordNotFound => e
+    failure(:not_found, e.message)
+  rescue ActiveRecord::RecordNotUnique
+    failure(:validation_error, { base: ['has already been taken'] })
   end
 
   def destroy_record(record)

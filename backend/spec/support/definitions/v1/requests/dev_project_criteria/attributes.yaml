@@ -1,0 +1,17 @@
+type: object
+required:
+  - dev_project_criterion
+properties:
+  dev_project_criterion:
+    type: object
+    required:
+      - title
+    properties:
+      title:
+        type: string
+      check_key:
+        type: string
+        nullable: true
+      points:
+        type: [number, string]
+        nullable: true

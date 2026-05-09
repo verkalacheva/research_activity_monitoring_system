@@ -1,0 +1,12 @@
+type: object
+properties:
+  query:
+    type: string
+    description: Поисковая строка
+    nullable: true
+  limit:
+    type: integer
+    nullable: true
+  offset:
+    type: integer
+    nullable: true

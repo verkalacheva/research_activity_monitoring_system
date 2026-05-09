@@ -1,0 +1,14 @@
+type: object
+required:
+  - achievement_status
+properties:
+  achievement_status:
+    type: object
+    required:
+      - title
+    properties:
+      title:
+        type: string
+      points:
+        type: [number, string]
+        nullable: true

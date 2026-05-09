@@ -1,0 +1,25 @@
+type: object
+required:
+  - team
+properties:
+  team:
+    type: object
+    required:
+      - title
+    properties:
+      title:
+        type: string
+        description: Название команды/проекта
+      github_repo_url:
+        type: string
+        nullable: true
+        description: URL репозитория GitHub
+      leader_id:
+        type: integer
+        nullable: true
+        description: ID руководителя (исследователя)
+      researcher_ids:
+        type: array
+        items:
+          type: integer
+        description: ID исследователей в команде

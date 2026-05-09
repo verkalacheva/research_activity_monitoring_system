@@ -38,6 +38,9 @@ func (r *Repository) FetchData(req *pb.ReportRequest) ([]DataRow, int32, map[str
 		case "achievement_type":
 			cond, val = reports.BuildFilterCondition("at.id", f.Operator, argCount, f.Value, true)
 		case "submission_date":
+			if strings.TrimSpace(f.Value) == "" {
+				continue
+			}
 			dates := strings.Split(f.Value, ",")
 			if len(dates) == 2 && (dates[0] != "" || dates[1] != "") {
 				if dates[0] != "" {
@@ -51,9 +54,8 @@ func (r *Repository) FetchData(req *pb.ReportRequest) ([]DataRow, int32, map[str
 					argCount++
 				}
 				continue
-			} else {
-				cond, val = reports.BuildFilterCondition("a.submission_date::date", f.Operator, argCount, f.Value, false)
 			}
+			cond, val = reports.BuildFilterCondition("a.submission_date::date", f.Operator, argCount, f.Value, false)
 		default:
 			continue
 		}
