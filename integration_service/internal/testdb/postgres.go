@@ -50,7 +50,9 @@ CREATE TABLE IF NOT EXISTS researchers (
 	id BIGSERIAL PRIMARY KEY,
 	orcid_id TEXT,
 	openalex_id TEXT,
-	deleted_at TIMESTAMP
+	deleted_at TIMESTAMP,
+	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+	updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 )`)
 }
 

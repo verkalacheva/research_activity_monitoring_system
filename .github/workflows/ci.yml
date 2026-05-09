@@ -177,7 +177,8 @@ jobs:
         working-directory: analytics_service
         run: |
           mkdir -p coverage
-          go test -tags go1.21 -coverprofile=coverage/coverage.out -covermode=atomic ./...
+          # -p 1: shared Postgres; parallel packages cause TRUNCATE deadlocks and FK races (see docker-compose analytics-test).
+          go test -p 1 -tags go1.21 -coverprofile=coverage/coverage.out -covermode=atomic ./...
           go tool cover -html=coverage/coverage.out -o coverage/coverage.html
           go tool cover -func=coverage/coverage.out | tee coverage/coverage.txt
 
@@ -221,7 +222,8 @@ jobs:
         working-directory: integration_service
         run: |
           mkdir -p coverage
-          go test -tags go1.21 -coverprofile=coverage/coverage.out -covermode=atomic ./...
+          # -p 1: shared TEST_DATABASE_URL; same rationale as integration-test in docker-compose.
+          go test -p 1 -tags go1.21 -coverprofile=coverage/coverage.out -covermode=atomic ./...
           go tool cover -html=coverage/coverage.out -o coverage/coverage.html
           go tool cover -func=coverage/coverage.out | tee coverage/coverage.txt
 
