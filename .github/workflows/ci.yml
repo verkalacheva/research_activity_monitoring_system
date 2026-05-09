@@ -124,9 +124,7 @@ jobs:
         if: always()
         with:
           name: crawler-coverage
-          path: |
-            crawler_service/coverage/html/
-            crawler_service/coverage/coverage.xml
+          path: crawler_service/coverage
           retention-days: 30
 
   # ─── Go / analytics_service ─────────────────────────────────────────────────
@@ -178,19 +176,22 @@ jobs:
         run: |
           mkdir -p coverage
           # -p 1: shared Postgres; parallel packages cause TRUNCATE deadlocks and FK races (see docker-compose analytics-test).
+          set +e
           go test -p 1 -tags go1.21 -coverprofile=coverage/coverage.out -covermode=atomic ./...
-          go tool cover -html=coverage/coverage.out -o coverage/coverage.html
-          go tool cover -func=coverage/coverage.out | tee coverage/coverage.txt
+          ec=$?
+          set -e
+          if [ -f coverage/coverage.out ]; then
+            go tool cover -html=coverage/coverage.out -o coverage/coverage.html || true
+            go tool cover -func=coverage/coverage.out > coverage/coverage.txt || true
+          fi
+          exit "$ec"
 
       - name: Upload analytics coverage
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: analytics-coverage
-          path: |
-            analytics_service/coverage/coverage.html
-            analytics_service/coverage/coverage.txt
-            analytics_service/coverage/coverage.out
+          path: analytics_service/coverage
           retention-days: 30
 
   # ─── Go / integration_service ───────────────────────────────────────────────
@@ -242,19 +243,22 @@ jobs:
         run: |
           mkdir -p coverage
           # -p 1: shared TEST_DATABASE_URL; same rationale as integration-test in docker-compose.
+          set +e
           go test -p 1 -tags go1.21 -coverprofile=coverage/coverage.out -covermode=atomic ./...
-          go tool cover -html=coverage/coverage.out -o coverage/coverage.html
-          go tool cover -func=coverage/coverage.out | tee coverage/coverage.txt
+          ec=$?
+          set -e
+          if [ -f coverage/coverage.out ]; then
+            go tool cover -html=coverage/coverage.out -o coverage/coverage.html || true
+            go tool cover -func=coverage/coverage.out > coverage/coverage.txt || true
+          fi
+          exit "$ec"
 
       - name: Upload integration coverage
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: integration-coverage
-          path: |
-            integration_service/coverage/coverage.html
-            integration_service/coverage/coverage.txt
-            integration_service/coverage/coverage.out
+          path: integration_service/coverage
           retention-days: 30
 
   # ─── Docker build ───────────────────────────────────────────────────
@@ -343,7 +347,7 @@ jobs:
           find_go_cover_txt() {
             local dir="$1"
             [ -d "coverage-artifacts/${dir}" ] || { echo ""; return; }
-            find "coverage-artifacts/${dir}" -path '*/coverage/coverage.txt' -type f 2>/dev/null | head -1
+            find "coverage-artifacts/${dir}" -name coverage.txt -type f 2>/dev/null | head -1
           }
 
           echo "# Test Coverage Report" > coverage_summary.md
@@ -374,8 +378,12 @@ jobs:
           echo "## integration_service (Go)" >> coverage_summary.md
           INT_TXT="$(find_go_cover_txt integration-coverage)"
           if [ -n "$INT_TXT" ] && [ -f "$INT_TXT" ]; then
-            grep '^total' "$INT_TXT" | awk '{print "- Total coverage: **" $NF "**"}' >> coverage_summary.md || \
-              echo "- Coverage data unavailable" >> coverage_summary.md
+            val="$(awk '/^total/ {print $NF; exit}' "$INT_TXT" 2>/dev/null || true)"
+            if [ -n "$val" ]; then
+              echo "- Total coverage: **${val}**" >> coverage_summary.md
+            else
+              echo "- Coverage data unavailable (no total line in coverage.txt)" >> coverage_summary.md
+            fi
           else
             echo "- Coverage artifact not available" >> coverage_summary.md
           fi
@@ -384,8 +392,12 @@ jobs:
           echo "## analytics_service (Go)" >> coverage_summary.md
           ANA_TXT="$(find_go_cover_txt analytics-coverage)"
           if [ -n "$ANA_TXT" ] && [ -f "$ANA_TXT" ]; then
-            grep '^total' "$ANA_TXT" | awk '{print "- Total coverage: **" $NF "**"}' >> coverage_summary.md || \
-              echo "- Coverage data unavailable" >> coverage_summary.md
+            val="$(awk '/^total/ {print $NF; exit}' "$ANA_TXT" 2>/dev/null || true)"
+            if [ -n "$val" ]; then
+              echo "- Total coverage: **${val}**" >> coverage_summary.md
+            else
+              echo "- Coverage data unavailable (no total line in coverage.txt)" >> coverage_summary.md
+            fi
           else
             echo "- Coverage artifact not available" >> coverage_summary.md
           fi
