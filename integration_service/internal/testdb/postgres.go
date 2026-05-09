@@ -1,5 +1,6 @@
 // Package testdb — подключение к PostgreSQL для интеграционных тестов (реальные INSERT/SELECT).
-// В Docker: общая БД db-test (research_activity_monitoring_system_test), схема — сервис test-db-schema в docker-compose.yml.
+// Ожидается полная схема Rails (backend/db/schema.rb): db:schema:load в TEST_DATABASE_URL
+// (CI: шаг перед go test; локально: docker-compose test-db-schema или bundle exec rails db:schema:load из backend).
 package testdb
 
 import (
@@ -42,18 +43,25 @@ func mustExec(t *testing.T, db *sql.DB, q string, args ...any) {
 	}
 }
 
-// EnsureResearchersTable создаёт таблицу researchers под запросы ResearcherRepository.
+func assertPublicTableExists(t *testing.T, db *sql.DB, table string) {
+	t.Helper()
+	var n int
+	err := db.QueryRow(
+		`SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = $1`,
+		table,
+	).Scan(&n)
+	if err != nil {
+		t.Fatalf("schema check %q: %v", table, err)
+	}
+	if n != 1 {
+		t.Fatalf("missing table %q: load Rails schema (cd backend && RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bundle exec rails db:schema:load)", table)
+	}
+}
+
+// EnsureResearchersTable проверяет, что в БД есть таблица researchers из схемы Rails.
 func EnsureResearchersTable(t *testing.T, db *sql.DB) {
 	t.Helper()
-	mustExec(t, db, `
-CREATE TABLE IF NOT EXISTS researchers (
-	id BIGSERIAL PRIMARY KEY,
-	orcid_id TEXT,
-	openalex_id TEXT,
-	deleted_at TIMESTAMP,
-	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-	updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-)`)
+	assertPublicTableExists(t, db, "researchers")
 }
 
 // TruncateResearchers очищает таблицу между тестами.
@@ -62,27 +70,11 @@ func TruncateResearchers(t *testing.T, db *sql.DB) {
 	mustExec(t, db, `TRUNCATE researchers RESTART IDENTITY CASCADE`)
 }
 
-// EnsureDevCatalogTables — dev_employee_activity_types и dev_project_criteria для github.Client.
+// EnsureDevCatalogTables проверяет таблицы dev_employee_activity_types и dev_project_criteria (схема Rails).
 func EnsureDevCatalogTables(t *testing.T, db *sql.DB) {
 	t.Helper()
-	mustExec(t, db, `
-CREATE TABLE IF NOT EXISTS dev_employee_activity_types (
-	id BIGSERIAL PRIMARY KEY,
-	title VARCHAR NOT NULL,
-	points DECIMAL(10,2) DEFAULT 0,
-	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-	check_key VARCHAR
-)`)
-	mustExec(t, db, `
-CREATE TABLE IF NOT EXISTS dev_project_criteria (
-	id BIGSERIAL PRIMARY KEY,
-	title VARCHAR NOT NULL,
-	points DECIMAL(10,2) DEFAULT 0,
-	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-	check_key VARCHAR
-)`)
+	assertPublicTableExists(t, db, "dev_employee_activity_types")
+	assertPublicTableExists(t, db, "dev_project_criteria")
 }
 
 // TruncateDevCatalog очищает справочники GitHub-синка.

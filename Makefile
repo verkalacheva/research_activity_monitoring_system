@@ -100,7 +100,7 @@ test-crawler:
 
 # Run Go tests for integration_service (общая БД db-test + схема из test-db-schema, см. docker-compose).
 # Отчёт: integration_service/coverage/coverage.html. В контейнере: go test ./... ; coverpkg без сгенерированных pb/proto.
-# Локально: TEST_DATABASE_URL=... go test -tags go1.21 ./...
+# Локально: схема Rails в БД (docker compose --profile test up test-db-schema, или из backend: rails db:schema:load), затем TEST_DATABASE_URL=... go test -p 1 -tags go1.21 ./...
 test-integration:
 	$(DC_TEST) run --rm integration-test
 	$(DC_TEST) down -v --remove-orphans

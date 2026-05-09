@@ -213,6 +213,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install native deps (Rails schema load)
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends libpq-dev
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2.2"
+          bundler: "2.4.22"
+          bundler-cache: true
+          working-directory: backend
+
+      - name: Load database schema for integration_service tests
+        working-directory: backend
+        env:
+          RAILS_ENV: test
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+        run: |
+          bundle install --jobs 4 --retry 3
+          bundle exec rails db:schema:load
+
       - uses: actions/setup-go@v5
         with:
           go-version: "1.25.x"

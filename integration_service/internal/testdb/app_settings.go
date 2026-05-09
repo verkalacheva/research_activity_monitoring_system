@@ -10,6 +10,7 @@ import (
 // восстанавливает прежнее значение и description. Нужен для тестов resolveToken без постоянного загрязнения БД.
 func StashGitHubToken(t *testing.T, db *sql.DB) {
 	t.Helper()
+	assertPublicTableExists(t, db, "app_settings")
 	var value, description sql.NullString
 	var had bool
 	switch err := db.QueryRow(
