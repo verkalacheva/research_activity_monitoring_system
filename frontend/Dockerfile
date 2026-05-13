@@ -6,7 +6,7 @@ WORKDIR /app
 
 RUN flutter config --enable-web
 
-COPY pubspec.yaml pubspec.lock ./
+COPY pubspec.yaml ./
 RUN --mount=type=cache,target=/root/.pub-cache \
     flutter pub get
 
