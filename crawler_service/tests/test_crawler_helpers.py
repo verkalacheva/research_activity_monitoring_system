@@ -520,3 +520,86 @@ class TestRequireLlmApiKeyEmpty:
     def test_first_of_multiple_keys_returned(self):
         from infrastructure.crawler_client import _require_llm_api_key
         assert _require_llm_api_key("sk-first,sk-second") == "sk-first"
+
+
+# ---------------------------------------------------------------------------
+# crawl4ai schema prompt patch (must match crawler_client import side-effect)
+# ---------------------------------------------------------------------------
+class TestCrawl4aiPromptPatchApplied:
+    def test_extraction_strategy_prompt_replaced(self):
+        import crawl4ai.extraction_strategy as es
+
+        assert "PAGE NOISE" in es.PROMPT_EXTRACT_SCHEMA_WITH_INSTRUCTION
+        assert (
+            "corresponding to a block of content from the URL"
+            not in es.PROMPT_EXTRACT_SCHEMA_WITH_INSTRUCTION
+        )
+
+    def test_json_dumps_indent2_uses_utf8_not_escape(self):
+        import json
+
+        s = json.dumps({"enum": ["Грант", "Статья"]}, indent=2)
+        assert "\\u0413" not in s
+        assert "Грант" in s
+
+
+# ---------------------------------------------------------------------------
+# _normalize_llm_json_blob / _parse_extracted
+# ---------------------------------------------------------------------------
+class TestNormalizeLlmJsonBlob:
+    def test_blocks_inner_json(self):
+        raw = 'prefix\n<blocks>{"achievements": []}</blocks>\n<score>4</score>'
+        assert cc._normalize_llm_json_blob(raw) == '{"achievements": []}'
+
+    def test_score_removed_without_blocks(self):
+        raw = '{"achievements": []}\n<score>5</score>'
+        assert cc._normalize_llm_json_blob(raw).strip() == '{"achievements": []}'
+
+
+class TestParseExtractedAchievements:
+    def test_blocks_and_trailing_score(self):
+        client = cc.CrawlerClient(
+            model="openrouter/test-model",
+            settings={"llm_api_key": "sk-test"},
+        )
+        raw = (
+            '<blocks>{"achievements":[{"title":"Paper","type":"Статья"}]}</blocks>'
+            '\n<score>5</score>'
+        )
+        out = client._parse_extracted(raw)
+        assert len(out) == 1
+        assert out[0]["title"] == "Paper"
+
+    def test_empty_achievements_valid(self):
+        client = cc.CrawlerClient(
+            model="openrouter/test-model",
+            settings={"llm_api_key": "sk-test"},
+        )
+        assert client._parse_extracted('{"achievements":[]}') == []
+
+    def test_crawl4ai_root_array_wrapper(self):
+        """schema-режим crawl4ai: [{ \"achievements\": [ {...} ] }]."""
+        client = cc.CrawlerClient(
+            model="openrouter/test-model",
+            settings={"llm_api_key": "sk-test"},
+        )
+        raw = """[
+            {
+                "achievements": [
+                    {"title": "Do Young Children Reverse Ambiguous Figures?", "type": "Статья", "url": "https://doi.org/x"}
+                ]
+            }
+        ]"""
+        out = client._parse_extracted(raw)
+        assert len(out) == 1
+        assert "Young Children" in out[0]["title"]
+
+    def test_extra_text_after_json_uses_raw_decode(self):
+        client = cc.CrawlerClient(
+            model="openrouter/test-model",
+            settings={"llm_api_key": "sk-test"},
+        )
+        raw = '[{"achievements":[{"title":"T","type":"Статья"}]}]\n\nQuality Score: 5'
+        out = client._parse_extracted(raw)
+        assert len(out) == 1
+        assert out[0]["title"] == "T"

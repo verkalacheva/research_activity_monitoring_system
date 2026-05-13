@@ -82,6 +82,13 @@ bundle:
 
 ## ─── Tests & Coverage ────────────────────────────────────────────────────────
 
+# После тестов убираем только контейнеры профиля test. НЕ использовать здесь
+# «docker compose down -v»: без списка сервисов compose гасит весь проект и с
+# ключом -v удаляет тома pgdata/redis_data — это стирает основную БД и валит приложение.
+.PHONY: test-compose-teardown
+test-compose-teardown:
+	-$(DC_TEST) rm -f -s db-test redis-test test-db-schema 2>/dev/null || true
+
 # Run RSpec in an isolated test environment (own postgres + redis, ephemeral).
 # Does NOT require the main stack to be running and does NOT need .env.
 # Coverage report: backend/coverage/index.html (HTML) and backend/coverage/coverage.json (JSON).
@@ -89,7 +96,7 @@ test-backend:
 	@mkdir -p backend/coverage
 	$(DC_TEST) build backend-test
 	$(DC_TEST) run --rm backend-test
-	$(DC_TEST) down -v --remove-orphans
+	@$(MAKE) --no-print-directory test-compose-teardown
 
 # Run pytest for crawler_service locally.
 # Coverage report: crawler_service/coverage/html/index.html and crawler_service/coverage/coverage.xml.
@@ -103,13 +110,13 @@ test-crawler:
 # Локально: схема Rails в БД (docker compose --profile test up test-db-schema, или из backend: rails db:schema:load), затем TEST_DATABASE_URL=... go test -p 1 -tags go1.21 ./...
 test-integration:
 	$(DC_TEST) run --rm integration-test
-	$(DC_TEST) down -v --remove-orphans
+	@$(MAKE) --no-print-directory test-compose-teardown
 
 # Run Go tests for analytics_service (та же общая тестовая БД, что и у integration_service / backend-test).
 # Отчёт: analytics_service/coverage/coverage.html. В Docker: go test -p 1 (общая БД, без параллельных пакетов).
 test-analytics:
 	$(DC_TEST) run --rm analytics-test
-	$(DC_TEST) down -v --remove-orphans
+	@$(MAKE) --no-print-directory test-compose-teardown
 
 # Run all test suites sequentially and collect every coverage artifact.
 # Summary is written to coverage_summary.txt in the project root.

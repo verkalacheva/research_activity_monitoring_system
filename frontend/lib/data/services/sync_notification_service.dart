@@ -162,6 +162,12 @@ class SyncNotificationService extends ChangeNotifier {
         (r) => r.isCompleted && !r.hasError && (r.results?.isNotEmpty ?? false),
       );
 
+  /// Задача на сервере завершилась без ошибки, но импортировать нечего (часто краулер после дедупликации).
+  /// Раньше UI считал это «ничего не происходит» и скрывал колокольчик.
+  bool get hasCompletedEmptySuccess => _requests.any(
+        (r) => r.isCompleted && !r.hasError && (r.results?.isEmpty ?? true),
+      );
+
   bool get hasActivity => _requests.isNotEmpty;
 
   List<SyncRequest> get completedRequests =>

@@ -54,11 +54,25 @@ _ATTRIBUTION_HINT_TEMPLATE = (
     "1. CO-AUTHORSHIP IS VALID: if the researcher '{name}' (or abbreviated '{abbrev}') is listed as "
     "one of several authors, co-authors, co-presenters, or co-participants of an achievement, "
     "extract it — co-authored works are full personal achievements.\n"
-    "2. STRICT NAME CHECK: for each achievement you consider extracting, verify that "
-    "'{name}' or '{abbrev}' actually appears on this page in connection with that specific item. "
-    "If the researcher's name is absent from the page entirely, return {{\"achievements\": []}}. "
-    "For multi-author collections or proceedings listing many different people, "
-    "include ONLY items where this person is explicitly named; skip items by other authors."
+    "2. STRICT NAME CHECK (per achievement): before extracting an item, verify this researcher is "
+    "actually credited for that specific work on the page (author line, byline, speaker list, etc.). "
+    "Latin/international spelling (e.g. English on a publisher site) counts as a match when "
+    "surname and given names clearly correspond to '{name}' / '{abbrev}' — Cyrillic does not need "
+    "to appear literally. If nobody matching this researcher appears anywhere on the page, return "
+    '{{"achievements": []}}.\n'
+    "3. MULTI-AUTHOR LISTS: for proceedings or listings naming many different people, include ONLY "
+    "items where this researcher is explicitly named for that entry; skip works by unrelated authors."
+)
+
+SURFACE_AND_REFERENCE_HINT = (
+    "PAGE CHROME — IGNORE AS EVIDENCE: navigation, footers, cookie/consent banners, login/paywall "
+    "prompts, share/cite widgets, Kindle/Dropbox/Google Drive modals, duplicate headings, "
+    "«Cited by» / Crossref / Google Scholar widgets, loading placeholders, Hostname:/Render date:/ "
+    "style diagnostics.\n"
+    "REFERENCE SECTIONS: do NOT emit separate achievements from bibliography / «References» / "
+    "third-party citing lists unless each line explicitly ties that work to this researcher on this "
+    "page; for a journal article landing page prefer ONE primary publication that this URL describes "
+    "when it matches the researcher."
 )
 
 DUPLICATE_HINT = (
@@ -499,6 +513,7 @@ class CrawlAchievementsUseCase:
             f"Extract research achievements for {researcher_name} "
             f"(also written as {abbrev_name}). "
             f"{attribution_hint} "
+            f"{SURFACE_AND_REFERENCE_HINT} "
             f"{_effective_html_page_hint()} "
             f"{TYPE_COVERAGE_HINT} "
             f"{TYPE_JSON_HINT} "

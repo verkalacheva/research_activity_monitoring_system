@@ -98,6 +98,8 @@ end
 
 # Achievement Statuses
 achievement_statuses = [
+  # Дефолт для синхронизаций / импорта, когда уровень не выводится из текста (PersistSyncResultsService#map_status).
+  { title: 'Не указано', points: 1.0 },
   { title: 'Университетский', points: 1.0 },
   { title: 'РИНЦ', points: 1.0 },
   { title: 'Региональный', points: 1.3 },

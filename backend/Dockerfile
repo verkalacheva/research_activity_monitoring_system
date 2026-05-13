@@ -23,8 +23,9 @@ COPY . .
 FROM ruby:3.2.2-slim
 
 RUN apt-get update -qq && \
-    apt-get install -y --no-install-recommends libpq5 curl && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y --no-install-recommends libpq5 curl ca-certificates && \
+    rm -rf /var/lib/apt/lists/* && \
+    update-ca-certificates
 
 WORKDIR /app
 
@@ -45,4 +46,5 @@ ENV PORT=3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
   CMD /bin/sh -c 'curl -fsS "http://$HEALTHCHECK_HOST:$PORT/health/live" || exit 1'
 
-CMD ["bundle", "exec", "rails", "s", "-p", "3000", "-b", "0.0.0.0", "-e", "production"]
+# Avoid "A server is already running" after unclean exits or image builds that carried tmp/pids.
+CMD ["sh", "-c", "rm -f tmp/pids/server.pid && exec bundle exec rails s -p 3000 -b 0.0.0.0 -e production"]

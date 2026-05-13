@@ -24,7 +24,10 @@ class IntegrationService {
     }
   }
 
-  /// POST задачи + ожидание результата только по WebSocket (Action Cable).
+  /// POST задачи + ожидание результата по WebSocket (Action Cable).
+  /// При обрыве сокета (перезагрузка прокси, sleep ноутбука и т.п.) повторно опрашивается
+  /// [GET /integration_sync_jobs/:id], пока задача на Sidekiq не перейдёт в терминальный статус.
+  ///
   /// [onJobCreated] — сразу после постановки задачи (до ожидания по сокету), для отмены через DELETE.
   Future<List<dynamic>> syncPreview({
     String provider = 'orcid',
@@ -88,11 +91,85 @@ class IntegrationService {
       } on SyncPreviewAborted {
         rethrow;
       } catch (e, st) {
-        debugPrint('Integration sync: WebSocket ($e). $st');
-        rethrow;
+        debugPrint('Integration sync: WebSocket lost ($e). Falling back to HTTP polling. $st');
+        return await _pollIntegrationSyncJob(
+          client: client,
+          jobId: jobId,
+          deadline: deadline,
+          shouldAbort: shouldAbort,
+        );
       }
     } finally {
       if (closeClient) client.close();
+    }
+  }
+
+  /// Ожидание завершения задачи по Redis-снимку (та же модель, что отдаётся по Action Cable).
+  Future<List<dynamic>> _pollIntegrationSyncJob({
+    required http.Client client,
+    required String jobId,
+    required DateTime deadline,
+    bool Function()? shouldAbort,
+  }) async {
+    const interval = Duration(seconds: 2);
+    while (true) {
+      if (shouldAbort?.call() == true) {
+        throw SyncPreviewAborted();
+      }
+      if (!DateTime.now().isBefore(deadline)) {
+        throw TimeoutException(
+          'integration_sync_job HTTP poll exceeded ${_maxWait.inHours}h deadline',
+        );
+      }
+
+      http.Response resp;
+      try {
+        resp = await client.get(Uri.parse('$baseUrl/integration_sync_jobs/$jobId'));
+      } catch (e) {
+        debugPrint('Integration sync poll GET failed: $e');
+        await Future<void>.delayed(interval);
+        continue;
+      }
+
+      if (resp.statusCode == 404) {
+        throw Exception(
+          'Задача синхронизации не найдена на сервере (истёк срок хранения или неверный id)',
+        );
+      }
+      if (resp.statusCode != 200) {
+        debugPrint('Integration sync poll HTTP ${resp.statusCode}: ${resp.body}');
+        await Future<void>.delayed(interval);
+        continue;
+      }
+
+      final Map<String, dynamic> map;
+      try {
+        final decoded = json.decode(resp.body);
+        if (decoded is! Map<String, dynamic>) {
+          await Future<void>.delayed(interval);
+          continue;
+        }
+        map = decoded;
+      } catch (_) {
+        await Future<void>.delayed(interval);
+        continue;
+      }
+
+      final status = map['status']?.toString();
+      switch (status) {
+        case 'complete':
+          final results = map['results'];
+          return results is List ? List<dynamic>.from(results) : <dynamic>[];
+        case 'cancelled':
+          return <dynamic>[];
+        case 'failed':
+          final err = map['error']?.toString() ?? 'Неизвестная ошибка';
+          final isRateLimit = map['rate_limit'] == true;
+          throw Exception(isRateLimit ? 'rate_limit:$err' : err);
+        default:
+          await Future<void>.delayed(interval);
+          continue;
+      }
     }
   }
 

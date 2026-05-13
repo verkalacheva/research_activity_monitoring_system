@@ -46,7 +46,10 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
     return _results.any((res) {
       final devActs = res['dev_activities'] as List? ?? [];
       final criteria = res['project_criteria_met'] as List? ?? [];
-      return devActs.isNotEmpty || criteria.isNotEmpty;
+      final details = res['activity_details'] as List? ?? [];
+      return devActs.isNotEmpty ||
+          criteria.isNotEmpty ||
+          details.isNotEmpty;
     });
   }
 
@@ -308,7 +311,7 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
                     ? 'GitHub — все проекты'
                     : widget.provider.toUpperCase())));
     
-    // Для команд кнопка активна всегда, так как dev_data сохраняется сразу
+    // Для команд кнопка СОХРАНИТЬ активна всегда (teamId != null); данные всё равно уходят только по нажатию.
     // Для исследователей кнопка активна если выбраны ачивки или есть данные по разработке
     final bool canSave = _selectedAchievements.isNotEmpty || widget.teamId != null || widget.scope == 'teams' || _hasDevData();
     final allAchievements = _allAchievements();
@@ -533,7 +536,9 @@ class _SyncPreviewDialogState extends State<SyncPreviewDialog> {
                         const Icon(Icons.code, size: 16, color: AppColors.primary),
                         const SizedBox(width: 8),
                         Text(
-                          isTeam ? 'Данные проекта (сохранятся автоматически)' : 'Активность разработки (сохранится автоматически)',
+                          isTeam
+                              ? 'Данные проекта (импорт при нажатии СОХРАНИТЬ)'
+                              : 'Активность разработки (импорт при нажатии СОХРАНИТЬ)',
                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
                         ),
                       ],

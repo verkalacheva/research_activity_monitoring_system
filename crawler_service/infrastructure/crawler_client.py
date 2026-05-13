@@ -15,6 +15,11 @@ from typing import List, Dict, Any, Optional, Tuple
 from urllib.parse import urlparse
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
 from crawl4ai.extraction_strategy import LLMExtractionStrategy
+
+from infrastructure.crawl4ai_prompt_patch import apply_crawl4ai_schema_prompt_patch
+
+apply_crawl4ai_schema_prompt_patch()
+
 from translations.ru import LLM_MODEL_UNAVAILABLE_USER_RU
 from infrastructure.url_ranking import is_pdf_url, is_forced_download_url
 from infrastructure.crawl_cache import cache_get_text, cache_set_text, llm_cache_key_material
@@ -279,6 +284,48 @@ def _strip_llm_json_fences(raw: str) -> str:
             lines = lines[:-1]
         s = "\n".join(lines)
     return s.strip()
+
+
+def _normalize_llm_json_blob(raw: str) -> str:
+    """Markdown-ограждения, crawl4ai <score>, содержимое <blocks> — строка для json.loads."""
+    s = _strip_llm_json_fences(raw or "")
+    s = re.sub(r"<score>\s*[\s\S]*?</score>", "", s, flags=re.IGNORECASE)
+    s = s.strip()
+    m = re.search(r"<blocks>\s*([\s\S]*?)\s*</blocks>", s, flags=re.IGNORECASE)
+    if m:
+        s = m.group(1).strip()
+    return s.strip()
+
+
+def _decode_llm_json_structure(normalized: str) -> Any:
+    """
+    crawl4ai для schema часто отдаёт корневой массив [{ "achievements": [...] }].
+    После сбоя json.loads прежний fallback резал строку от первого «{» до последнего «}»,
+    что ломает массив и обнуляет результаты в UI.
+    """
+    s = normalized.strip()
+    if not s:
+        raise json.JSONDecodeError("empty", normalized, 0)
+    try:
+        return json.loads(s)
+    except json.JSONDecodeError:
+        pass
+    try:
+        return json.JSONDecoder().raw_decode(s)[0]
+    except json.JSONDecodeError:
+        pass
+    lb = s.find("[")
+    rb = s.rfind("]")
+    if lb >= 0 and rb > lb:
+        try:
+            return json.loads(s[lb : rb + 1])
+        except json.JSONDecodeError:
+            pass
+    start = s.find("{")
+    end = s.rfind("}")
+    if start >= 0 and end > start:
+        return json.loads(s[start : end + 1])
+    raise json.JSONDecodeError("unrecoverable LLM JSON", s, 0)
 
 
 def _direct_llm_extract_enabled() -> bool:
@@ -798,8 +845,16 @@ class CrawlerClient:
         if len(body) > max_chars:
             body = body[:max_chars] + "\n\n[... обрезано по лимиту CRAWL_DIRECT_LLM_MAX_CHARS ...]"
         contract = (json_contract or "").strip() or (
+            "PAGE NOISE: Ignore navigation, cookie/consent banners, login/paywall prompts, "
+            "share/cite widgets, Kindle/Dropbox modals, «Cited by»/Crossref widgets, "
+            "and diagnostic lines (Hostname:, Render date:, Total loading time:).\n"
+            "AUTHOR NAMES: Latin/international spelling on the page satisfies the name check "
+            "when it clearly matches the researcher named in the instructions (cross-script).\n"
+            "REFERENCES: Do not emit separate achievements from bibliography / «References» / "
+            "third-party citing lists; extract the primary work this page describes when it "
+            "matches the researcher, not every cited paper.\n"
             'Ответь ОДНИМ JSON-объектом без markdown-ограждений и без комментариев. '
-            'Форма: {"achievements": [ ... ]} — массив объектов достижений как выше.'
+            'Строго форма: {"achievements": [ ... ]}.'
         )
         prompt = (
             f"{instruction}\n\n"
@@ -962,7 +1017,7 @@ class CrawlerClient:
         cands: Any = None
         if raw1:
             try:
-                data = json.loads(_strip_llm_json_fences(raw1))
+                data = json.loads(_normalize_llm_json_blob(raw1))
                 cands = data.get("candidates") if isinstance(data, dict) else None
             except (json.JSONDecodeError, TypeError):
                 cands = None
@@ -1235,20 +1290,54 @@ class CrawlerClient:
             or "429" in raw
         )
 
-    def _parse_extracted(self, raw: str) -> List[Dict[str, Any]]:
+    def _parse_extracted(self, raw: Any) -> Optional[List[Dict[str, Any]]]:
         """Пустой список или achievements: [] — валидный ответ «ничего не извлечено», не ошибка парсинга."""
+        data: Any = None
+        if isinstance(raw, list):
+            data = raw
+        elif isinstance(raw, dict):
+            data = raw
+        else:
+            if raw is None:
+                return None
+            normalized = _normalize_llm_json_blob(str(raw))
+            if not normalized.strip():
+                return None
+            try:
+                data = _decode_llm_json_structure(normalized)
+            except json.JSONDecodeError as e:
+                print(
+                    f"[CrawlerClient] JSON parse error: {e}; "
+                    f"snippet={normalized[:480]!r}{'…' if len(normalized) > 480 else ''}"
+                )
+                return None
         try:
-            data = json.loads(raw)
             if isinstance(data, list):
-                return [item for item in data if not item.get("error")]
+                # crawl4ai schema: [ { "achievements": [ {...}, ... ] }, ... ] — разворачиваем в плоский список
+                out: List[Dict[str, Any]] = []
+                for item in data:
+                    if not isinstance(item, dict) or item.get("error"):
+                        continue
+                    nested = item.get("achievements")
+                    if isinstance(nested, list):
+                        out.extend(
+                            x
+                            for x in nested
+                            if isinstance(x, dict) and not x.get("error")
+                        )
+                    elif item.get("title"):
+                        out.append(item)
+                return out
             if isinstance(data, dict):
                 ach = data.get("achievements")
                 if isinstance(ach, list):
-                    return [item for item in ach if not item.get("error")]
+                    return [item for item in ach if isinstance(item, dict) and not item.get("error")]
                 for value in data.values():
                     if isinstance(value, list):
-                        return [item for item in value if not item.get("error")]
+                        return [
+                            item for item in value if isinstance(item, dict) and not item.get("error")
+                        ]
                 return [data]
-        except (json.JSONDecodeError, Exception) as e:
+        except Exception as e:
             print(f"[CrawlerClient] JSON parse error: {e}")
         return None

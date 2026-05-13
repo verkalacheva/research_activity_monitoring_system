@@ -41,7 +41,8 @@ class _SyncNotificationBellState extends State<SyncNotificationBell>
 
     final service = SyncNotificationService.instance;
     final results = service.mergedResults;
-    if (results.isEmpty) return;
+    final mayOpenEmpty = service.hasCompletedEmptySuccess;
+    if (results.isEmpty && !mayOpenEmpty) return;
 
     showDialog<bool?>(
       context: navContext,
@@ -71,9 +72,11 @@ class _SyncNotificationBellState extends State<SyncNotificationBell>
         final service = SyncNotificationService.instance;
         final isSyncing = service.isSyncing;
         final hasPending = service.hasPendingResults;
+        final hasEmptyDone = service.hasCompletedEmptySuccess;
         final pendingCount = service.pendingRequests.length;
+        final canOpenResults = hasPending || (!isSyncing && hasEmptyDone);
 
-        if (!isSyncing && !hasPending) return const SizedBox.shrink();
+        if (!isSyncing && !hasPending && !hasEmptyDone) return const SizedBox.shrink();
 
         // Use Align so the widget fills the Stack without blocking hit-testing on empty areas.
         return Align(
@@ -84,9 +87,10 @@ class _SyncNotificationBellState extends State<SyncNotificationBell>
             child: _BellButton(
               isSyncing: isSyncing,
               hasPending: hasPending,
+              hasEmptyDone: hasEmptyDone,
               pendingCount: pendingCount,
               pulseAnimation: _pulse,
-              onTap: hasPending ? _openResults : null,
+              onTap: canOpenResults ? _openResults : null,
               onCancelSync: isSyncing ? () => service.cancelSync() : null,
             ),
           ),
@@ -99,6 +103,7 @@ class _SyncNotificationBellState extends State<SyncNotificationBell>
 class _BellButton extends StatelessWidget {
   final bool isSyncing;
   final bool hasPending;
+  final bool hasEmptyDone;
   final int pendingCount;
   final Animation<double> pulseAnimation;
   final VoidCallback? onTap;
@@ -107,6 +112,7 @@ class _BellButton extends StatelessWidget {
   const _BellButton({
     required this.isSyncing,
     required this.hasPending,
+    required this.hasEmptyDone,
     required this.pendingCount,
     required this.pulseAnimation,
     required this.onTap,
@@ -122,7 +128,9 @@ class _BellButton extends StatelessWidget {
     Widget button = Material(
       elevation: 6,
       borderRadius: BorderRadius.circular(32),
-      color: hasPending ? AppColors.primary : AppColors.primary.withOpacity(0.7),
+      color: (hasPending || (!isSyncing && hasEmptyDone))
+          ? AppColors.primary
+          : AppColors.primary.withOpacity(0.7),
       child: InkWell(
         borderRadius: BorderRadius.circular(32),
         onTap: onTap,
@@ -227,7 +235,9 @@ class _BellButton extends StatelessWidget {
               Text(
                 isSyncing
                     ? (pendingCount > 1 ? 'Синхронизация… ($pendingCount)' : 'Синхронизация…')
-                    : 'Результаты синхронизации',
+                    : (hasPending
+                        ? 'Результаты синхронизации'
+                        : 'Синхронизация завершена'),
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -240,7 +250,7 @@ class _BellButton extends StatelessWidget {
       ),
     );
 
-    if (hasPending) {
+    if (hasPending || (!isSyncing && hasEmptyDone)) {
       button = AnimatedBuilder(
         animation: pulseAnimation,
         builder: (_, child) => Transform.scale(

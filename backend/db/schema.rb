@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_04_27_120000) do
+ActiveRecord::Schema[7.0].define(version: 2026_05_11_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -132,7 +132,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_27_120000) do
 
   create_table "researcher_activity_details", force: :cascade do |t|
     t.bigint "researcher_id", null: false
-    t.bigint "team_id", null: false
+    t.bigint "team_id"
     t.string "activity_type", null: false
     t.string "external_id", null: false
     t.text "title"
@@ -149,14 +149,15 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_27_120000) do
 
   create_table "researcher_dev_activities", force: :cascade do |t|
     t.bigint "researcher_id", null: false
-    t.bigint "team_id", null: false
+    t.bigint "team_id"
     t.bigint "dev_employee_activity_type_id", null: false
     t.integer "count", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.date "date"
     t.index ["dev_employee_activity_type_id"], name: "idx_res_dev_act_on_type_id"
-    t.index ["researcher_id", "team_id", "dev_employee_activity_type_id", "date"], name: "idx_res_dev_act_uniqueness", unique: true
+    t.index ["researcher_id", "dev_employee_activity_type_id", "date"], name: "idx_res_dev_act_uniqueness_no_team", unique: true, where: "(team_id IS NULL)"
+    t.index ["researcher_id", "team_id", "dev_employee_activity_type_id", "date"], name: "idx_res_dev_act_uniqueness_with_team", unique: true, where: "(team_id IS NOT NULL)"
     t.index ["researcher_id"], name: "index_researcher_dev_activities_on_researcher_id"
     t.index ["team_id"], name: "index_researcher_dev_activities_on_team_id"
   end
