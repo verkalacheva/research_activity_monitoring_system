@@ -20,6 +20,9 @@ RUN flutter pub get && flutter build web --release --dart-define=API_BASE_URL=${
 # Stage 2: Serve
 FROM nginx:alpine
 RUN apk add --no-cache curl
+
+RUN rm -rf /etc/nginx/templates
+COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY --from=build-env /app/build/web /usr/share/nginx/html
 EXPOSE 80
 ENV FRONTEND_INTERNAL_HTTP_PORT=80
