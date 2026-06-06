@@ -62,6 +62,7 @@ build-iPhoneSimulator/
 *.csv
 *.sql
 *.lock
+!backend/Gemfile.lock
 *.docker/make-build/*
 *docs/*
 *testdata/*
