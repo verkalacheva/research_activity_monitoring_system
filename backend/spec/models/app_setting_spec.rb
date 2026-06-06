@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe AppSetting, type: :model do
+RSpec.describe AppSetting, type: :model, needs_tenant_context: true do
   describe 'validations' do
     it 'requires key' do
       expect(build(:app_setting, key: '')).not_to be_valid

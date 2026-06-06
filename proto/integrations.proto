@@ -60,6 +60,7 @@ message CrawlResponse {
 
 message SyncRequest {
   string provider = 1; // e.g., "orcid", "openalex"
+  int64 admin_id = 2;  // tenant scope: only researchers of this admin
 }
 
 message SyncResponse {

@@ -5,6 +5,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'package:research_activity_monitoring_system/core/config.dart';
 import 'action_cable_wire.dart';
+import 'api_client.dart';
 
 class SocketService {
   static final SocketService _instance = SocketService._internal();
@@ -17,14 +18,17 @@ class SocketService {
   String? _identifier;
   final String _baseUrl = '${AppConfig.wsBase}/cable';
 
-  void connect({
+  Future<void> connect({
     required String channel,
     required void Function(Map<String, dynamic>) onMessage,
-  }) {
+  }) async {
     disconnect();
     _identifier = ActionCableWire.encodeChannelId(channel, <String, dynamic>{});
     _subscribed = false;
-    _channel = WebSocketChannel.connect(Uri.parse(_baseUrl));
+    final uri = await ApiClient.cableWebSocketUri(_baseUrl);
+    if (!uri.queryParameters.containsKey('token')) return;
+
+    _channel = WebSocketChannel.connect(uri);
 
     _sub = _channel!.stream.listen(
       (dynamic frame) {

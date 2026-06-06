@@ -1,6 +1,7 @@
 package dev_researchers
 
 import (
+	"analytics_service/internal/reports"
 	"analytics_service/pb"
 	"context"
 	"database/sql"
@@ -32,6 +33,12 @@ func (h *Handler) Generate(ctx context.Context, req *pb.ReportRequest) (*pb.Repo
 
 	// WHERE conditions for base tables (researcher, team filters + soft-delete).
 	outerConds := " AND r.deleted_at IS NULL AND t.deleted_at IS NULL"
+	adminID := reports.AdminIDFromRequest(req)
+	if adminID > 0 {
+		var adminSQL string
+		adminSQL, args, argCount = reports.AdminFilterSQL(adminID, argCount, args, "r.admin_id", "t.admin_id")
+		outerConds += adminSQL
+	}
 	// JOIN conditions for LEFT JOIN on rda (date range must go here so that
 	// researchers without activities in the range still appear).
 	var rdaJoinConds string
@@ -39,7 +46,7 @@ func (h *Handler) Generate(ctx context.Context, req *pb.ReportRequest) (*pb.Repo
 	var actSubConds string
 
 	for _, f := range req.Filters {
-		if f.Value == "" {
+		if f.Value == "" || f.Field == "admin_id" {
 			continue
 		}
 		switch f.Field {
@@ -86,25 +93,26 @@ func (h *Handler) Generate(ctx context.Context, req *pb.ReportRequest) (*pb.Repo
 			(
 				SELECT COALESCE(SUM(dpc2.points), 0)
 				FROM team_dev_criteria tdc2
-				JOIN dev_project_criteria dpc2 ON tdc2.dev_project_criterion_id = dpc2.id
+				JOIN dev_project_criteria dpc2 ON tdc2.dev_project_criterion_id = dpc2.id%s
 				WHERE tdc2.team_id = t.id
 			) AS criteria_sum,
 			(
 				SELECT COALESCE(SUM(rda2.count * deat2.points), 0)
 				FROM researcher_dev_activities rda2
-				JOIN dev_employee_activity_types deat2 ON rda2.dev_employee_activity_type_id = deat2.id
+				JOIN dev_employee_activity_types deat2 ON rda2.dev_employee_activity_type_id = deat2.id%s
 				WHERE rda2.researcher_id = r.id AND rda2.team_id = t.id%s
 			) AS total_activity_sum
 		FROM researchers r
 		JOIN researchers_teams rt ON rt.researcher_id = r.id
-		JOIN teams t ON rt.team_id = t.id
+		JOIN teams t ON rt.team_id = t.id%s
 		LEFT JOIN researcher_dev_activities rda
 			ON rda.researcher_id = r.id AND rda.team_id = t.id%s
 		LEFT JOIN dev_employee_activity_types deat
-			ON deat.id = rda.dev_employee_activity_type_id
+			ON deat.id = rda.dev_employee_activity_type_id%s
 		WHERE 1=1%s
 		GROUP BY r.id, r.surname, r.name, r.second_name, t.id, t.title, deat.id, deat.title, deat.points
-	`, actSubConds, rdaJoinConds, outerConds)
+	`, reports.MatchAdminColumn("dpc2.admin_id", "t"), reports.MatchAdminColumn("deat2.admin_id", "r"), actSubConds,
+		reports.MatchAdminColumn("t.admin_id", "r"), rdaJoinConds, reports.MatchAdminColumn("deat.admin_id", "t"), outerConds)
 
 	// Count distinct researcher+team groups (not individual rows) so that
 	// pagination controls reflect the number of researchers, not activity rows.

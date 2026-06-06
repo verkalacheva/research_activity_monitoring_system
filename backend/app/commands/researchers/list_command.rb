@@ -5,7 +5,7 @@ module Researchers
     protected
 
     def list_scope
-      Researcher.kept.select(
+      Researcher.kept.for_current_admin.select(
         :id, :surname, :name, :second_name, :degree_level, :subject_area,
         :orcid_id, :openalex_id,
         '(EXISTS (SELECT 1 FROM teams WHERE teams.leader_id = researchers.id)) AS is_leader'
@@ -21,7 +21,7 @@ module Researchers
     end
 
     def total_count_scope(_list_scope)
-      Researcher.kept
+      Researcher.kept.for_current_admin
     end
   end
 end

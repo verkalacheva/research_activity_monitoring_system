@@ -7,6 +7,14 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v1 do
+      scope :auth, controller: :auth do
+        post :register
+        post :login
+        post :refresh
+        post :logout
+        get :me
+      end
+
       resources :researchers, except: [:index] do
         post :import, on: :collection
         get :list, on: :collection

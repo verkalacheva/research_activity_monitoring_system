@@ -7,7 +7,7 @@ module Api
       end
 
       def show
-        achievement_status = AchievementStatus.find(params[:id])
+        achievement_status = find_tenant_record!(AchievementStatus, params[:id])
         render json: achievement_status
       rescue ActiveRecord::RecordNotFound
         render_failure({ type: :not_found, message: "Achievement status not found" })

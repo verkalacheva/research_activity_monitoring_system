@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:research_activity_monitoring_system/data/services/api_client.dart';
 import 'package:research_activity_monitoring_system/data/models/models.dart';
 import 'package:research_activity_monitoring_system/core/config.dart';
 
@@ -7,7 +7,7 @@ class AchievementResultService {
   static const String baseUrl = AppConfig.apiV1;
 
   Future<List<AchievementResult>> getAll() async {
-    final response = await http.get(Uri.parse('$baseUrl/achievement_results/list?limit=100'));
+    final response = await ApiClient.get(Uri.parse('$baseUrl/achievement_results/list?limit=100'));
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       List itemsJson = jsonResponse['items'];
@@ -18,7 +18,7 @@ class AchievementResultService {
   }
 
   Future<PaginatedResponse<AchievementResult>> list({int limit = 20, int offset = 0}) async {
-    final response = await http.get(Uri.parse('$baseUrl/achievement_results/list?limit=$limit&offset=$offset'));
+    final response = await ApiClient.get(Uri.parse('$baseUrl/achievement_results/list?limit=$limit&offset=$offset'));
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       final List itemsJson = jsonResponse['items'];
@@ -31,9 +31,8 @@ class AchievementResultService {
   }
 
   Future<AchievementResult> create(AchievementResult result) async {
-    final response = await http.post(
+    final response = await ApiClient.post(
       Uri.parse('$baseUrl/achievement_results'),
-      headers: {'Content-Type': 'application/json'},
       body: json.encode({'achievement_result': result.toJson()}),
     );
     if (response.statusCode == 201) {
@@ -44,9 +43,8 @@ class AchievementResultService {
   }
 
   Future<AchievementResult> update(int id, AchievementResult result) async {
-    final response = await http.put(
+    final response = await ApiClient.put(
       Uri.parse('$baseUrl/achievement_results/$id'),
-      headers: {'Content-Type': 'application/json'},
       body: json.encode({'achievement_result': result.toJson()}),
     );
     if (response.statusCode == 200) {
@@ -57,7 +55,7 @@ class AchievementResultService {
   }
 
   Future<void> delete(int id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/achievement_results/$id'));
+    final response = await ApiClient.delete(Uri.parse('$baseUrl/achievement_results/$id'));
     if (response.statusCode != 204) {
       throw Exception('Failed to delete achievement result');
     }

@@ -1,8 +1,13 @@
 class Team < ApplicationRecord
   include SoftDeletable
+  include TenantScoped
   belongs_to :leader, class_name: 'Researcher', optional: true
   has_many :researchers_teams, dependent: :destroy
   has_many :researchers, -> { where(researchers: { deleted_at: nil }).order(:surname, :name, :second_name) }, through: :researchers_teams
+
+  scope :for_researcher_membership, lambda { |researcher_id|
+    where(id: ResearchersTeam.where(researcher_id: researcher_id).select(:team_id))
+  }
   
   has_many :team_dev_criteria, dependent: :destroy
   has_many :dev_project_criteria, through: :team_dev_criteria

@@ -5,7 +5,7 @@ module AchievementResults
     protected
 
     def list_scope
-      AchievementResult.kept.select(:id, :title, :points).order(:title)
+      AchievementResult.kept.for_current_admin.select(:id, :title, :points).order(:title)
     end
 
     def row_serializer_class
@@ -17,7 +17,7 @@ module AchievementResults
     end
 
     def total_count_scope(_list_scope)
-      AchievementResult.kept
+      AchievementResult.kept.for_current_admin
     end
   end
 end

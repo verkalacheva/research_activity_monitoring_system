@@ -26,8 +26,8 @@ func (r *Repository) FetchData(req *pb.ReportRequest) ([]DataRow, int32, map[str
 		"FROM achievements a " +
 		"JOIN researcher_achievements ra ON a.id = ra.achievement_id " +
 		"JOIN researchers r ON ra.researcher_id = r.id " +
-		"LEFT JOIN achievement_types at ON a.achievement_type_id = at.id " +
-		"LEFT JOIN achievement_statuses s ON a.achievement_status_id = s.id"
+		"LEFT JOIN achievement_types at ON a.achievement_type_id = at.id" + reports.MatchAdminColumn("at.admin_id", "r") +
+		" LEFT JOIN achievement_statuses s ON a.achievement_status_id = s.id" + reports.MatchAdminColumn("s.admin_id", "r")
 
 	baseQuery = reports.AppendSoftDelete(baseQuery, "a")
 	baseQuery = reports.AppendSoftDelete(baseQuery, "r")
@@ -37,7 +37,17 @@ func (r *Repository) FetchData(req *pb.ReportRequest) ([]DataRow, int32, map[str
 	var args []interface{}
 	argCount := 1
 
+	adminID := reports.AdminIDFromRequest(req)
+	if adminID > 0 {
+		var adminSQL string
+		adminSQL, args, argCount = reports.AdminFilterSQL(adminID, argCount, args, "r.admin_id", "at.admin_id")
+		baseQuery += adminSQL
+	}
+
 	for _, f := range req.Filters {
+		if f.Field == "admin_id" {
+			continue
+		}
 		var cond string
 		var val interface{}
 

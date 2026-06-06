@@ -12,6 +12,7 @@ module Teams
         return failure(:database_error, team.errors.full_messages) unless team.update(params)
       else
         team.assign_attributes(params)
+        team.admin_id = Current.admin_id if team.admin_id.blank? && Current.admin_id.present?
         return failure(:database_error, team.errors.full_messages) unless team.save
       end
 

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'action_cable_wire.dart';
+import 'api_client.dart';
 import 'sync_preview_exceptions.dart';
 
 /// Подмножество Action Cable для канала `IntegrationSyncJobChannel`.
@@ -76,7 +77,12 @@ class IntegrationSyncJobSocket {
       ch = null;
     }
 
-    ch = WebSocketChannel.connect(Uri.parse(wsUrl));
+    final cableUri = await ApiClient.cableWebSocketUri(wsUrl);
+    if (!cableUri.queryParameters.containsKey('token')) {
+      finishError(Exception('Action Cable: не авторизован'));
+      return completer.future;
+    }
+    ch = WebSocketChannel.connect(cableUri);
     sub = ch!.stream.listen(
       (dynamic frame) {
         if (completer.isCompleted) return;

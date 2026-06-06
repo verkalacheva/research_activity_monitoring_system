@@ -28,12 +28,14 @@ type DataRow struct {
 func (r *Repository) FetchData(req *pb.ReportRequest) ([]DataRow, int32, map[string]float64, error) {
 	devPointsSubquery := "(SELECT COALESCE(SUM(cs * als), 0) FROM (" +
 		"SELECT (SELECT COALESCE(SUM(dpc2.points), 0) FROM team_dev_criteria tdc2 " +
-		"JOIN dev_project_criteria dpc2 ON tdc2.dev_project_criterion_id = dpc2.id WHERE tdc2.team_id = rt2.team_id) AS cs, " +
+		"JOIN dev_project_criteria dpc2 ON tdc2.dev_project_criterion_id = dpc2.id" + reports.MatchAdminColumn("dpc2.admin_id", "t2") +
+		" WHERE tdc2.team_id = rt2.team_id) AS cs, " +
 		"(SELECT COALESCE(SUM(rda2.count * deat2.points), 0) FROM researcher_dev_activities rda2 " +
-		"JOIN dev_employee_activity_types deat2 ON rda2.dev_employee_activity_type_id = deat2.id WHERE rda2.researcher_id = r.id AND rda2.team_id = rt2.team_id) AS als " +
+		"JOIN dev_employee_activity_types deat2 ON rda2.dev_employee_activity_type_id = deat2.id" + reports.MatchAdminColumn("deat2.admin_id", "r") +
+		" WHERE rda2.researcher_id = r.id AND rda2.team_id = rt2.team_id) AS als " +
 		"FROM researchers_teams rt2 " +
-		"JOIN teams t2 ON t2.id = rt2.team_id AND t2.deleted_at IS NULL " +
-		"WHERE rt2.researcher_id = r.id) dp) AS dev_points"
+		"JOIN teams t2 ON t2.id = rt2.team_id AND t2.deleted_at IS NULL" + reports.MatchAdminColumn("t2.admin_id", "r") +
+		" WHERE rt2.researcher_id = r.id) dp) AS dev_points"
 
 	baseQuery := "SELECT a.id AS achievement_id, r.id AS researcher_id, " +
 		"TRIM(CONCAT_WS(' ', r.surname, r.name, r.second_name)) AS researcher_name, " +
@@ -46,16 +48,26 @@ func (r *Repository) FetchData(req *pb.ReportRequest) ([]DataRow, int32, map[str
 		"FROM achievements a " +
 		"JOIN researcher_achievements ra ON a.id = ra.achievement_id " +
 		"JOIN researchers r ON ra.researcher_id = r.id " +
-		"LEFT JOIN achievement_types at ON a.achievement_type_id = at.id AND at.deleted_at IS NULL " +
-		"LEFT JOIN achievement_statuses s ON a.achievement_status_id = s.id AND s.deleted_at IS NULL " +
-		"LEFT JOIN achievement_results res ON a.achievement_result_id = res.id AND res.deleted_at IS NULL " +
-		"LEFT JOIN achievement_participations p ON a.achievement_participation_id = p.id AND p.deleted_at IS NULL " +
-		"WHERE a.deleted_at IS NULL AND r.deleted_at IS NULL"
+		"LEFT JOIN achievement_types at ON a.achievement_type_id = at.id AND at.deleted_at IS NULL" + reports.MatchAdminColumn("at.admin_id", "r") +
+		" LEFT JOIN achievement_statuses s ON a.achievement_status_id = s.id AND s.deleted_at IS NULL" + reports.MatchAdminColumn("s.admin_id", "r") +
+		" LEFT JOIN achievement_results res ON a.achievement_result_id = res.id AND res.deleted_at IS NULL" + reports.MatchAdminColumn("res.admin_id", "r") +
+		" LEFT JOIN achievement_participations p ON a.achievement_participation_id = p.id AND p.deleted_at IS NULL" + reports.MatchAdminColumn("p.admin_id", "r") +
+		" WHERE a.deleted_at IS NULL AND r.deleted_at IS NULL"
 
 	var args []interface{}
 	argCount := 1
 
+	adminID := reports.AdminIDFromRequest(req)
+	if adminID > 0 {
+		var adminSQL string
+		adminSQL, args, argCount = reports.AdminFilterSQL(adminID, argCount, args, "r.admin_id", "at.admin_id")
+		baseQuery += adminSQL
+	}
+
 	for _, f := range req.Filters {
+		if f.Field == "admin_id" {
+			continue
+		}
 		var cond string
 		var val interface{}
 
@@ -69,7 +81,7 @@ func (r *Repository) FetchData(req *pb.ReportRequest) ([]DataRow, int32, map[str
 		case "team_id":
 			// For team_id, we still need the subquery but we can use BuildFilterCondition for the inner part
 			innerCond, innerVal := reports.BuildFilterCondition("team_id", f.Operator, argCount, f.Value, true)
-			cond = fmt.Sprintf("r.id IN (SELECT rt.researcher_id FROM researchers_teams rt JOIN teams t ON t.id = rt.team_id AND t.deleted_at IS NULL WHERE %s)", innerCond)
+			cond = fmt.Sprintf("r.id IN (SELECT rt.researcher_id FROM researchers_teams rt JOIN teams t ON t.id = rt.team_id AND t.deleted_at IS NULL AND t.admin_id = r.admin_id WHERE %s)", innerCond)
 			val = innerVal
 		case "achievement_result_id":
 			cond, val = reports.BuildFilterCondition("res.id", f.Operator, argCount, f.Value, true)

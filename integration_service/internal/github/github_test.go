@@ -412,12 +412,14 @@ func TestFetchActivityTypes_FromDB(t *testing.T) {
 	db := testdb.Open(t)
 	testdb.EnsureDevCatalogTables(t, db)
 	testdb.TruncateDevCatalog(t, db)
+	adminID := testdb.EnsureTestAdmin(t, db)
 
 	_, err := db.Exec(
-		`INSERT INTO dev_employee_activity_types (title, check_key, created_at, updated_at)
-		 VALUES ($1, $2, NOW(), NOW()), ($3, $4, NOW(), NOW())`,
+		`INSERT INTO dev_employee_activity_types (title, check_key, admin_id, created_at, updated_at)
+		 VALUES ($1, $2, $5, NOW(), NOW()), ($3, $4, $5, NOW(), NOW())`,
 		"Commits", "commits",
 		"Pull Requests", "pull_requests",
+		adminID,
 	)
 	if err != nil {
 		t.Fatalf("insert activity types: %v", err)
@@ -444,12 +446,14 @@ func TestFetchCriteria_FromDB(t *testing.T) {
 	db := testdb.Open(t)
 	testdb.EnsureDevCatalogTables(t, db)
 	testdb.TruncateDevCatalog(t, db)
+	adminID := testdb.EnsureTestAdmin(t, db)
 
 	_, err := db.Exec(
-		`INSERT INTO dev_project_criteria (title, check_key, created_at, updated_at)
-		 VALUES ($1, $2, NOW(), NOW()), ($3, $4, NOW(), NOW())`,
+		`INSERT INTO dev_project_criteria (title, check_key, admin_id, created_at, updated_at)
+		 VALUES ($1, $2, $5, NOW(), NOW()), ($3, $4, $5, NOW(), NOW())`,
 		"Has README", "has_readme",
 		"Has Tests", "has_tests",
+		adminID,
 	)
 	if err != nil {
 		t.Fatalf("insert criteria: %v", err)
@@ -476,12 +480,14 @@ func TestFetchActivityTypes_FiltersNullCheckKey(t *testing.T) {
 	db := testdb.Open(t)
 	testdb.EnsureDevCatalogTables(t, db)
 	testdb.TruncateDevCatalog(t, db)
+	adminID := testdb.EnsureTestAdmin(t, db)
 
 	_, err := db.Exec(
-		`INSERT INTO dev_employee_activity_types (title, check_key, created_at, updated_at)
-		 VALUES ($1, NULL, NOW(), NOW()), ($2, $3, NOW(), NOW())`,
+		`INSERT INTO dev_employee_activity_types (title, check_key, admin_id, created_at, updated_at)
+		 VALUES ($1, NULL, $4, NOW(), NOW()), ($2, $3, $4, NOW(), NOW())`,
 		"No key row",
 		"Valid", "valid_key",
+		adminID,
 	)
 	if err != nil {
 		t.Fatalf("insert: %v", err)
@@ -504,12 +510,14 @@ func TestFetchCriteria_FiltersNullCheckKey(t *testing.T) {
 	db := testdb.Open(t)
 	testdb.EnsureDevCatalogTables(t, db)
 	testdb.TruncateDevCatalog(t, db)
+	adminID := testdb.EnsureTestAdmin(t, db)
 
 	_, err := db.Exec(
-		`INSERT INTO dev_project_criteria (title, check_key, created_at, updated_at)
-		 VALUES ($1, NULL, NOW(), NOW()), ($2, $3, NOW(), NOW())`,
+		`INSERT INTO dev_project_criteria (title, check_key, admin_id, created_at, updated_at)
+		 VALUES ($1, NULL, $4, NOW(), NOW()), ($2, $3, $4, NOW(), NOW())`,
 		"No key criterion",
 		"Has CI", "cr_valid_ci",
+		adminID,
 	)
 	if err != nil {
 		t.Fatalf("insert: %v", err)
@@ -541,11 +549,12 @@ func TestResolveToken_NilDB(t *testing.T) {
 func TestResolveToken_WithSecret(t *testing.T) {
 	db := testdb.Open(t)
 	testdb.StashGitHubToken(t, db)
+	adminID := testdb.EnsureTestAdmin(t, db)
 
 	const want = "ghp_integration_test_dummy_token"
 	if _, err := db.Exec(
-		`INSERT INTO app_settings (key, value, created_at, updated_at) VALUES ('github_token', $1, NOW(), NOW())`,
-		want,
+		`INSERT INTO app_settings (key, value, admin_id, created_at, updated_at) VALUES ('github_token', $1, $2, NOW(), NOW())`,
+		want, adminID,
 	); err != nil {
 		t.Fatalf("insert: %v", err)
 	}
@@ -557,9 +566,11 @@ func TestResolveToken_WithSecret(t *testing.T) {
 func TestResolveToken_IgnoresNullValue(t *testing.T) {
 	db := testdb.Open(t)
 	testdb.StashGitHubToken(t, db)
+	adminID := testdb.EnsureTestAdmin(t, db)
 
 	if _, err := db.Exec(
-		`INSERT INTO app_settings (key, value, created_at, updated_at) VALUES ('github_token', NULL, NOW(), NOW())`,
+		`INSERT INTO app_settings (key, value, admin_id, created_at, updated_at) VALUES ('github_token', NULL, $1, NOW(), NOW())`,
+		adminID,
 	); err != nil {
 		t.Fatalf("insert: %v", err)
 	}
@@ -571,9 +582,11 @@ func TestResolveToken_IgnoresNullValue(t *testing.T) {
 func TestResolveToken_IgnoresEmptyString(t *testing.T) {
 	db := testdb.Open(t)
 	testdb.StashGitHubToken(t, db)
+	adminID := testdb.EnsureTestAdmin(t, db)
 
 	if _, err := db.Exec(
-		`INSERT INTO app_settings (key, value, created_at, updated_at) VALUES ('github_token', '', NOW(), NOW())`,
+		`INSERT INTO app_settings (key, value, admin_id, created_at, updated_at) VALUES ('github_token', '', $1, NOW(), NOW())`,
+		adminID,
 	); err != nil {
 		t.Fatalf("insert: %v", err)
 	}

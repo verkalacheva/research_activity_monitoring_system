@@ -2,7 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:http/http.dart' as http;
+import 'package:research_activity_monitoring_system/data/services/api_client.dart';
+import 'package:research_activity_monitoring_system/data/services/token_storage.dart';
 import 'package:research_activity_monitoring_system/core/config.dart';
 import 'integration_service.dart' show IntegrationService;
 import 'sync_preview_exceptions.dart';
@@ -72,15 +73,28 @@ class SyncNotificationService extends ChangeNotifier {
   static final SyncNotificationService instance = SyncNotificationService._();
 
   SyncNotificationService._() {
-    _loadFromRedis();
     _syncUiValueNotifiers();
+  }
+
+  bool _redisLoaded = false;
+
+  /// Loads persisted sync results after the user is authenticated.
+  Future<void> ensureStarted() async {
+    if (_redisLoaded) return;
+    final token = await TokenStorage.accessToken();
+    if (token == null || token.isEmpty) return;
+    final ok = await _loadFromRedis();
+    if (ok) _redisLoaded = true;
+  }
+
+  void resetForLogout() {
+    _redisLoaded = false;
   }
 
   final IntegrationService _service = IntegrationService();
   final List<SyncRequest> _requests = [];
   bool _isRunning = false;
   bool _cancelRequested = false;
-  http.Client? _activeHttpClient;
   /// Completes when [cancelSync] is called — wakes [Future.any] waiting on the current request.
   Completer<void>? _cancelCompleter;
   /// Текущая фоновая задача на бэкенде (для DELETE /integration_sync_jobs/:id при «Стоп»).
@@ -210,17 +224,13 @@ class SyncNotificationService extends ChangeNotifier {
     if (c != null && !c.isCompleted) {
       c.complete();
     }
-    try {
-      _activeHttpClient?.close();
-    } catch (_) {}
-    _activeHttpClient = null;
     _activeSyncJobId = null;
     notifyListeners();
   }
 
   Future<void> _notifyServerCancelJob(String jobId) async {
     try {
-      final r = await http.delete(Uri.parse('$_baseUrl/integration_sync_jobs/$jobId'));
+      final r = await ApiClient.delete(Uri.parse('$_baseUrl/integration_sync_jobs/$jobId'));
       if (r.statusCode != 200 && r.statusCode != 202 && r.statusCode != 204) {
         debugPrint('integration_sync_jobs cancel HTTP ${r.statusCode}: ${r.body}');
       }
@@ -249,9 +259,10 @@ class SyncNotificationService extends ChangeNotifier {
 
   static String get _baseUrl => AppConfig.apiV1;
 
-  Future<void> _loadFromRedis() async {
+  Future<bool> _loadFromRedis() async {
     try {
-      final response = await http.get(Uri.parse('$_baseUrl/sync_results'));
+      final response = await ApiClient.get(Uri.parse('$_baseUrl/sync_results'));
+      if (response.statusCode == 401 || response.statusCode == 403) return false;
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
         final list = body['results'] as List<dynamic>? ?? [];
@@ -265,10 +276,12 @@ class SyncNotificationService extends ChangeNotifier {
             notifyListeners();
           }
         }
+        return true;
       }
     } catch (_) {
       // Redis unavailable — silently skip; in-memory state is still usable.
     }
+    return false;
   }
 
   Future<void> _saveToRedis() async {
@@ -277,9 +290,8 @@ class SyncNotificationService extends ChangeNotifier {
         .map((r) => r.toJson())
         .toList();
     try {
-      await http.put(
+      await ApiClient.put(
         Uri.parse('$_baseUrl/sync_results'),
-        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'results': toSave}),
       );
     } catch (_) {}
@@ -287,7 +299,7 @@ class SyncNotificationService extends ChangeNotifier {
 
   Future<void> _deleteFromRedis() async {
     try {
-      await http.delete(Uri.parse('$_baseUrl/sync_results'));
+      await ApiClient.delete(Uri.parse('$_baseUrl/sync_results'));
     } catch (_) {}
   }
 
@@ -304,8 +316,6 @@ class SyncNotificationService extends ChangeNotifier {
     _isRunning = true;
     _cancelRequested = false;
     notifyListeners();
-
-    _activeHttpClient = http.Client();
 
     try {
       while (!_cancelRequested) {
@@ -329,7 +339,6 @@ class SyncNotificationService extends ChangeNotifier {
               researcherId: request.researcherId,
               teamId: request.teamId,
               scope: request.scope,
-              httpClient: _activeHttpClient,
               shouldAbort: () => _cancelRequested,
               onJobCreated: (id) {
                 _activeSyncJobId = id;
@@ -374,10 +383,6 @@ class SyncNotificationService extends ChangeNotifier {
       }
     } finally {
       _cancelCompleter = null;
-      try {
-        _activeHttpClient?.close();
-      } catch (_) {}
-      _activeHttpClient = null;
       _isRunning = false;
       _cancelRequested = false;
       notifyListeners();

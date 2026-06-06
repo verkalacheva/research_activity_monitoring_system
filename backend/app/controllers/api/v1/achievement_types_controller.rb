@@ -7,7 +7,8 @@ module Api
       end
 
       def show
-        achievement_type = AchievementType.includes(:achievement_fields).find(params[:id])
+        achievement_type = find_tenant_record!(AchievementType, params[:id])
+        achievement_type = AchievementType.for_current_admin.includes(:achievement_fields).find(achievement_type.id)
         render json: achievement_type, include: :achievement_fields
       rescue ActiveRecord::RecordNotFound
         render_failure({ type: :not_found, message: "Achievement type not found" })

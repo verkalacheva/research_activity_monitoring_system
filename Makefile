@@ -78,7 +78,10 @@ db-restore:
 	cat dump.sql | $(DC) --env-file $(ENV_FILE) exec -T db psql -U postgres $(PG_DB)
 
 bundle:
-	$(DC) --env-file $(ENV_FILE) run --rm backend bundle install
+	$(DC_TEST) --env-file $(ENV_FILE) build backend-test
+	$(DC_TEST) --env-file $(ENV_FILE) run --rm --no-deps \
+	  -e BUNDLE_DEPLOYMENT=false \
+	  backend-test bundle install
 
 ## ─── Tests & Coverage ────────────────────────────────────────────────────────
 

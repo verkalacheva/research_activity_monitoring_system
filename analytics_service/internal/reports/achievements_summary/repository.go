@@ -28,7 +28,17 @@ func (r *Repository) FetchData(req *pb.ReportRequest) ([]DataRow, int32, map[str
 	var args []interface{}
 	argCount := 1
 
+	adminID := reports.AdminIDFromRequest(req)
+	if adminID > 0 {
+		whereConditions = append(whereConditions, fmt.Sprintf("at.admin_id = $%d", argCount))
+		args = append(args, adminID)
+		argCount++
+	}
+
 	for _, f := range req.Filters {
+		if f.Field == "admin_id" {
+			continue
+		}
 		var cond string
 		var val interface{}
 

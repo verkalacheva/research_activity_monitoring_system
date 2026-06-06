@@ -14,6 +14,7 @@ module Api
         queued = Integrations::MergeIntegrationSyncJobStatusCommand.call(
           job_id: job_id,
           attrs: {
+            'admin_id' => Current.admin_id,
             'status' => 'queued',
             'error' => nil,
             'rate_limit' => false,
@@ -22,7 +23,7 @@ module Api
         )
         return render_result(queued) if queued.failure?
 
-        IntegrationSyncJob.perform_async(job_id, payload)
+        IntegrationSyncJob.perform_async(job_id, Current.admin_id, payload)
 
         render_result(
           Integrations::IntegrationSyncJobCreateResponseCommand.call(job_id: job_id),
@@ -41,6 +42,9 @@ module Api
         unless jid.match?(/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/i)
           return render json: { error: 'invalid job_id' }, status: :unprocessable_entity
         end
+
+        status = Integrations::ReadIntegrationSyncJobStatusCommand.call(job_id: jid)
+        return render_result(status) if status.failure?
 
         Integrations::SyncJobCancellation.request!(jid)
         head :accepted

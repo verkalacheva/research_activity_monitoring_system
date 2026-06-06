@@ -1,13 +1,14 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:research_activity_monitoring_system/data/models/models.dart';
+
 import 'package:research_activity_monitoring_system/core/config.dart';
+import 'package:research_activity_monitoring_system/data/models/models.dart';
+import 'package:research_activity_monitoring_system/data/services/api_client.dart';
 
 class TeamService {
   static const String baseUrl = AppConfig.apiV1;
 
   Future<List<Team>> getAll() async {
-    final response = await http.get(Uri.parse('$baseUrl/teams/list?limit=1000'));
+    final response = await ApiClient.get(Uri.parse('$baseUrl/teams/list?limit=1000'));
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       List itemsJson = jsonResponse['items'];
@@ -18,7 +19,7 @@ class TeamService {
   }
 
   Future<PaginatedResponse<Team>> list({int limit = 20, int offset = 0}) async {
-    final response = await http.get(Uri.parse('$baseUrl/teams/list?limit=$limit&offset=$offset'));
+    final response = await ApiClient.get(Uri.parse('$baseUrl/teams/list?limit=$limit&offset=$offset'));
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       final List itemsJson = jsonResponse['items'];
@@ -31,7 +32,7 @@ class TeamService {
   }
 
   Future<Team> getById(int id) async {
-    final response = await http.get(Uri.parse('$baseUrl/teams/$id'));
+    final response = await ApiClient.get(Uri.parse('$baseUrl/teams/$id'));
     if (response.statusCode == 200) {
       return Team.fromJson(json.decode(response.body));
     } else {
@@ -40,9 +41,8 @@ class TeamService {
   }
 
   Future<Team> create(Team team) async {
-    final response = await http.post(
+    final response = await ApiClient.post(
       Uri.parse('$baseUrl/teams'),
-      headers: {'Content-Type': 'application/json'},
       body: json.encode({'team': team.toJson()}),
     );
     if (response.statusCode == 201) {
@@ -53,9 +53,8 @@ class TeamService {
   }
 
   Future<Team> update(int id, Team team) async {
-    final response = await http.put(
+    final response = await ApiClient.put(
       Uri.parse('$baseUrl/teams/$id'),
-      headers: {'Content-Type': 'application/json'},
       body: json.encode({'team': team.toJson()}),
     );
     if (response.statusCode == 200) {
@@ -66,9 +65,8 @@ class TeamService {
   }
 
   Future<Team> updateCriteria(int id, List<int> criterionIds) async {
-    final response = await http.put(
+    final response = await ApiClient.put(
       Uri.parse('$baseUrl/teams/$id/update_criteria'),
-      headers: {'Content-Type': 'application/json'},
       body: json.encode({'criterion_ids': criterionIds}),
     );
     if (response.statusCode == 200) {
@@ -79,10 +77,9 @@ class TeamService {
   }
 
   Future<void> delete(int id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/teams/$id'));
+    final response = await ApiClient.delete(Uri.parse('$baseUrl/teams/$id'));
     if (response.statusCode != 204) {
       throw Exception('Failed to delete project');
     }
   }
 }
-

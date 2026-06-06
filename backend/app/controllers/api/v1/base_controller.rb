@@ -2,6 +2,8 @@ module Api
   module V1
     class BaseController < ActionController::API
       include Dry::Monads[:result]
+      include Authenticatable
+      include TenantScopedHelpers
 
       def render_result(result, status_on_success: :ok)
         case result
@@ -23,9 +25,10 @@ module Api
                    when :validation_error then :unprocessable_entity
                    when :not_found then :not_found
                    when :unauthorized then :unauthorized
+                   when :forbidden then :forbidden
                    else :bad_request
                    end
-          render json: { 
+          render json: {
             errors: failure[:errors] || failure[:message],
             type: failure[:type],
             message: failure[:message]

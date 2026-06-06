@@ -97,7 +97,7 @@ class _ResearcherFormScreenState extends State<ResearcherFormScreen> {
         degreeLevel: _selectedDegreeLevel,
         course: _selectedCourse,
         subjectArea: _subjectAreaController.text.isEmpty ? null : _subjectAreaController.text,
-        email: _emailController.text.isEmpty ? null : _emailController.text,
+        email: _emailController.text.isEmpty ? null : _emailController.text.trim(),
         telegram: _telegramController.text.isEmpty ? null : _telegramController.text,
         isuNumber: _isuNumberController.text.isEmpty ? null : _isuNumberController.text,
         faculty: _facultyController.text.isEmpty ? null : _facultyController.text,
@@ -189,7 +189,10 @@ class _ResearcherFormScreenState extends State<ResearcherFormScreen> {
             const SizedBox(height: AppDimensions.paddingMedium),
             TextFormField(
               controller: _emailController,
-              decoration: const InputDecoration(labelText: 'Почта'),
+              decoration: const InputDecoration(
+                labelText: 'Почта',
+                helperText: 'Используется для приглашения сотрудника в систему',
+              ),
               keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: AppDimensions.paddingMedium),

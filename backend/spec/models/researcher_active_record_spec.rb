@@ -3,7 +3,7 @@
 require 'rails_helper'
 
 # Реальная модель Researcher; см. также researcher_spec.rb (чистая логика без AR).
-RSpec.describe Researcher, type: :model do
+RSpec.describe Researcher, type: :model, needs_tenant_context: true do
   describe 'validations' do
     it 'rejects duplicate orcid_id' do
       create(:researcher, orcid_id: '0000-0001-1111-1111')

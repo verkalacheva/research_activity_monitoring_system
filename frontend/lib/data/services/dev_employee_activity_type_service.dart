@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:research_activity_monitoring_system/data/services/api_client.dart';
 import 'package:research_activity_monitoring_system/data/models/models.dart';
 import 'package:research_activity_monitoring_system/core/config.dart';
 
@@ -7,7 +7,7 @@ class DevEmployeeActivityTypeService {
   static const String baseUrl = AppConfig.apiV1;
 
   Future<PaginatedResponse<DevEmployeeActivityType>> list({int limit = 100, int offset = 0}) async {
-    final response = await http.get(Uri.parse('$baseUrl/dev_employee_activity_types/list?limit=$limit&offset=$offset'));
+    final response = await ApiClient.get(Uri.parse('$baseUrl/dev_employee_activity_types/list?limit=$limit&offset=$offset'));
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       final List itemsJson = jsonResponse['items'];
@@ -20,9 +20,8 @@ class DevEmployeeActivityTypeService {
   }
 
   Future<DevEmployeeActivityType> create(DevEmployeeActivityType type) async {
-    final response = await http.post(
+    final response = await ApiClient.post(
       Uri.parse('$baseUrl/dev_employee_activity_types'),
-      headers: {'Content-Type': 'application/json'},
       body: json.encode({'dev_employee_activity_type': type.toJson()}),
     );
     if (response.statusCode == 201) {
@@ -33,9 +32,8 @@ class DevEmployeeActivityTypeService {
   }
 
   Future<DevEmployeeActivityType> update(int id, DevEmployeeActivityType type) async {
-    final response = await http.put(
+    final response = await ApiClient.put(
       Uri.parse('$baseUrl/dev_employee_activity_types/$id'),
-      headers: {'Content-Type': 'application/json'},
       body: json.encode({'dev_employee_activity_type': type.toJson()}),
     );
     if (response.statusCode == 200) {
@@ -46,7 +44,7 @@ class DevEmployeeActivityTypeService {
   }
 
   Future<void> delete(int id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/dev_employee_activity_types/$id'));
+    final response = await ApiClient.delete(Uri.parse('$baseUrl/dev_employee_activity_types/$id'));
     if (response.statusCode != 204) {
       throw Exception('Failed to delete dev activity type');
     }

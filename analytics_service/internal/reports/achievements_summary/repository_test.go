@@ -36,28 +36,26 @@ func TestAchievementsSummaryFetchData_Empty(t *testing.T) {
 
 func TestAchievementsSummaryFetchData_WithRows(t *testing.T) {
 	repo := setupRepoDB(t)
+	adminID := testdb.EnsureTestAdmin(t, repo.db)
 	// два типа достижений, по одному достижению
 	var t1, t2 int64
-	if err := repo.db.QueryRow(`INSERT INTO achievement_types (title, points, created_at, updated_at)
-		VALUES ('Статья ВАК', 1, NOW(), NOW()) RETURNING id`).Scan(&t1); err != nil {
+	if err := repo.db.QueryRow(`INSERT INTO achievement_types (title, points, admin_id, created_at, updated_at)
+		VALUES ('Статья ВАК', 1, $1, NOW(), NOW()) RETURNING id`, adminID).Scan(&t1); err != nil {
 		t.Fatal(err)
 	}
-	if err := repo.db.QueryRow(`INSERT INTO achievement_types (title, points, created_at, updated_at)
-		VALUES ('Грант', 1, NOW(), NOW()) RETURNING id`).Scan(&t2); err != nil {
+	if err := repo.db.QueryRow(`INSERT INTO achievement_types (title, points, admin_id, created_at, updated_at)
+		VALUES ('Грант', 1, $1, NOW(), NOW()) RETURNING id`, adminID).Scan(&t2); err != nil {
 		t.Fatal(err)
 	}
 	var pid, rid, sid int64
-	for _, q := range []struct {
-		sql string
-		id  *int64
-	}{
-		{`INSERT INTO achievement_participations (title, points, created_at, updated_at) VALUES ('p',1,NOW(),NOW()) RETURNING id`, &pid},
-		{`INSERT INTO achievement_results (title, points, created_at, updated_at) VALUES ('r',1,NOW(),NOW()) RETURNING id`, &rid},
-		{`INSERT INTO achievement_statuses (title, points, created_at, updated_at) VALUES ('s',1,NOW(),NOW()) RETURNING id`, &sid},
-	} {
-		if err := repo.db.QueryRow(q.sql).Scan(q.id); err != nil {
-			t.Fatal(err)
-		}
+	if err := repo.db.QueryRow(`INSERT INTO achievement_participations (title, points, admin_id, created_at, updated_at) VALUES ('p',1,$1,NOW(),NOW()) RETURNING id`, adminID).Scan(&pid); err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.db.QueryRow(`INSERT INTO achievement_results (title, points, admin_id, created_at, updated_at) VALUES ('r',1,$1,NOW(),NOW()) RETURNING id`, adminID).Scan(&rid); err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.db.QueryRow(`INSERT INTO achievement_statuses (title, points, admin_id, created_at, updated_at) VALUES ('s',1,$1,NOW(),NOW()) RETURNING id`, adminID).Scan(&sid); err != nil {
+		t.Fatal(err)
 	}
 	insAch := func(typeID int64, pts float64) {
 		_, err := repo.db.Exec(`INSERT INTO achievements (

@@ -5,7 +5,7 @@ module Teams
     protected
 
     def list_scope
-      Team.kept.includes(:researchers, :leader).order(:title)
+      Team.kept.for_current_admin.includes(:researchers, :leader).order(:title)
     end
 
     def row_serializer_class
@@ -17,7 +17,7 @@ module Teams
     end
 
     def total_count_scope(_list_scope)
-      Team.kept
+      Team.kept.for_current_admin
     end
   end
 end

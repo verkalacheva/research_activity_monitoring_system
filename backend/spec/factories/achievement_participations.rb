@@ -2,6 +2,7 @@
 
 FactoryBot.define do
   factory :achievement_participation do
+    admin { RequestAuthTenant.admin || association(:user) }
     sequence(:title) { |n| "Участие #{n}" }
     points { 1.0 }
 

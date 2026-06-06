@@ -1,6 +1,7 @@
 package dev_teams
 
 import (
+	"analytics_service/internal/reports"
 	"analytics_service/pb"
 	"context"
 	"database/sql"
@@ -32,8 +33,15 @@ func (h *Handler) Generate(ctx context.Context, req *pb.ReportRequest) (*pb.Repo
 	outerConds := "t.deleted_at IS NULL"
 	var actSubConds string
 
+	adminID := reports.AdminIDFromRequest(req)
+	if adminID > 0 {
+		var adminSQL string
+		adminSQL, args, argCount = reports.AdminFilterSQL(adminID, argCount, args, "t.admin_id")
+		outerConds += adminSQL
+	}
+
 	for _, f := range req.Filters {
-		if f.Value == "" {
+		if f.Value == "" || f.Field == "admin_id" {
 			continue
 		}
 		switch f.Field {
@@ -68,15 +76,15 @@ func (h *Handler) Generate(ctx context.Context, req *pb.ReportRequest) (*pb.Repo
 			(
 				SELECT COALESCE(SUM(rda.count * deat.points), 0)
 				FROM researcher_dev_activities rda
-				JOIN dev_employee_activity_types deat ON rda.dev_employee_activity_type_id = deat.id
+				JOIN dev_employee_activity_types deat ON rda.dev_employee_activity_type_id = deat.id%s
 				WHERE rda.team_id = t.id%s
 			) AS activity_sum
 		FROM teams t
 		LEFT JOIN team_dev_criteria tdc ON t.id = tdc.team_id
-		LEFT JOIN dev_project_criteria dpc ON tdc.dev_project_criterion_id = dpc.id
+		LEFT JOIN dev_project_criteria dpc ON tdc.dev_project_criterion_id = dpc.id%s
 		WHERE %s
 		GROUP BY t.id, t.title
-	`, actSubConds, outerConds)
+	`, reports.MatchAdminColumn("deat.admin_id", "t"), actSubConds, reports.MatchAdminColumn("dpc.admin_id", "t"), outerConds)
 
 	countQuery := "SELECT COUNT(*) FROM (" + baseQuery + ") AS sub"
 	var totalCount int32

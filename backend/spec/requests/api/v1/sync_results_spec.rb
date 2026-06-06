@@ -4,7 +4,10 @@ require 'swagger_helper'
 
 RSpec.describe 'api/v1/sync_results', type: :request do
   # Очищаем Redis-хранилище перед каждым тестом
-  before { Integrations::PendingSyncResultsStore.clear! }
+  before do
+    Integrations::PendingSyncResultsStore.clear!(admin_id: auth_admin.id)
+    Current.user = auth_admin
+  end
 
   # ---------------------------------------------------------------------------
   # GET /api/v1/sync_results
@@ -29,7 +32,8 @@ RSpec.describe 'api/v1/sync_results', type: :request do
       context 'когда результаты записаны заранее' do
         before do
           Integrations::PendingSyncResultsStore.write_array(
-            [{ 'job_id' => 'abc-123', 'status' => 'done' }]
+            [{ 'job_id' => 'abc-123', 'status' => 'done' }],
+            admin_id: auth_admin.id
           )
         end
 
@@ -82,7 +86,7 @@ RSpec.describe 'api/v1/sync_results', type: :request do
 
           expect(data['ok']).to be true
 
-          stored = Integrations::PendingSyncResultsStore.read_array
+          stored = Integrations::PendingSyncResultsStore.read_array(admin_id: auth_admin.id)
           expect(stored.size).to eq(2)
           expect(stored.first['job_id']).to eq('job-1')
         end
@@ -92,14 +96,14 @@ RSpec.describe 'api/v1/sync_results', type: :request do
         schema load_schema(:models, :sync_results, :ok)
 
         before do
-          Integrations::PendingSyncResultsStore.write_array([{ 'job_id' => 'old' }])
+          Integrations::PendingSyncResultsStore.write_array([{ 'job_id' => 'old' }], admin_id: auth_admin.id)
         end
 
         let(:sync_results_body) { { results: [] } }
 
         run_test!(nil, :aggregate_failures) do |response|
           expect(response.parsed_body['ok']).to be true
-          expect(Integrations::PendingSyncResultsStore.read_array).to eq([])
+          expect(Integrations::PendingSyncResultsStore.read_array(admin_id: auth_admin.id)).to eq([])
         end
       end
     end
@@ -114,7 +118,8 @@ RSpec.describe 'api/v1/sync_results', type: :request do
 
       before do
         Integrations::PendingSyncResultsStore.write_array(
-          [{ 'job_id' => 'x' }, { 'job_id' => 'y' }]
+          [{ 'job_id' => 'x' }, { 'job_id' => 'y' }],
+          admin_id: auth_admin.id
         )
       end
 
@@ -123,7 +128,7 @@ RSpec.describe 'api/v1/sync_results', type: :request do
 
         run_test!(nil, :aggregate_failures) do |response|
           expect(response.parsed_body['ok']).to be true
-          expect(Integrations::PendingSyncResultsStore.read_array).to eq([])
+          expect(Integrations::PendingSyncResultsStore.read_array(admin_id: auth_admin.id)).to eq([])
         end
       end
     end

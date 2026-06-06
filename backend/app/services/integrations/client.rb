@@ -18,13 +18,14 @@ module Integrations
       end
     end
 
-    def self.sync_all(provider = 'orcid', cancel_proc: nil)
+    def self.sync_all(provider = 'orcid', admin_id: Current.admin_id, cancel_proc: nil)
       return nil unless ::Integrations::SyncRequest
+      return nil if admin_id.blank?
 
       host = ENV.fetch('INTEGRATION_SERVICE_HOST', 'integration:50052')
       stub = grpc_stub(host)
 
-      request = ::Integrations::SyncRequest.new(provider: provider)
+      request = ::Integrations::SyncRequest.new(provider: provider, admin_id: admin_id.to_i)
       unary_rpc(stub, :sync_all_achievements, request, cancel_proc, deadline: ::Time.now + ::ServiceGrpc::DEADLINE_INTEGRATION)
     end
 
@@ -54,8 +55,10 @@ module Integrations
       host = ENV.fetch('CRAWLER_SERVICE_HOST', 'crawler:50053')
       stub = grpc_stub(host)
 
-      resolved_provider = llm_provider.presence || AppSetting.get('llm_provider_name').presence || ''
-      resolved_model    = AppSetting.get('llm_model_name').presence || ''
+      admin_id = Researcher.where(id: researcher_id).pick(:admin_id)
+
+      resolved_provider = llm_provider.presence || AppSetting.get('llm_provider', admin_id: admin_id).presence || ''
+      resolved_model    = AppSetting.get('llm_model_name', admin_id: admin_id).presence || ''
 
       params = {
         url: url.to_s,

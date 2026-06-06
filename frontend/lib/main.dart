@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'app/app.dart';
+import 'core/auth/auth_notifier.dart';
 import 'core/config.dart';
 import 'core/l10n/l10n.dart';
+import 'data/services/api_client.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,5 +15,14 @@ Future<void> main() async {
     );
   }
   final strings = await AppStrings.load(const Locale('ru'));
-  runApp(ResearchActivityApp(strings: strings));
+  final auth = AuthNotifier();
+  ApiClient.onUnauthorized = auth.handleSessionExpired;
+  await auth.bootstrap();
+
+  runApp(
+    ChangeNotifierProvider.value(
+      value: auth,
+      child: ResearchActivityApp(strings: strings),
+    ),
+  );
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:provider/provider.dart';
+import 'package:research_activity_monitoring_system/core/auth/auth_notifier.dart';
 import 'package:research_activity_monitoring_system/presentation/screens/achievement/entity_list_screen.dart';
 import 'package:research_activity_monitoring_system/presentation/screens/researcher/researcher_list_screen.dart';
 import 'package:research_activity_monitoring_system/presentation/screens/team/team_list_screen.dart';
@@ -77,6 +79,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     onTap: () => setState(() => _currentViewIndex = 2),
                   ),
                 ),
+                IconButton(
+                  tooltip: 'Выйти',
+                  icon: const Icon(Icons.logout),
+                  onPressed: () => context.read<AuthNotifier>().logout(),
+                ),
               ],
             ),
           ),
@@ -89,7 +96,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildCurrentView() {
     switch (_currentViewIndex) {
       case 0:
-        return const ReportScreen();
+        return Consumer<AuthNotifier>(
+          builder: (context, auth, _) {
+            if (!auth.isAuthenticated) {
+              return const SizedBox.shrink();
+            }
+            return const ReportScreen();
+          },
+        );
       case 1:
         return _buildImportView();
       case 2:

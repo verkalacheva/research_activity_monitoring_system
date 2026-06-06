@@ -20,7 +20,7 @@ module Api
       private
 
       def set_researcher
-        @researcher = Researcher.find(params[:researcher_id])
+        @researcher = Researcher.kept.for_current_admin.find(params[:researcher_id])
       rescue ActiveRecord::RecordNotFound
         render_failure({ type: :not_found, message: 'Researcher not found' })
       end

@@ -39,20 +39,24 @@ func (r *ResearcherRepository) ExistsByOpenAlexID(openAlexID string) (bool, erro
 	return exists, nil
 }
 
-func (r *ResearcherRepository) GetAllWithExternalID(provider string) ([]Researcher, error) {
+func (r *ResearcherRepository) GetAllWithExternalID(provider string, adminID int64) ([]Researcher, error) {
+	if adminID <= 0 {
+		return nil, fmt.Errorf("admin_id is required")
+	}
+
 	var query string
 	switch provider {
 	case "orcid":
-		query = "SELECT id, orcid_id, openalex_id FROM researchers WHERE orcid_id IS NOT NULL AND deleted_at IS NULL"
+		query = "SELECT id, orcid_id, openalex_id FROM researchers WHERE admin_id = $1 AND orcid_id IS NOT NULL AND deleted_at IS NULL"
 	case "openalex":
-		query = "SELECT id, orcid_id, openalex_id FROM researchers WHERE openalex_id IS NOT NULL AND deleted_at IS NULL"
+		query = "SELECT id, orcid_id, openalex_id FROM researchers WHERE admin_id = $1 AND openalex_id IS NOT NULL AND deleted_at IS NULL"
 	case "all":
-		query = "SELECT id, orcid_id, openalex_id FROM researchers WHERE (orcid_id IS NOT NULL OR openalex_id IS NOT NULL) AND deleted_at IS NULL"
+		query = "SELECT id, orcid_id, openalex_id FROM researchers WHERE admin_id = $1 AND (orcid_id IS NOT NULL OR openalex_id IS NOT NULL) AND deleted_at IS NULL"
 	default:
 		return nil, fmt.Errorf("unsupported provider: %s", provider)
 	}
 
-	rows, err := r.db.Query(query)
+	rows, err := r.db.Query(query, adminID)
 	if err != nil {
 		return nil, fmt.Errorf("error querying researchers: %w", err)
 	}

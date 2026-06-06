@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:research_activity_monitoring_system/data/services/api_client.dart';
 import 'package:research_activity_monitoring_system/core/config.dart';
 
 class AppSettings {
@@ -44,7 +44,7 @@ class SettingsService {
   static const String baseUrl = AppConfig.apiV1;
 
   Future<AppSettings> getSettings() async {
-    final response = await http.get(Uri.parse('$baseUrl/settings'));
+    final response = await ApiClient.get(Uri.parse('$baseUrl/settings'));
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final data = (json['settings'] as Map<String, dynamic>?) ?? {};
@@ -55,9 +55,8 @@ class SettingsService {
   }
 
   Future<AppSettings> updateSettings(Map<String, String?> settings) async {
-    final response = await http.put(
+    final response = await ApiClient.put(
       Uri.parse('$baseUrl/settings'),
-      headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'settings': settings}),
     );
     if (response.statusCode == 200) {

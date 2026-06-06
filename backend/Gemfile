@@ -19,6 +19,9 @@ gem 'grpc'
 gem 'google-protobuf'
 gem 'grpc-tools'
 
+gem 'bcrypt', '~> 3.1'
+gem 'jwt', '~> 2.7'
+
 gem 'redis', '~> 5.0'
 gem 'sidekiq', '~> 7.0'
 gem 'sidekiq-scheduler', '~> 5.0'

@@ -21,6 +21,12 @@ RSpec.describe Integrations::Client do
     end
   end
 
+  describe '.sync_all' do
+    it 'returns nil when admin_id is blank' do
+      expect(described_class.sync_all('orcid', admin_id: nil)).to be_nil
+    end
+  end
+
   describe '.unary_rpc' do
     it 'invokes unary RPC directly when cancel_proc is nil' do
       stub = double('grpc_stub')

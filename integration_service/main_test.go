@@ -361,27 +361,36 @@ func newTestServer(t *testing.T, db *sql.DB) *server {
 	}
 }
 
-func insertResearcherORCID(t *testing.T, db *sql.DB, orcid string) {
+func insertResearcherORCID(t *testing.T, db *sql.DB, orcid string) int64 {
 	t.Helper()
+	adminID := testdb.InsertAdmin(t, db, "orcid-"+orcid+"@test")
+	testdb.InsertResearcherORCID(t, db, adminID, orcid)
+	return adminID
+}
+
+func insertResearcherBothIDs(t *testing.T, db *sql.DB, orcid, openalex string) int64 {
+	t.Helper()
+	adminID := testdb.InsertAdmin(t, db, "both-"+orcid+"@test")
 	_, err := db.Exec(
-		`INSERT INTO researchers (orcid_id, openalex_id, deleted_at, created_at, updated_at)
-		 VALUES ($1, NULL, NULL, NOW(), NOW())`,
-		orcid,
+		`INSERT INTO researchers (orcid_id, openalex_id, admin_id, deleted_at, created_at, updated_at)
+		 VALUES ($1, $2, $3, NULL, NOW(), NOW())`,
+		orcid, openalex, adminID,
 	)
 	if err != nil {
 		t.Fatalf("insert researcher: %v", err)
 	}
+	return adminID
 }
 
-func insertResearcherBothIDs(t *testing.T, db *sql.DB, orcid, openalex string) {
-	t.Helper()
-	_, err := db.Exec(
-		`INSERT INTO researchers (orcid_id, openalex_id, deleted_at, created_at, updated_at)
-		 VALUES ($1, $2, NULL, NOW(), NOW())`,
-		orcid, openalex,
-	)
-	if err != nil {
-		t.Fatalf("insert researcher: %v", err)
+func TestSyncAllAchievements_RequiresAdminID(t *testing.T) {
+	db := testdb.Open(t)
+	srv := newTestServer(t, db)
+	_, err := srv.SyncAllAchievements(context.Background(), &pb.SyncRequest{Provider: "orcid"})
+	if err == nil {
+		t.Fatal("expected error when admin_id is missing")
+	}
+	if status.Code(err) != codes.InvalidArgument {
+		t.Fatalf("expected InvalidArgument, got %v", status.Code(err))
 	}
 }
 
@@ -390,10 +399,10 @@ func TestSyncAllAchievements_OrcidProvider(t *testing.T) {
 	testdb.EnsureResearchersTable(t, db)
 	testdb.TruncateResearchers(t, db)
 	const orcid = "0000-0001-5555-5555"
-	insertResearcherORCID(t, db, orcid)
+	adminID := insertResearcherORCID(t, db, orcid)
 
 	srv := newTestServer(t, db)
-	resp, err := srv.SyncAllAchievements(context.Background(), &pb.SyncRequest{Provider: "orcid"})
+	resp, err := srv.SyncAllAchievements(context.Background(), &pb.SyncRequest{Provider: "orcid", AdminId: adminID})
 	if err != nil {
 		t.Fatalf("SyncAllAchievements: %v", err)
 	}
@@ -409,7 +418,7 @@ func TestSyncAllAchievements_AllMergesBothProviders(t *testing.T) {
 	db := testdb.Open(t)
 	testdb.EnsureResearchersTable(t, db)
 	testdb.TruncateResearchers(t, db)
-	insertResearcherBothIDs(t, db, "0000-0001-6666-6666", "W1234567890")
+	adminID := insertResearcherBothIDs(t, db, "0000-0001-6666-6666", "W1234567890")
 
 	reg := integrations.NewRegistry()
 	reg.Register("orcid", stubOrcidProvider{out: []*pb.Achievement{{Title: "A", ExternalId: "doi:a"}}})
@@ -420,7 +429,7 @@ func TestSyncAllAchievements_AllMergesBothProviders(t *testing.T) {
 		researcherRepository: repository.NewResearcherRepository(db),
 		githubClient:         github.NewClient(db),
 	}
-	resp, err := srv.SyncAllAchievements(context.Background(), &pb.SyncRequest{Provider: "all"})
+	resp, err := srv.SyncAllAchievements(context.Background(), &pb.SyncRequest{Provider: "all", AdminId: adminID})
 	if err != nil {
 		t.Fatalf("SyncAllAchievements: %v", err)
 	}
@@ -436,7 +445,7 @@ func TestSyncAllAchievements_InvalidProviderRegistry(t *testing.T) {
 	db := testdb.Open(t)
 	testdb.EnsureResearchersTable(t, db)
 	testdb.TruncateResearchers(t, db)
-	insertResearcherORCID(t, db, "0000-0001-8888-8888")
+	adminID := insertResearcherORCID(t, db, "0000-0001-8888-8888")
 
 	reg := integrations.NewRegistry()
 	srv := &server{
@@ -444,7 +453,7 @@ func TestSyncAllAchievements_InvalidProviderRegistry(t *testing.T) {
 		researcherRepository: repository.NewResearcherRepository(db),
 		githubClient:         github.NewClient(db),
 	}
-	_, err := srv.SyncAllAchievements(context.Background(), &pb.SyncRequest{Provider: "orcid"})
+	_, err := srv.SyncAllAchievements(context.Background(), &pb.SyncRequest{Provider: "orcid", AdminId: adminID})
 	if err == nil {
 		t.Fatal("expected error: registry has no orcid provider")
 	}
@@ -459,7 +468,8 @@ func TestSyncAllAchievements_EmptyResearchers(t *testing.T) {
 	testdb.TruncateResearchers(t, db)
 
 	srv := newTestServer(t, db)
-	resp, err := srv.SyncAllAchievements(context.Background(), &pb.SyncRequest{Provider: "orcid"})
+	adminID := testdb.InsertAdmin(t, db, "empty-sync@test")
+	resp, err := srv.SyncAllAchievements(context.Background(), &pb.SyncRequest{Provider: "orcid", AdminId: adminID})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -472,7 +482,7 @@ func TestSyncAllAchievements_FetchErrorSkipsResearcher(t *testing.T) {
 	db := testdb.Open(t)
 	testdb.EnsureResearchersTable(t, db)
 	testdb.TruncateResearchers(t, db)
-	insertResearcherORCID(t, db, "0000-0001-7777-7777")
+	adminID := insertResearcherORCID(t, db, "0000-0001-7777-7777")
 
 	reg := integrations.NewRegistry()
 	reg.Register("orcid", stubOrcidProvider{err: status.Error(codes.Unavailable, "stub fail")})
@@ -482,7 +492,7 @@ func TestSyncAllAchievements_FetchErrorSkipsResearcher(t *testing.T) {
 		researcherRepository: repository.NewResearcherRepository(db),
 		githubClient:         github.NewClient(db),
 	}
-	resp, err := srv.SyncAllAchievements(context.Background(), &pb.SyncRequest{Provider: "orcid"})
+	resp, err := srv.SyncAllAchievements(context.Background(), &pb.SyncRequest{Provider: "orcid", AdminId: adminID})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -511,7 +521,7 @@ func TestSyncAllAchievements_DBError(t *testing.T) {
 		researcherRepository: repository.NewResearcherRepository(db),
 		githubClient:         github.NewClient(nil),
 	}
-	_, err = srv.SyncAllAchievements(context.Background(), &pb.SyncRequest{Provider: "orcid"})
+	_, err = srv.SyncAllAchievements(context.Background(), &pb.SyncRequest{Provider: "orcid", AdminId: 1})
 	if err == nil {
 		t.Fatal("expected error from closed DB")
 	}
@@ -520,16 +530,18 @@ func TestSyncAllAchievements_DBError(t *testing.T) {
 	}
 }
 
-func insertResearcherOpenAlexOnly(t *testing.T, db *sql.DB, openalexID string) {
+func insertResearcherOpenAlexOnly(t *testing.T, db *sql.DB, openalexID string) int64 {
 	t.Helper()
+	adminID := testdb.InsertAdmin(t, db, "openalex-"+openalexID+"@test")
 	_, err := db.Exec(
-		`INSERT INTO researchers (orcid_id, openalex_id, deleted_at, created_at, updated_at)
-		 VALUES (NULL, $1, NULL, NOW(), NOW())`,
-		openalexID,
+		`INSERT INTO researchers (orcid_id, openalex_id, admin_id, deleted_at, created_at, updated_at)
+		 VALUES (NULL, $1, $2, NULL, NOW(), NOW())`,
+		openalexID, adminID,
 	)
 	if err != nil {
 		t.Fatalf("insert researcher openalex: %v", err)
 	}
+	return adminID
 }
 
 func TestFetchOrcidAchievements_NotFound(t *testing.T) {
@@ -768,14 +780,14 @@ func TestSyncAllAchievements_All_EmptyProvidersMap(t *testing.T) {
 	db := testdb.Open(t)
 	testdb.EnsureResearchersTable(t, db)
 	testdb.TruncateResearchers(t, db)
-	insertResearcherBothIDs(t, db, "0000-0003-3333-3333", "W4444444444")
+	adminID := insertResearcherBothIDs(t, db, "0000-0003-3333-3333", "W4444444444")
 
 	srv := &server{
 		registry:             integrations.NewRegistry(),
 		researcherRepository: repository.NewResearcherRepository(db),
 		githubClient:         github.NewClient(db),
 	}
-	resp, err := srv.SyncAllAchievements(context.Background(), &pb.SyncRequest{Provider: "all"})
+	resp, err := srv.SyncAllAchievements(context.Background(), &pb.SyncRequest{Provider: "all", AdminId: adminID})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

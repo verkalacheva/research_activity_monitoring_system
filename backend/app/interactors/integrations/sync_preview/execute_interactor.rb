@@ -25,11 +25,11 @@ module Integrations
         return github_dev_sync_rows if provider.to_s == 'github'
         return internet_crawl_sync_rows if %w[crawl crawl_search].include?(provider.to_s)
 
-        response = Integrations::Client.sync_all(provider.to_s, cancel_proc: @cancel_proc)
+        response = Integrations::Client.sync_all(provider.to_s, admin_id: Current.admin_id, cancel_proc: @cancel_proc)
         return [] unless response
 
         response.results.map do |res|
-          researcher = Researcher.find_by(id: res.researcher_id)
+          researcher = tenant_researchers.find_by(id: res.researcher_id)
           next nil unless researcher
 
           {
@@ -47,7 +47,7 @@ module Integrations
         team_id = @params[:team_id]
 
         if team_id.present?
-          team = Team.kept.find_by(id: team_id)
+          team = tenant_teams.find_by(id: team_id)
           return [] unless team
           response = Integrations::Client.github_dev_activity(team.github_repo_url, nil, team_id, cancel_proc: @cancel_proc)
           return [] unless response
@@ -62,7 +62,7 @@ module Integrations
             }
           }]
         elsif researcher_id.present?
-          researcher = Researcher.find(researcher_id)
+          researcher = tenant_researchers.find_by!(id: researcher_id)
           response = Integrations::Client.github_dev_activity(researcher.github, researcher_id, nil, cancel_proc: @cancel_proc)
           return [] unless response
 
@@ -78,7 +78,7 @@ module Integrations
           }]
         elsif @params[:scope].to_s == 'teams'
           team_jobs = ActiveRecord::Base.connection_pool.with_connection do
-            Team.kept.where.not(github_repo_url: [nil, '']).map do |t|
+            tenant_teams.where.not(github_repo_url: [nil, '']).map do |t|
               { id: t.id, title: t.title, url: t.github_repo_url }
             end
           end
@@ -89,7 +89,7 @@ module Integrations
           bounded_github_sync(job_procs)
         else
           researcher_jobs = ActiveRecord::Base.connection_pool.with_connection do
-            Researcher.where.not(github: [nil, '']).map do |r|
+            tenant_researchers_for_github.map do |r|
               { id: r.id, name: r.fullName, github: r.github }
             end
           end
@@ -107,7 +107,7 @@ module Integrations
         team_id = @params[:team_id]
 
         if team_id.present?
-          team = Team.kept.find_by(id: team_id)
+          team = tenant_teams.find_by(id: team_id)
           return [] unless team
           response = Integrations::Client.crawl(nil, nil, team.title.to_s, true, nil, nil, cancel_proc: @cancel_proc)
           return [] unless response
@@ -120,7 +120,7 @@ module Integrations
             warnings: response.warnings.to_a
           }]
         elsif researcher_id.present?
-          researcher = Researcher.kept.find_by(id: researcher_id)
+          researcher = tenant_researchers.find_by(id: researcher_id)
           return [] unless researcher
           response = Integrations::Client.crawl(nil, researcher_id, researcher.fullName, true, llm_provider, researcher.github, cancel_proc: @cancel_proc)
           return [] unless response
@@ -147,19 +147,20 @@ module Integrations
           end
         else
           crawl_jobs = ActiveRecord::Base.connection_pool.with_connection do
-            Researcher.kept.order(:id).map do |r|
+            tenant_researchers.order(:id).map do |r|
               { id: r.id, fullName: r.fullName, github: r.github }
             end
           end
           results = []
           results_mutex = Mutex.new
           work_mutex = Mutex.new
+          tenant_user = Current.user
           concurrency = begin
             n = ENV.fetch('DAILY_CRAWL_CONCURRENCY', '4').to_i
             n < 1 ? 1 : n
           end
           workers = concurrency.times.map do
-            Thread.new do
+            TenantContext.in_thread(tenant_user) do
               loop do
                 break if @cancel_proc.call
 
@@ -201,7 +202,7 @@ module Integrations
       end
 
       def single_researcher_academic_sync(provider, researcher_id)
-        researcher = Researcher.find(researcher_id)
+        researcher = tenant_researchers.find_by!(id: researcher_id)
         if provider == 'orcid'
           oid = researcher.orcid_id.to_s.strip
           return [] if oid.blank?
@@ -243,10 +244,29 @@ module Integrations
         FilterNewAchievementsInteractor.call(researcher_id: researcher_id, achievements: achievements).value!
       end
 
+      def tenant_researchers
+        return Researcher.kept.none unless Current.admin_id.present?
+
+        Researcher.kept.for_current_admin
+      end
+
+      def tenant_teams
+        return Team.kept.none unless Current.admin_id.present?
+
+        Team.kept.for_current_admin
+      end
+
+      def tenant_researchers_for_github
+        return Researcher.none unless Current.admin_id.present?
+
+        Researcher.where.not(github: [nil, '']).for_current_admin
+      end
+
       # Ограниченный пул потоков для GitHub: не порождаем по потоку на каждого исследователя (и не держим AR на главном потоке).
       def bounded_github_sync(job_procs)
         return [] if job_procs.empty?
 
+        tenant_user = Current.user
         concurrency = begin
           n = ENV.fetch('GITHUB_DEV_SYNC_CONCURRENCY', '8').to_i
           n < 1 ? 1 : n
@@ -257,7 +277,7 @@ module Integrations
         out = []
         out_m = Mutex.new
         workers = concurrency.times.map do
-          Thread.new do
+          TenantContext.in_thread(tenant_user) do
             loop do
               jp = lock.synchronize { pending.shift }
               break unless jp

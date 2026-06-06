@@ -8,12 +8,13 @@ import (
 // InsertSecondTeamWithDev добавляет второго исследователя, команду и dev-метрики (без достижений).
 func InsertSecondTeamWithDev(t *testing.T, db *sql.DB, deatID int64) (researcherID, teamID int64) {
 	t.Helper()
-	if err := db.QueryRow(`INSERT INTO researchers (name, surname, second_name, degree_level, created_at, updated_at)
-		VALUES ('Пётр', 'Петров', '', 'д.т.н.', NOW(), NOW()) RETURNING id`).Scan(&researcherID); err != nil {
+	adminID := EnsureTestAdmin(t, db)
+	if err := db.QueryRow(`INSERT INTO researchers (name, surname, second_name, degree_level, admin_id, created_at, updated_at)
+		VALUES ('Пётр', 'Петров', '', 'д.т.н.', $1, NOW(), NOW()) RETURNING id`, adminID).Scan(&researcherID); err != nil {
 		t.Fatalf("researcher2: %v", err)
 	}
-	if err := db.QueryRow(`INSERT INTO teams (title, leader_id, created_at, updated_at)
-		VALUES ('Команда Б', $1, NOW(), NOW()) RETURNING id`, researcherID).Scan(&teamID); err != nil {
+	if err := db.QueryRow(`INSERT INTO teams (title, leader_id, admin_id, created_at, updated_at)
+		VALUES ('Команда Б', $1, $2, NOW(), NOW()) RETURNING id`, researcherID, adminID).Scan(&teamID); err != nil {
 		t.Fatalf("team2: %v", err)
 	}
 	if _, err := db.Exec(`INSERT INTO researchers_teams (researcher_id, team_id, created_at, updated_at)
@@ -27,31 +28,32 @@ func InsertSecondTeamWithDev(t *testing.T, db *sql.DB, deatID int64) (researcher
 // InsertAchievementGraph создаёт цепочку справочников + исследователь + команда + достижение.
 func InsertAchievementGraph(t *testing.T, db *sql.DB) (researcherID, teamID, achievementID int64) {
 	t.Helper()
+	adminID := EnsureTestAdmin(t, db)
 	var pid, resid, sid, tid int64
-	if err := db.QueryRow(`INSERT INTO achievement_participations (title, points, created_at, updated_at)
-		VALUES ('Single', 1, NOW(), NOW()) RETURNING id`).Scan(&pid); err != nil {
+	if err := db.QueryRow(`INSERT INTO achievement_participations (title, points, admin_id, created_at, updated_at)
+		VALUES ('Single', 1, $1, NOW(), NOW()) RETURNING id`, adminID).Scan(&pid); err != nil {
 		t.Fatalf("participation: %v", err)
 	}
-	if err := db.QueryRow(`INSERT INTO achievement_results (title, points, created_at, updated_at)
-		VALUES ('Win', 1, NOW(), NOW()) RETURNING id`).Scan(&resid); err != nil {
+	if err := db.QueryRow(`INSERT INTO achievement_results (title, points, admin_id, created_at, updated_at)
+		VALUES ('Win', 1, $1, NOW(), NOW()) RETURNING id`, adminID).Scan(&resid); err != nil {
 		t.Fatalf("result: %v", err)
 	}
-	if err := db.QueryRow(`INSERT INTO achievement_statuses (title, points, created_at, updated_at)
-		VALUES ('ВАК', 1, NOW(), NOW()) RETURNING id`).Scan(&sid); err != nil {
+	if err := db.QueryRow(`INSERT INTO achievement_statuses (title, points, admin_id, created_at, updated_at)
+		VALUES ('ВАК', 1, $1, NOW(), NOW()) RETURNING id`, adminID).Scan(&sid); err != nil {
 		t.Fatalf("status: %v", err)
 	}
-	if err := db.QueryRow(`INSERT INTO achievement_types (title, points, created_at, updated_at)
-		VALUES ('Статья ВАК', 1, NOW(), NOW()) RETURNING id`).Scan(&tid); err != nil {
+	if err := db.QueryRow(`INSERT INTO achievement_types (title, points, admin_id, created_at, updated_at)
+		VALUES ('Статья ВАК', 1, $1, NOW(), NOW()) RETURNING id`, adminID).Scan(&tid); err != nil {
 		t.Fatalf("type: %v", err)
 	}
 
-	if err := db.QueryRow(`INSERT INTO researchers (name, surname, second_name, degree_level, created_at, updated_at)
-		VALUES ('Иван', 'Иванов', '', 'к.т.н.', NOW(), NOW()) RETURNING id`).Scan(&researcherID); err != nil {
+	if err := db.QueryRow(`INSERT INTO researchers (name, surname, second_name, degree_level, admin_id, created_at, updated_at)
+		VALUES ('Иван', 'Иванов', '', 'к.т.н.', $1, NOW(), NOW()) RETURNING id`, adminID).Scan(&researcherID); err != nil {
 		t.Fatalf("researcher: %v", err)
 	}
 
-	if err := db.QueryRow(`INSERT INTO teams (title, leader_id, created_at, updated_at)
-		VALUES ('Команда А', $1, NOW(), NOW()) RETURNING id`, researcherID).Scan(&teamID); err != nil {
+	if err := db.QueryRow(`INSERT INTO teams (title, leader_id, admin_id, created_at, updated_at)
+		VALUES ('Команда А', $1, $2, NOW(), NOW()) RETURNING id`, researcherID, adminID).Scan(&teamID); err != nil {
 		t.Fatalf("team: %v", err)
 	}
 
@@ -79,9 +81,10 @@ func InsertAchievementGraph(t *testing.T, db *sql.DB) (researcherID, teamID, ach
 // checkKey должен быть уникален среди dev_project_criteria (уникальный индекс в БД).
 func InsertDevTeamExtras(t *testing.T, db *sql.DB, teamID, researcherID, deatID int64, checkKey string) {
 	t.Helper()
+	adminID := EnsureTestAdmin(t, db)
 	var dpcID int64
-	if err := db.QueryRow(`INSERT INTO dev_project_criteria (title, points, created_at, updated_at, check_key)
-		VALUES ('README', 10, NOW(), NOW(), $1) RETURNING id`, checkKey).Scan(&dpcID); err != nil {
+	if err := db.QueryRow(`INSERT INTO dev_project_criteria (title, points, admin_id, created_at, updated_at, check_key)
+		VALUES ('README', 10, $2, NOW(), NOW(), $1) RETURNING id`, checkKey, adminID).Scan(&dpcID); err != nil {
 		t.Fatalf("dpc: %v", err)
 	}
 	if _, err := db.Exec(`INSERT INTO team_dev_criteria (team_id, dev_project_criterion_id, created_at, updated_at)
@@ -97,9 +100,10 @@ func InsertDevTeamExtras(t *testing.T, db *sql.DB, teamID, researcherID, deatID 
 // InsertActivityType возвращает id типа активности.
 func InsertActivityType(t *testing.T, db *sql.DB, title, checkKey string) int64 {
 	t.Helper()
+	adminID := EnsureTestAdmin(t, db)
 	var id int64
-	if err := db.QueryRow(`INSERT INTO dev_employee_activity_types (title, points, created_at, updated_at, check_key)
-		VALUES ($1, 2.5, NOW(), NOW(), $2) RETURNING id`, title, checkKey).Scan(&id); err != nil {
+	if err := db.QueryRow(`INSERT INTO dev_employee_activity_types (title, points, admin_id, created_at, updated_at, check_key)
+		VALUES ($1, 2.5, $3, NOW(), NOW(), $2) RETURNING id`, title, checkKey, adminID).Scan(&id); err != nil {
 		t.Fatalf("deat: %v", err)
 	}
 	return id

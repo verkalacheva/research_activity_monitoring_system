@@ -5,7 +5,11 @@ module Achievements
     protected
 
     def list_scope
-      Achievement.kept.includes(:achievement_field_answers, :achievement_type).order(created_at: :desc)
+      Achievement.kept
+             .joins(:achievement_type)
+             .where(achievement_types: { admin_id: Current.admin_id })
+             .includes(:achievement_field_answers, :achievement_type)
+             .order(created_at: :desc)
     end
 
     def row_serializer_class

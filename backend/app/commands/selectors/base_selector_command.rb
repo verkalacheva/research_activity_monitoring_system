@@ -24,6 +24,7 @@ module Selectors
 
     def build_scope(params)
       scope = model_class.respond_to?(:kept) ? model_class.kept : model_class.all
+      scope = scope.for_current_admin if scope.respond_to?(:for_current_admin)
       filters = (params[:filters] || {}).merge(params)
       scope = apply_filters(scope, filters)
       apply_default_sort(scope)

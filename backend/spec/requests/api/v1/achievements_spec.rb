@@ -159,7 +159,7 @@ RSpec.describe 'api/v1/achievements', type: :request do
         end
       end
 
-      response(404, 'validation error — несуществующий researcher_id') do
+      response(422, 'validation error — несуществующий researcher_id') do
 
         let(:achievement_attributes) do
           {

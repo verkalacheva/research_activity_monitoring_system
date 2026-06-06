@@ -23,10 +23,13 @@ module Reports
         data: parsed_data,
         format: response.format.to_s,
         total_count: response.total_count.to_i,
-        column_totals: response.column_totals ? response.column_totals.to_h : {}
+        column_totals: response.column_totals ? response.column_totals.to_h : {},
+        admin_id: Current.admin_id
       }
 
-      ActionCable.server.broadcast('reports_channel', result)
+      return failure(:forbidden, 'admin context required') if Current.admin_id.blank?
+
+      ActionCable.server.broadcast("reports_channel:#{Current.admin_id}", result)
 
       success(result)
     rescue GRPC::BadStatus => e

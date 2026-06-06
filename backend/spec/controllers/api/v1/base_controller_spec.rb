@@ -4,6 +4,8 @@ require 'rails_helper'
 
 RSpec.describe Api::V1::BaseController, type: :controller do
   controller(Api::V1::BaseController) do
+    skip_before_action :authenticate_user!
+
     def index
       case params[:scenario]
       when 'success'

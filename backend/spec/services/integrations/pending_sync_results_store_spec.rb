@@ -21,13 +21,15 @@ RSpec.describe Integrations::PendingSyncResultsStore do
   end
 
   describe '.replace_daily_sync_entry' do
-    it 'writes JSON to redis key' do
+    it 'writes JSON to tenant redis key' do
+      admin = create(:user)
       with_fake_redis({}) do |mem|
         described_class.replace_daily_sync_entry(
-          { 'provider' => 'daily_sync', 'label' => 'Daily', 'results' => [{ 'a' => 1 }] }
+          { 'provider' => 'daily_sync', 'label' => 'Daily', 'results' => [{ 'a' => 1 }] },
+          admin_id: admin.id
         )
 
-        expect(mem[described_class::REDIS_KEY]).to include('daily_sync')
+        expect(mem[described_class.redis_key(admin.id)]).to include('daily_sync')
       end
     end
   end

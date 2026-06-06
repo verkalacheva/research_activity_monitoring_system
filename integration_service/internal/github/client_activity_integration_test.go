@@ -172,9 +172,11 @@ func TestGetUserActivity_WithFakeGitHubREST(t *testing.T) {
 	db := testdb.Open(t)
 	testdb.EnsureDevCatalogTables(t, db)
 	testdb.TruncateDevCatalog(t, db)
+	adminID := testdb.EnsureTestAdmin(t, db)
 	_, err := db.Exec(
-		`INSERT INTO dev_employee_activity_types (title, check_key, created_at, updated_at)
-		 VALUES ('Followers', 'followers', NOW(), NOW())`,
+		`INSERT INTO dev_employee_activity_types (title, check_key, admin_id, created_at, updated_at)
+		 VALUES ('Followers', 'followers', $1, NOW(), NOW())`,
+		adminID,
 	)
 	if err != nil {
 		t.Fatalf("insert activity type: %v", err)
@@ -213,9 +215,11 @@ func TestGetRepoActivity_WithFakeGitHubREST(t *testing.T) {
 	db := testdb.Open(t)
 	testdb.EnsureDevCatalogTables(t, db)
 	testdb.TruncateDevCatalog(t, db)
+	adminID := testdb.EnsureTestAdmin(t, db)
 	_, err := db.Exec(
-		`INSERT INTO dev_employee_activity_types (title, check_key, created_at, updated_at)
-		 VALUES ('Stars', 'stars', NOW(), NOW())`,
+		`INSERT INTO dev_employee_activity_types (title, check_key, admin_id, created_at, updated_at)
+		 VALUES ('Stars', 'stars', $1, NOW(), NOW())`,
+		adminID,
 	)
 	if err != nil {
 		t.Fatalf("insert activity type: %v", err)

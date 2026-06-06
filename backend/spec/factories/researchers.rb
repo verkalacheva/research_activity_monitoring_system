@@ -2,6 +2,7 @@
 
 FactoryBot.define do
   factory :researcher do
+    admin { RequestAuthTenant.admin || association(:user) }
     sequence(:name)    { |n| "Иван#{n}" }
     sequence(:surname) { |n| "Иванов#{n}" }
     second_name        { 'Иванович' }
@@ -19,6 +20,10 @@ FactoryBot.define do
 
     trait :with_github do
       sequence(:github) { |n| "researcher#{n}" }
+    end
+
+    trait :with_email do
+      sequence(:email) { |n| "member#{n}@example.com" }
     end
   end
 end

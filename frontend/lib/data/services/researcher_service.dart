@@ -1,13 +1,14 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:research_activity_monitoring_system/data/models/models.dart';
+
 import 'package:research_activity_monitoring_system/core/config.dart';
+import 'package:research_activity_monitoring_system/data/models/models.dart';
+import 'package:research_activity_monitoring_system/data/services/api_client.dart';
 
 class ResearcherService {
   static const String baseUrl = AppConfig.apiV1;
 
   Future<List<Researcher>> getAll() async {
-    final response = await http.get(Uri.parse('$baseUrl/researchers/list?limit=1000'));
+    final response = await ApiClient.get(Uri.parse('$baseUrl/researchers/list?limit=1000'));
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       List itemsJson = jsonResponse['items'];
@@ -18,7 +19,7 @@ class ResearcherService {
   }
 
   Future<PaginatedResponse<Researcher>> list({int limit = 20, int offset = 0}) async {
-    final response = await http.get(Uri.parse('$baseUrl/researchers/list?limit=$limit&offset=$offset'));
+    final response = await ApiClient.get(Uri.parse('$baseUrl/researchers/list?limit=$limit&offset=$offset'));
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       final List itemsJson = jsonResponse['items'];
@@ -31,7 +32,7 @@ class ResearcherService {
   }
 
   Future<Researcher> getById(int id) async {
-    final response = await http.get(Uri.parse('$baseUrl/researchers/$id'));
+    final response = await ApiClient.get(Uri.parse('$baseUrl/researchers/$id'));
     if (response.statusCode == 200) {
       return Researcher.fromJson(json.decode(response.body));
     } else {
@@ -40,9 +41,8 @@ class ResearcherService {
   }
 
   Future<Researcher> create(Researcher researcher) async {
-    final response = await http.post(
+    final response = await ApiClient.post(
       Uri.parse('$baseUrl/researchers'),
-      headers: {'Content-Type': 'application/json'},
       body: json.encode({'researcher': researcher.toJson()}),
     );
     if (response.statusCode == 201) {
@@ -53,9 +53,8 @@ class ResearcherService {
   }
 
   Future<Researcher> update(int id, Researcher researcher) async {
-    final response = await http.put(
+    final response = await ApiClient.put(
       Uri.parse('$baseUrl/researchers/$id'),
-      headers: {'Content-Type': 'application/json'},
       body: json.encode({'researcher': researcher.toJson()}),
     );
     if (response.statusCode == 200) {
@@ -66,10 +65,9 @@ class ResearcherService {
   }
 
   Future<void> delete(int id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/researchers/$id'));
+    final response = await ApiClient.delete(Uri.parse('$baseUrl/researchers/$id'));
     if (response.statusCode != 204) {
       throw Exception('Failed to delete researcher');
     }
   }
 }
-

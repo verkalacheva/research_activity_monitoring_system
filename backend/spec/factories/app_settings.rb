@@ -2,6 +2,7 @@
 
 FactoryBot.define do
   factory :app_setting do
+    admin { RequestAuthTenant.admin || association(:user) }
     sequence(:key)   { |n| "setting_key_#{n}" }
     sequence(:value) { |n| "setting_value_#{n}" }
   end

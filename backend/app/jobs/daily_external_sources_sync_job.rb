@@ -16,48 +16,60 @@ class DailyExternalSourcesSyncJob
 
   def perform
     cancel_proc = -> { false }
+    total_rows = 0
+
+    User.active.find_each do |admin|
+      rows = sync_phases_for_admin(admin, cancel_proc)
+      next if rows.empty?
+
+      entry = {
+        'provider' => 'daily_sync',
+        'label' => DAILY_SYNC_LABEL,
+        'results' => rows,
+        'has_error' => false,
+        'admin_id' => admin.id
+      }
+      Integrations::PendingSyncResultsStore.replace_daily_sync_entry(entry, admin_id: admin.id)
+      total_rows += rows.size
+      Rails.logger.info "[DailyExternalSourcesSync] admin #{admin.id}: #{rows.size} preview rows queued"
+    end
+
+    if total_rows.zero?
+      Rails.logger.info '[DailyExternalSourcesSync] finished, no preview rows (nothing to show)'
+    else
+      Rails.logger.info "[DailyExternalSourcesSync] finished, #{total_rows} preview rows queued for review (Redis)"
+    end
+  rescue StandardError => e
+    Rails.logger.error "[DailyExternalSourcesSync] failed to store preview: #{e.class}: #{e.message}"
+  end
+
+  private
+
+  def sync_phases_for_admin(admin, cancel_proc)
     all_rows = []
     rows_mutex = Mutex.new
 
     threads = phases.map do |name, params|
-      Thread.new do
+      TenantContext.in_thread(admin) do
         begin
           merged = params.merge(cancel_proc: cancel_proc)
           result = Integrations::SyncPreviewCommand.call(merged)
           if result.failure?
-            Rails.logger.error "[DailyExternalSourcesSync] phase #{name} failed: #{result.failure.inspect}"
+            Rails.logger.error "[DailyExternalSourcesSync] admin #{admin.id} phase #{name} failed: #{result.failure.inspect}"
           else
             rows = Array(result.value!['results'])
             rows_mutex.synchronize { all_rows.concat(rows) }
-            Rails.logger.info "[DailyExternalSourcesSync] phase #{name}: preview rows #{rows.size}"
+            Rails.logger.info "[DailyExternalSourcesSync] admin #{admin.id} phase #{name}: preview rows #{rows.size}"
           end
         rescue StandardError => e
-          Rails.logger.error "[DailyExternalSourcesSync] phase #{name} error: #{e.class}: #{e.message}"
+          Rails.logger.error "[DailyExternalSourcesSync] admin #{admin.id} phase #{name} error: #{e.class}: #{e.message}"
         end
       end
     end
 
     threads.each(&:join)
-
-    if all_rows.empty?
-      Rails.logger.info '[DailyExternalSourcesSync] finished, no preview rows (nothing to show)'
-      return
-    end
-
-    entry = {
-      'provider' => 'daily_sync',
-      'label' => DAILY_SYNC_LABEL,
-      'results' => all_rows,
-      'has_error' => false
-    }
-    Integrations::PendingSyncResultsStore.replace_daily_sync_entry(entry)
-    Rails.logger.info "[DailyExternalSourcesSync] finished, #{all_rows.size} preview rows queued for review (Redis)"
-  rescue StandardError => e
-    # Не пробрасываем: повтор джобы заново вызовет все внешние источники.
-    Rails.logger.error "[DailyExternalSourcesSync] failed to store preview: #{e.class}: #{e.message}"
+    all_rows
   end
-
-  private
 
   def phases
     list = [

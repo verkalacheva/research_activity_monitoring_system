@@ -36,6 +36,7 @@ module Researchers
 
         attrs = base_attributes(row).merge(
           deleted_at: nil,
+          admin_id: Current.admin_id,
           github: row_fetch_identifier_cell(row, GITHUB_EXACT_KEYS, [])&.strip,
           surname: surname,
           name: name,
@@ -105,12 +106,13 @@ module Researchers
     end
 
     def find_researcher(oid:, oax:, surname:, name:, second_name:)
+      scope = Researcher.for_current_admin
       if oid.present?
-        Researcher.find_or_initialize_by(orcid_id: oid)
+        scope.find_or_initialize_by(orcid_id: oid)
       elsif oax.present?
-        Researcher.find_or_initialize_by(openalex_id: oax)
+        scope.find_or_initialize_by(openalex_id: oax)
       else
-        Researcher.find_or_initialize_by(surname: surname, name: name, second_name: second_name)
+        scope.find_or_initialize_by(surname: surname, name: name, second_name: second_name)
       end
     end
 
@@ -173,7 +175,7 @@ module Researchers
       l_surname = l_parts[0]
       l_rest = l_parts[1..].join(' ')
 
-      query = Researcher.where('surname ILIKE ?', l_surname)
+      query = Researcher.for_current_admin.where('surname ILIKE ?', l_surname)
 
       if l_rest.present?
         if l_rest.include?('.')
@@ -190,7 +192,7 @@ module Researchers
       leader = query.first
       return unless leader
 
-      team = Team.find_by(leader_id: leader.id)
+      team = Team.for_current_admin.find_by(leader_id: leader.id)
       ResearchersTeam.find_or_create_by!(researcher: researcher, team: team) if team.present?
     end
   end

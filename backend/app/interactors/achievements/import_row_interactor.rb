@@ -19,7 +19,7 @@ module Achievements
         type_title = find_value(row_pairs, 'Тип достижения')
         return failure(:validation_error, 'Achievement type is empty') if type_title.blank?
 
-        type = AchievementType.find_or_create_by!(title: type_title) do |t|
+        type = AchievementType.tenant_find_or_create_by!(Current.admin_id, title: type_title) do |t|
           t.points = 1.0
         end
 
@@ -77,12 +77,12 @@ module Achievements
       name = parts[1] || 'Неизвестно'
       second_name = parts[2..].join(' ') if parts.size > 2
 
-      kept = Researcher.kept.find_by(surname: surname, name: name, second_name: second_name)
+      kept = Researcher.kept.for_current_admin.find_by(surname: surname, name: name, second_name: second_name)
       return [kept, nil] if kept
 
-      return [nil, :deleted] if Researcher.deleted.find_by(surname: surname, name: name, second_name: second_name)
+      return [nil, :deleted] if Researcher.deleted.for_current_admin.find_by(surname: surname, name: name, second_name: second_name)
 
-      researcher = Researcher.create!(surname: surname, name: name, second_name: second_name)
+      researcher = Researcher.create!(surname: surname, name: name, second_name: second_name, admin_id: Current.admin_id)
       [researcher, nil]
     rescue ActiveRecord::RecordInvalid => e
       [nil, e.record.errors.full_messages]
@@ -123,8 +123,9 @@ module Achievements
 
     def find_or_create_status(title)
       title = title.to_s.strip
-      status = AchievementStatus.find_by('title ILIKE ?', "%#{title}%") if title.present?
-      status || AchievementStatus.find_or_create_by!(title: title.presence || 'Не указано') do |s|
+      scope = AchievementStatus.for_admin_id(Current.admin_id)
+      status = scope.find_by('title ILIKE ?', "%#{title}%") if title.present?
+      status || AchievementStatus.tenant_find_or_create_by!(Current.admin_id, title: title.presence || 'Не указано') do |s|
         s.points = 1.0
       end
     end
@@ -134,17 +135,19 @@ module Achievements
       quartile = quartile.to_s.strip
 
       search_term = quartile.presence || title
+      scope = AchievementResult.for_admin_id(Current.admin_id)
 
-      res = AchievementResult.find_by('title ILIKE ?', "%#{search_term}%") if search_term.present?
-      res || AchievementResult.find_or_create_by!(title: search_term.presence || 'Не указано') do |r|
+      res = scope.find_by('title ILIKE ?', "%#{search_term}%") if search_term.present?
+      res || AchievementResult.tenant_find_or_create_by!(Current.admin_id, title: search_term.presence || 'Не указано') do |r|
         r.points = 1.0
       end
     end
 
     def find_or_create_participation(title)
       title = title.to_s.strip
-      part = AchievementParticipation.find_by('title ILIKE ?', "%#{title}%") if title.present?
-      part || AchievementParticipation.find_or_create_by!(title: title.presence || 'Не указано') do |p|
+      scope = AchievementParticipation.for_admin_id(Current.admin_id)
+      part = scope.find_by('title ILIKE ?', "%#{title}%") if title.present?
+      part || AchievementParticipation.tenant_find_or_create_by!(Current.admin_id, title: title.presence || 'Не указано') do |p|
         p.points = 1.0
       end
     end

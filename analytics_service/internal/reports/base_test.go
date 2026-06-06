@@ -5,6 +5,8 @@ package reports
 import (
 	"strings"
 	"testing"
+
+	"analytics_service/pb"
 )
 
 // ---------------------------------------------------------------------------
@@ -166,5 +168,27 @@ func TestBuildFilterCondition_ContainsPercentWrapping(t *testing.T) {
 	s, ok := arg.(string)
 	if !ok || s != "%к.т.н%" {
 		t.Errorf("arg should be %%к.т.н%%, got %q", s)
+	}
+}
+
+func TestAdminIDFromRequest(t *testing.T) {
+	req := &pb.ReportRequest{
+		Filters: []*pb.Filter{{Field: "admin_id", Operator: "eq", Value: "42"}},
+	}
+	if got := AdminIDFromRequest(req); got != 42 {
+		t.Fatalf("AdminIDFromRequest() = %d, want 42", got)
+	}
+}
+
+func TestAdminFilterSQL(t *testing.T) {
+	sql, args, argCount := AdminFilterSQL(7, 1, nil, "t.admin_id", "r.admin_id")
+	if sql != " AND t.admin_id = $1 AND r.admin_id = $2" {
+		t.Fatalf("unexpected sql: %q", sql)
+	}
+	if len(args) != 2 || args[0] != int64(7) || args[1] != int64(7) {
+		t.Fatalf("unexpected args: %#v", args)
+	}
+	if argCount != 3 {
+		t.Fatalf("argCount = %d, want 3", argCount)
 	}
 }

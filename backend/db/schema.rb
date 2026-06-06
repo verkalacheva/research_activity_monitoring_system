@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_05_11_120000) do
+ActiveRecord::Schema[7.0].define(version: 2026_05_31_120400) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -45,6 +45,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_11_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "deleted_at"
+    t.bigint "admin_id", null: false
+    t.index ["admin_id"], name: "index_achievement_participations_on_admin_id"
     t.index ["deleted_at"], name: "index_achievement_participations_on_deleted_at"
   end
 
@@ -54,6 +56,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_11_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "deleted_at"
+    t.bigint "admin_id", null: false
+    t.index ["admin_id"], name: "index_achievement_results_on_admin_id"
     t.index ["deleted_at"], name: "index_achievement_results_on_deleted_at"
   end
 
@@ -63,6 +67,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_11_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "deleted_at"
+    t.bigint "admin_id", null: false
+    t.index ["admin_id"], name: "index_achievement_statuses_on_admin_id"
     t.index ["deleted_at"], name: "index_achievement_statuses_on_deleted_at"
   end
 
@@ -74,6 +80,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_11_120000) do
     t.string "icon_name"
     t.datetime "deleted_at"
     t.text "description"
+    t.bigint "admin_id", null: false
+    t.index ["admin_id"], name: "index_achievement_types_on_admin_id"
     t.index ["deleted_at"], name: "index_achievement_types_on_deleted_at"
   end
 
@@ -100,7 +108,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_11_120000) do
     t.text "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["key"], name: "index_app_settings_on_key", unique: true
+    t.bigint "admin_id", null: false
+    t.index ["admin_id", "key"], name: "index_app_settings_on_admin_id_and_key", unique: true
   end
 
   create_table "dev_employee_activity_types", force: :cascade do |t|
@@ -109,7 +118,9 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_11_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "check_key"
-    t.index ["check_key"], name: "index_dev_employee_activity_types_on_check_key", unique: true, where: "(check_key IS NOT NULL)"
+    t.bigint "admin_id", null: false
+    t.index ["admin_id", "check_key"], name: "index_dev_employee_activity_types_on_admin_id_and_check_key", unique: true, where: "(check_key IS NOT NULL)"
+    t.index ["admin_id"], name: "index_dev_employee_activity_types_on_admin_id"
   end
 
   create_table "dev_project_criteria", force: :cascade do |t|
@@ -118,7 +129,37 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_11_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "check_key"
-    t.index ["check_key"], name: "index_dev_project_criteria_on_check_key", unique: true, where: "(check_key IS NOT NULL)"
+    t.bigint "admin_id", null: false
+    t.index ["admin_id", "check_key"], name: "index_dev_project_criteria_on_admin_id_and_check_key", unique: true, where: "(check_key IS NOT NULL)"
+    t.index ["admin_id"], name: "index_dev_project_criteria_on_admin_id"
+  end
+
+  create_table "invitations", force: :cascade do |t|
+    t.bigint "admin_id", null: false
+    t.bigint "researcher_id", null: false
+    t.string "email", null: false
+    t.string "token_digest", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "accepted_at"
+    t.datetime "revoked_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["admin_id"], name: "index_invitations_on_admin_id"
+    t.index ["researcher_id"], name: "index_invitations_on_researcher_id"
+    t.index ["token_digest"], name: "index_invitations_on_token_digest", unique: true
+  end
+
+  create_table "refresh_tokens", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "token_digest", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "revoked_at"
+    t.string "user_agent"
+    t.string "ip_address"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["token_digest"], name: "index_refresh_tokens_on_token_digest", unique: true
+    t.index ["user_id"], name: "index_refresh_tokens_on_user_id"
   end
 
   create_table "researcher_achievements", force: :cascade do |t|
@@ -180,9 +221,11 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_11_120000) do
     t.text "orcid_id"
     t.text "openalex_id"
     t.string "github"
+    t.bigint "admin_id", null: false
+    t.index ["admin_id", "openalex_id"], name: "index_researchers_on_admin_id_and_openalex_id"
+    t.index ["admin_id", "orcid_id"], name: "index_researchers_on_admin_id_and_orcid_id", unique: true, where: "(orcid_id IS NOT NULL)"
+    t.index ["admin_id"], name: "index_researchers_on_admin_id"
     t.index ["deleted_at"], name: "index_researchers_on_deleted_at"
-    t.index ["openalex_id"], name: "index_researchers_on_openalex_id"
-    t.index ["orcid_id"], name: "index_researchers_on_orcid_id", unique: true
   end
 
   create_table "researchers_teams", force: :cascade do |t|
@@ -222,17 +265,45 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_11_120000) do
     t.datetime "updated_at", null: false
     t.datetime "deleted_at"
     t.string "github_repo_url"
+    t.bigint "admin_id", null: false
+    t.index ["admin_id"], name: "index_teams_on_admin_id"
     t.index ["deleted_at"], name: "index_teams_on_deleted_at"
     t.index ["leader_id"], name: "index_teams_on_leader_id"
+  end
+
+  create_table "users", force: :cascade do |t|
+    t.string "email", null: false
+    t.string "password_digest", null: false
+    t.string "role", default: "admin", null: false
+    t.bigint "admin_id"
+    t.bigint "researcher_id"
+    t.string "full_name"
+    t.boolean "is_active", default: true, null: false
+    t.datetime "last_sign_in_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["admin_id"], name: "index_users_on_admin_id"
+    t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["researcher_id"], name: "index_users_on_researcher_id", unique: true, where: "(researcher_id IS NOT NULL)"
   end
 
   add_foreign_key "achievement_field_answers", "achievement_fields"
   add_foreign_key "achievement_field_answers", "achievements"
   add_foreign_key "achievement_fields", "achievement_types"
+  add_foreign_key "achievement_participations", "users", column: "admin_id"
+  add_foreign_key "achievement_results", "users", column: "admin_id"
+  add_foreign_key "achievement_statuses", "users", column: "admin_id"
+  add_foreign_key "achievement_types", "users", column: "admin_id"
   add_foreign_key "achievements", "achievement_participations"
   add_foreign_key "achievements", "achievement_results"
   add_foreign_key "achievements", "achievement_statuses"
   add_foreign_key "achievements", "achievement_types"
+  add_foreign_key "app_settings", "users", column: "admin_id"
+  add_foreign_key "dev_employee_activity_types", "users", column: "admin_id"
+  add_foreign_key "dev_project_criteria", "users", column: "admin_id"
+  add_foreign_key "invitations", "researchers"
+  add_foreign_key "invitations", "users", column: "admin_id"
+  add_foreign_key "refresh_tokens", "users"
   add_foreign_key "researcher_achievements", "achievements"
   add_foreign_key "researcher_achievements", "researchers"
   add_foreign_key "researcher_activity_details", "researchers"
@@ -240,6 +311,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_11_120000) do
   add_foreign_key "researcher_dev_activities", "dev_employee_activity_types"
   add_foreign_key "researcher_dev_activities", "researchers"
   add_foreign_key "researcher_dev_activities", "teams"
+  add_foreign_key "researchers", "users", column: "admin_id"
   add_foreign_key "researchers_teams", "researchers"
   add_foreign_key "researchers_teams", "teams"
   add_foreign_key "team_dev_activities", "dev_employee_activity_types"
@@ -247,4 +319,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_11_120000) do
   add_foreign_key "team_dev_criteria", "dev_project_criteria"
   add_foreign_key "team_dev_criteria", "teams"
   add_foreign_key "teams", "researchers", column: "leader_id"
+  add_foreign_key "teams", "users", column: "admin_id"
+  add_foreign_key "users", "researchers"
+  add_foreign_key "users", "users", column: "admin_id"
 end

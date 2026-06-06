@@ -1,50 +1,15 @@
 module Api
   module V1
     class ResearchersController < BaseController
+      before_action :set_researcher, only: %i[show update destroy]
+
       def list
         result = Researchers::ListCommand.call(params)
         render_result(result)
       end
 
       def show
-        includes_list = [
-          :researcher_dev_activities,
-          achievements: [
-            { achievement_type: :achievement_fields },
-            :achievement_status,
-            :achievement_result,
-            :achievement_participation,
-            :achievement_field_answers
-          ]
-        ]
-
-        # Guard against migration not yet applied
-        if ActiveRecord::Base.connection.table_exists?(:researcher_activity_details)
-          includes_list.unshift(:researcher_activity_details)
-        end
-
-        researcher = Researcher.includes(*includes_list).find(params[:id])
-
-        json_includes = {
-          researcher_dev_activities: { include: :dev_employee_activity_type },
-          achievements: {
-            include: [
-              { achievement_type: { include: :achievement_fields } },
-              :achievement_status,
-              :achievement_result,
-              :achievement_participation,
-              :achievement_field_answers
-            ]
-          }
-        }
-
-        if ActiveRecord::Base.connection.table_exists?(:researcher_activity_details)
-          json_includes[:researcher_activity_details] = {}
-        end
-
-        render json: researcher.as_json(include: json_includes)
-      rescue ActiveRecord::RecordNotFound
-        render_failure({ type: :not_found, message: "Researcher not found" })
+        render json: researcher_json(@researcher)
       end
 
       def create
@@ -57,7 +22,7 @@ module Api
       end
 
       def update
-        result = Researchers::UpdateCommand.call(params[:id], researcher_params.to_h)
+        result = Researchers::UpdateCommand.call(@researcher.id, researcher_params.to_h)
         if result.success?
           render json: researcher_json(result.value!)
         else
@@ -66,7 +31,7 @@ module Api
       end
 
       def destroy
-        result = Researchers::DestroyCommand.call(params[:id])
+        result = Researchers::DestroyCommand.call(@researcher.id)
         render_result(result, status_on_success: :no_content)
       end
 
@@ -80,6 +45,12 @@ module Api
       end
 
       private
+
+      def set_researcher
+        @researcher = Researcher.kept.for_current_admin.find(params[:id])
+      rescue ActiveRecord::RecordNotFound
+        render_failure({ type: :not_found, message: "Researcher not found" })
+      end
 
       def researcher_json(researcher)
         researcher.as_json(include: {
@@ -108,4 +79,3 @@ module Api
     end
   end
 end
-

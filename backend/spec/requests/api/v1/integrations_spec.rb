@@ -3,7 +3,7 @@
 require 'rails_helper'
 
 RSpec.describe 'api/v1/integrations', type: :request do
-  let(:headers) { { 'Content-Type' => 'application/json', 'Accept' => 'application/json' } }
+  let(:headers) { { 'Content-Type' => 'application/json', 'Accept' => 'application/json' }.merge(json_auth_headers) }
 
   describe 'POST /api/v1/integrations/save_achievements' do
     context 'with empty arrays' do

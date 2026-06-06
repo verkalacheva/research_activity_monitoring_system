@@ -2,6 +2,7 @@
 
 FactoryBot.define do
   factory :achievement_type do
+    admin { RequestAuthTenant.admin || association(:user) }
     sequence(:title) { |n| "Тип достижения #{n}" }
     points { 1.0 }
 

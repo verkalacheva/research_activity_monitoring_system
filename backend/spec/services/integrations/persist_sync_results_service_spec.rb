@@ -66,6 +66,8 @@ def _make_ar_stub(name)
       def find_by(*) = nil
       def all        = []
       def first      = nil
+      def for_admin_id(_id) = self
+      def find(&block) = block ? all.find(&block) : nil
     end
     attr_accessor :title, :points, :achievement_fields, :check_key
   end
@@ -210,6 +212,7 @@ RSpec.describe Integrations::PersistSyncResultsService do
     let(:default_s) { make_type(AchievementStatus, title: 'Не указано') }
 
     before do
+      allow(AchievementStatus).to receive(:for_admin_id).and_return(AchievementStatus)
       allow(AchievementStatus).to receive(:find_by).with(title: 'Scopus/Web of Science').and_return(scopus_s)
       allow(AchievementStatus).to receive(:find_by).with(title: 'Международный').and_return(intl_s)
       allow(AchievementStatus).to receive(:find_by).with(title: 'ВАК').and_return(vak_s)
@@ -219,39 +222,39 @@ RSpec.describe Integrations::PersistSyncResultsService do
     end
 
     it 'matches Scopus' do
-      expect(svc.send(:map_status, 'Article in Scopus', nil, nil)).to eq scopus_s
+      expect(svc.send(:map_status, 'Article in Scopus', nil, nil, admin_id: nil)).to eq scopus_s
     end
 
     it 'matches Web of Science (wos)' do
-      expect(svc.send(:map_status, 'WoS-indexed paper', nil, nil)).to eq scopus_s
+      expect(svc.send(:map_status, 'WoS-indexed paper', nil, nil, admin_id: nil)).to eq scopus_s
     end
 
     it 'matches Elsevier in URL' do
-      expect(svc.send(:map_status, 'article', nil, 'https://elsevier.com/paper')).to eq scopus_s
+      expect(svc.send(:map_status, 'article', nil, 'https://elsevier.com/paper', admin_id: nil)).to eq scopus_s
     end
 
     it 'matches international keyword' do
-      expect(svc.send(:map_status, 'International conference', nil, nil)).to eq intl_s
+      expect(svc.send(:map_status, 'International conference', nil, nil, admin_id: nil)).to eq intl_s
     end
 
     it 'matches международн (Russian)' do
-      expect(svc.send(:map_status, 'Международная конференция', nil, nil)).to eq intl_s
+      expect(svc.send(:map_status, 'Международная конференция', nil, nil, admin_id: nil)).to eq intl_s
     end
 
     it 'matches ВАК' do
-      expect(svc.send(:map_status, 'Журнал ВАК', nil, nil)).to eq vak_s
+      expect(svc.send(:map_status, 'Журнал ВАК', nil, nil, admin_id: nil)).to eq vak_s
     end
 
     it 'matches RSCI' do
-      expect(svc.send(:map_status, nil, 'RSCI journal', nil)).to eq rsci_s
+      expect(svc.send(:map_status, nil, 'RSCI journal', nil, admin_id: nil)).to eq rsci_s
     end
 
     it 'matches university keyword' do
-      expect(svc.send(:map_status, 'университет публикация', nil, nil)).to eq univ_s
+      expect(svc.send(:map_status, 'университет публикация', nil, nil, admin_id: nil)).to eq univ_s
     end
 
     it 'returns default when no keyword matches' do
-      expect(svc.send(:map_status, 'some random title', nil, nil)).to eq default_s
+      expect(svc.send(:map_status, 'some random title', nil, nil, admin_id: nil)).to eq default_s
     end
   end
 
@@ -267,6 +270,7 @@ RSpec.describe Integrations::PersistSyncResultsService do
     let(:default_r) { make_type(AchievementResult, title: 'Участие') }
 
     before do
+      allow(AchievementResult).to receive(:for_admin_id).and_return(AchievementResult)
       allow(AchievementResult).to receive(:find_by).with(title: 'Q1 (K1 для RSCI)').and_return(q1)
       allow(AchievementResult).to receive(:find_by).with(title: 'Q2 (K2)').and_return(q2)
       allow(AchievementResult).to receive(:find_by).with(title: 'Победа').and_return(win)
@@ -275,23 +279,23 @@ RSpec.describe Integrations::PersistSyncResultsService do
     end
 
     it 'returns Q1' do
-      expect(svc.send(:map_result, 'Journal Q1 paper', nil)).to eq q1
+      expect(svc.send(:map_result, 'Journal Q1 paper', nil, admin_id: nil)).to eq q1
     end
 
     it 'returns Q2' do
-      expect(svc.send(:map_result, 'Journal', 'ranked Q2')).to eq q2
+      expect(svc.send(:map_result, 'Journal', 'ranked Q2', admin_id: nil)).to eq q2
     end
 
     it 'returns Победа for winner keyword' do
-      expect(svc.send(:map_result, 'Best paper winner 2023', nil)).to eq win
+      expect(svc.send(:map_result, 'Best paper winner 2023', nil, admin_id: nil)).to eq win
     end
 
     it 'returns Победа for 1 место' do
-      expect(svc.send(:map_result, '1 место на хакатоне', nil)).to eq win
+      expect(svc.send(:map_result, '1 место на хакатоне', nil, admin_id: nil)).to eq win
     end
 
     it 'returns Участие as default' do
-      expect(svc.send(:map_result, 'Some presentation', 'description')).to eq default_r
+      expect(svc.send(:map_result, 'Some presentation', 'description', admin_id: nil)).to eq default_r
     end
   end
 
@@ -305,29 +309,30 @@ RSpec.describe Integrations::PersistSyncResultsService do
     let(:individual) { make_type(AchievementParticipation, title: 'Индивидуальный') }
 
     before do
+      allow(AchievementParticipation).to receive(:for_admin_id).and_return(AchievementParticipation)
       allow(AchievementParticipation).to receive(:find_by).with(title: 'Коллективный').and_return(collective)
       allow(AchievementParticipation).to receive(:find_by).with(title: 'Индивидуальный').and_return(individual)
       allow(AchievementParticipation).to receive(:first).and_return(individual)
     end
 
     it 'returns Коллективный when author_count > 1' do
-      expect(svc.send(:map_participation, 'title', 3, nil, nil)).to eq collective
+      expect(svc.send(:map_participation, 'title', 3, nil, nil, admin_id: nil)).to eq collective
     end
 
     it 'returns Коллективный for et al' do
-      expect(svc.send(:map_participation, 'title', 1, 'Smith et al', nil)).to eq collective
+      expect(svc.send(:map_participation, 'title', 1, 'Smith et al', nil, admin_id: nil)).to eq collective
     end
 
     it 'returns Коллективный when title has semicolon' do
-      expect(svc.send(:map_participation, 'Иванов; Петров', 1, nil, nil)).to eq collective
+      expect(svc.send(:map_participation, 'Иванов; Петров', 1, nil, nil, admin_id: nil)).to eq collective
     end
 
     it 'returns Индивидуальный for single author' do
-      expect(svc.send(:map_participation, 'Solo paper', 1, 'Clean description', nil)).to eq individual
+      expect(svc.send(:map_participation, 'Solo paper', 1, 'Clean description', nil, admin_id: nil)).to eq individual
     end
 
     it 'returns Индивидуальный when author_count is nil' do
-      expect(svc.send(:map_participation, 'Solo paper', nil, nil, nil)).to eq individual
+      expect(svc.send(:map_participation, 'Solo paper', nil, nil, nil, admin_id: nil)).to eq individual
     end
   end
 
@@ -346,6 +351,7 @@ RSpec.describe Integrations::PersistSyncResultsService do
     let(:t_other)      { make_type(AchievementType, title: 'Другое') }
 
     before do
+      allow(AchievementType).to receive(:for_admin_id).and_return(AchievementType)
       allow(AchievementType).to receive(:find_by).and_return(nil)
       allow(AchievementType).to receive(:find_by).with(title: 'Другое').and_return(t_other)
       allow(AchievementType).to receive(:first).and_return(t_other)
@@ -355,54 +361,54 @@ RSpec.describe Integrations::PersistSyncResultsService do
     end
 
     it 'returns Другое when raw_type is nil' do
-      expect(svc.send(:map_type, nil)).to eq t_other
+      expect(svc.send(:map_type, nil, admin_id: nil)).to eq t_other
     end
 
     it 'returns exact DB match when found' do
       allow(AchievementType).to receive(:find_by).with('lower(title) = ?', 'статья').and_return(t_article)
-      expect(svc.send(:map_type, 'Статья')).to eq t_article
+      expect(svc.send(:map_type, 'Статья', admin_id: nil)).to eq t_article
     end
 
     it 'maps article keyword → Статья' do
       allow(AchievementType).to receive(:find_by).with('lower(title) = ?', 'journal-article').and_return(nil)
       allow(AchievementType).to receive(:find_by).with(title: 'Статья').and_return(t_article)
-      expect(svc.send(:map_type, 'journal-article')).to eq t_article
+      expect(svc.send(:map_type, 'journal-article', admin_id: nil)).to eq t_article
     end
 
     it 'maps conference keyword → Конференция' do
       allow(AchievementType).to receive(:find_by).with('lower(title) = ?', 'conference presentation').and_return(nil)
       allow(AchievementType).to receive(:find_by).with(title: 'Конференция').and_return(t_conference)
-      expect(svc.send(:map_type, 'conference presentation')).to eq t_conference
+      expect(svc.send(:map_type, 'conference presentation', admin_id: nil)).to eq t_conference
     end
 
     it 'maps grant keyword → Грант' do
       allow(AchievementType).to receive(:find_by).with('lower(title) = ?', 'research grant').and_return(nil)
       allow(AchievementType).to receive(:find_by).with(title: 'Грант').and_return(t_grant)
-      expect(svc.send(:map_type, 'research grant')).to eq t_grant
+      expect(svc.send(:map_type, 'research grant', admin_id: nil)).to eq t_grant
     end
 
     it 'maps hackathon keyword → Хакатон' do
       allow(AchievementType).to receive(:find_by).with('lower(title) = ?', 'hackathon 2023').and_return(nil)
       allow(AchievementType).to receive(:find_by).with(title: 'Хакатон').and_return(t_hackathon)
-      expect(svc.send(:map_type, 'hackathon 2023')).to eq t_hackathon
+      expect(svc.send(:map_type, 'hackathon 2023', admin_id: nil)).to eq t_hackathon
     end
 
     it 'maps scholarship keyword → Стипендия' do
       # 'scholarship award' would also match /award/ → Хакатон; use pure stipend keyword
       allow(AchievementType).to receive(:find_by).with('lower(title) = ?', 'university stipend').and_return(nil)
       allow(AchievementType).to receive(:find_by).with(title: 'Стипендия').and_return(t_stipend)
-      expect(svc.send(:map_type, 'university stipend')).to eq t_stipend
+      expect(svc.send(:map_type, 'university stipend', admin_id: nil)).to eq t_stipend
     end
 
     it 'maps internship keyword → Стажировка' do
       allow(AchievementType).to receive(:find_by).with('lower(title) = ?', 'internship at itmo').and_return(nil)
       allow(AchievementType).to receive(:find_by).with(title: 'Стажировка').and_return(t_internship)
-      expect(svc.send(:map_type, 'internship at ITMO')).to eq t_internship
+      expect(svc.send(:map_type, 'internship at ITMO', admin_id: nil)).to eq t_internship
     end
 
     it 'maps unknown string → Другое' do
       allow(AchievementType).to receive(:find_by).with('lower(title) = ?', 'some unknown type xyz').and_return(nil)
-      expect(svc.send(:map_type, 'some unknown type xyz')).to eq t_other
+      expect(svc.send(:map_type, 'some unknown type xyz', admin_id: nil)).to eq t_other
     end
   end
 
@@ -443,19 +449,25 @@ RSpec.describe Integrations::PersistSyncResultsService do
     subject(:svc) { described_class.new(achievements: params, researcher_dev_data: [], team_dev_data: []) }
 
     before do
+      allow(svc).to receive(:tenant_researcher).and_return(double('researcher', admin_id: 1))
+
       allow(Achievement).to receive(:transaction).and_yield
       allow(Achievement).to receive(:new).and_return(saved_record)
       allow(ResearcherAchievement).to receive(:create!)
 
+      allow(AchievementType).to receive(:for_admin_id).and_return(AchievementType)
       allow(AchievementType).to receive(:find_by).and_return(nil)
       allow(AchievementType).to receive(:find_by).with('lower(title) = ?', 'статья').and_return(t_obj)
       allow(AchievementType).to receive(:find_by).with(title: 'Другое').and_return(t_obj)
       allow(AchievementType).to receive(:all).and_return([t_obj])
       allow(AchievementType).to receive(:first).and_return(t_obj)
 
+      allow(AchievementStatus).to receive(:for_admin_id).and_return(AchievementStatus)
       allow(AchievementStatus).to receive(:find_by).and_return(s_obj)
+      allow(AchievementResult).to receive(:for_admin_id).and_return(AchievementResult)
       allow(AchievementResult).to receive(:find_by).and_return(r_obj)
       allow(AchievementResult).to receive(:first).and_return(r_obj)
+      allow(AchievementParticipation).to receive(:for_admin_id).and_return(AchievementParticipation)
       allow(AchievementParticipation).to receive(:find_by).and_return(p_obj)
       allow(AchievementParticipation).to receive(:first).and_return(p_obj)
     end

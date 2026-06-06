@@ -44,5 +44,19 @@ RSpec.configure do |config|
   config.around(:each) do |example|
     DatabaseCleaner.cleaning { example.run }
   end
+
+  # Inject Authorization header parameter into rswag operation metadata so that
+  # let(:Authorization) from AuthRequestHelpers is picked up by run_test!
+  config.before(:each) do |example|
+    next unless example.metadata[:operation]
+    next if example.metadata[:skip_auth_headers]
+
+    existing_params = Array(example.metadata.dig(:operation, :parameters))
+    next if existing_params.any? { |p| p[:name].to_s == 'Authorization' }
+
+    example.metadata[:operation] = example.metadata[:operation].merge(
+      parameters: [{ name: :Authorization, in: :header, type: :string, required: false }] + existing_params
+    )
+  end
 end
 

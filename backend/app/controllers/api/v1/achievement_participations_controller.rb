@@ -7,7 +7,7 @@ module Api
       end
 
       def show
-        participation = AchievementParticipation.find(params[:id])
+        participation = find_tenant_record!(AchievementParticipation, params[:id])
         render json: participation
       rescue ActiveRecord::RecordNotFound
         render_failure({ type: :not_found, message: "Achievement participation not found" })

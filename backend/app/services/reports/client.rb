@@ -23,10 +23,16 @@ module Reports
     def self.generate(params)
       host = ENV.fetch('ANALYTICS_SERVICE_HOST', 'analytics:50051')
       stub = analytics_stub(host)
+
+      filters = Array(params[:filters]).map { |f| f.transform_keys(&:to_sym) }
+      filters.reject! { |f| f[:field].to_s == 'admin_id' }
+      if Current.admin_id.present?
+        filters << { field: 'admin_id', operator: 'eq', value: Current.admin_id.to_s }
+      end
       
       request = GrpcReports::ReportRequest.new({
         report_type: params[:report_type].to_s,
-        filters: params[:filters]&.map { |f| GrpcReports::Filter.new(f.transform_keys(&:to_sym)) } || [],
+        filters: filters.map { |f| GrpcReports::Filter.new(f.transform_keys(&:to_sym)) },
         sorts: params[:sorts]&.map { |s| GrpcReports::Sort.new(s.transform_keys(&:to_sym)) } || [],
         limit: params[:limit].to_i,
         offset: params[:offset].to_i,

@@ -24,15 +24,8 @@ func TestExistsByOrcidID_Found(t *testing.T) {
 	db := testdb.Open(t)
 	testdb.EnsureResearchersTable(t, db)
 	testdb.TruncateResearchers(t, db)
-
-	_, err := db.Exec(
-		`INSERT INTO researchers (orcid_id, openalex_id, deleted_at, created_at, updated_at)
-		 VALUES ($1, NULL, NULL, NOW(), NOW())`,
-		"0000-0001-2345-6789",
-	)
-	if err != nil {
-		t.Fatalf("insert: %v", err)
-	}
+	adminID := testdb.InsertAdmin(t, db, "exists-orcid@test")
+	testdb.InsertResearcherORCID(t, db, adminID, "0000-0001-2345-6789")
 
 	repo := NewResearcherRepository(db)
 	exists, err := repo.ExistsByOrcidID("0000-0001-2345-6789")
@@ -63,11 +56,12 @@ func TestExistsByOrcidID_SoftDeletedIgnored(t *testing.T) {
 	db := testdb.Open(t)
 	testdb.EnsureResearchersTable(t, db)
 	testdb.TruncateResearchers(t, db)
+	adminID := testdb.InsertAdmin(t, db, "soft-del@test")
 
 	_, err := db.Exec(
-		`INSERT INTO researchers (orcid_id, openalex_id, deleted_at, created_at, updated_at)
-		 VALUES ($1, NULL, NOW(), NOW(), NOW())`,
-		"0000-0001-9999-0001",
+		`INSERT INTO researchers (orcid_id, openalex_id, admin_id, deleted_at, created_at, updated_at)
+		 VALUES ($1, NULL, $2, NOW(), NOW(), NOW())`,
+		"0000-0001-9999-0001", adminID,
 	)
 	if err != nil {
 		t.Fatalf("insert: %v", err)
@@ -87,11 +81,12 @@ func TestExistsByOpenAlexID_Found(t *testing.T) {
 	db := testdb.Open(t)
 	testdb.EnsureResearchersTable(t, db)
 	testdb.TruncateResearchers(t, db)
+	adminID := testdb.InsertAdmin(t, db, "openalex-exists@test")
 
 	_, err := db.Exec(
-		`INSERT INTO researchers (orcid_id, openalex_id, deleted_at, created_at, updated_at)
-		 VALUES (NULL, $1, NULL, NOW(), NOW())`,
-		"A1234567890",
+		`INSERT INTO researchers (orcid_id, openalex_id, admin_id, deleted_at, created_at, updated_at)
+		 VALUES (NULL, $1, $2, NULL, NOW(), NOW())`,
+		"A1234567890", adminID,
 	)
 	if err != nil {
 		t.Fatalf("insert: %v", err)
@@ -111,25 +106,14 @@ func TestGetAllWithExternalID_Orcid(t *testing.T) {
 	db := testdb.Open(t)
 	testdb.EnsureResearchersTable(t, db)
 	testdb.TruncateResearchers(t, db)
+	adminID := testdb.InsertAdmin(t, db, "orcid-all@test")
 
-	for _, pair := range []struct {
-		orcid, openalex string
-	}{
-		{"0000-0001-2345-6789", ""},
-		{"0000-0002-3456-7890", ""},
-	} {
-		_, err := db.Exec(
-			`INSERT INTO researchers (orcid_id, openalex_id, deleted_at, created_at, updated_at)
-			 VALUES ($1, NULLIF($2,''), NULL, NOW(), NOW())`,
-			pair.orcid, pair.openalex,
-		)
-		if err != nil {
-			t.Fatalf("insert %s: %v", pair.orcid, err)
-		}
+	for _, orcid := range []string{"0000-0001-2345-6789", "0000-0002-3456-7890"} {
+		testdb.InsertResearcherORCID(t, db, adminID, orcid)
 	}
 
 	repo := NewResearcherRepository(db)
-	researchers, err := repo.GetAllWithExternalID("orcid")
+	researchers, err := repo.GetAllWithExternalID("orcid", adminID)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -152,18 +136,19 @@ func TestGetAllWithExternalID_OpenAlex(t *testing.T) {
 	db := testdb.Open(t)
 	testdb.EnsureResearchersTable(t, db)
 	testdb.TruncateResearchers(t, db)
+	adminID := testdb.InsertAdmin(t, db, "openalex-all@test")
 
 	_, err := db.Exec(
-		`INSERT INTO researchers (orcid_id, openalex_id, deleted_at, created_at, updated_at)
-		 VALUES (NULL, $1, NULL, NOW(), NOW())`,
-		"A1234567890",
+		`INSERT INTO researchers (orcid_id, openalex_id, admin_id, deleted_at, created_at, updated_at)
+		 VALUES (NULL, $1, $2, NULL, NOW(), NOW())`,
+		"A1234567890", adminID,
 	)
 	if err != nil {
 		t.Fatalf("insert: %v", err)
 	}
 
 	repo := NewResearcherRepository(db)
-	researchers, err := repo.GetAllWithExternalID("openalex")
+	researchers, err := repo.GetAllWithExternalID("openalex", adminID)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -179,26 +164,20 @@ func TestGetAllWithExternalID_All(t *testing.T) {
 	db := testdb.Open(t)
 	testdb.EnsureResearchersTable(t, db)
 	testdb.TruncateResearchers(t, db)
+	adminID := testdb.InsertAdmin(t, db, "all-providers@test")
 
+	testdb.InsertResearcherORCID(t, db, adminID, "0000-0001-1111-1111")
 	_, err := db.Exec(
-		`INSERT INTO researchers (orcid_id, openalex_id, deleted_at, created_at, updated_at)
-		 VALUES ($1, NULL, NULL, NOW(), NOW())`,
-		"0000-0001-1111-1111",
-	)
-	if err != nil {
-		t.Fatalf("insert1: %v", err)
-	}
-	_, err = db.Exec(
-		`INSERT INTO researchers (orcid_id, openalex_id, deleted_at, created_at, updated_at)
-		 VALUES (NULL, $1, NULL, NOW(), NOW())`,
-		"A9876543210",
+		`INSERT INTO researchers (orcid_id, openalex_id, admin_id, deleted_at, created_at, updated_at)
+		 VALUES (NULL, $1, $2, NULL, NOW(), NOW())`,
+		"A9876543210", adminID,
 	)
 	if err != nil {
 		t.Fatalf("insert2: %v", err)
 	}
 
 	repo := NewResearcherRepository(db)
-	researchers, err := repo.GetAllWithExternalID("all")
+	researchers, err := repo.GetAllWithExternalID("all", adminID)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -211,7 +190,7 @@ func TestGetAllWithExternalID_UnsupportedProvider(t *testing.T) {
 	db := testdb.Open(t)
 	testdb.EnsureResearchersTable(t, db)
 	repo := NewResearcherRepository(db)
-	_, err := repo.GetAllWithExternalID("github")
+	_, err := repo.GetAllWithExternalID("github", 1)
 	if err == nil {
 		t.Fatal("expected error for unsupported provider, got nil")
 	}
@@ -221,9 +200,10 @@ func TestGetAllWithExternalID_EmptyResult(t *testing.T) {
 	db := testdb.Open(t)
 	testdb.EnsureResearchersTable(t, db)
 	testdb.TruncateResearchers(t, db)
+	adminID := testdb.InsertAdmin(t, db, "empty@test")
 
 	repo := NewResearcherRepository(db)
-	researchers, err := repo.GetAllWithExternalID("orcid")
+	researchers, err := repo.GetAllWithExternalID("orcid", adminID)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

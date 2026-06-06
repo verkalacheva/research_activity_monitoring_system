@@ -5,9 +5,23 @@ class IntegrationSyncJob
 
   sidekiq_options queue: :integrations, retry: 1
 
-  def perform(job_id, payload)
-    return if job_id.blank?
+  def perform(job_id, admin_id, payload)
+    return if job_id.blank? || admin_id.blank?
 
+    admin = User.active.find_by(id: admin_id)
+    unless admin
+      Rails.logger.error "[IntegrationSyncJob] admin #{admin_id} not found for job #{job_id}"
+      return
+    end
+
+    TenantContext.with_user(admin) do
+      run_sync(job_id, payload)
+    end
+  end
+
+  private
+
+  def run_sync(job_id, payload)
     Integrations::MergeIntegrationSyncJobStatusCommand.call(
       job_id: job_id,
       attrs: { 'status' => 'running' }
@@ -85,8 +99,6 @@ class IntegrationSyncJob
       )
     end
   end
-
-  private
 
   def extract_sync_failure(fv)
     return [fv.to_s, false] unless fv.is_a?(Hash)

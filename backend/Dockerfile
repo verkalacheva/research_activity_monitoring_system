@@ -3,17 +3,23 @@
 FROM ruby:3.2.2-slim AS builder
 
 RUN apt-get update -qq && \
-    apt-get install -y --no-install-recommends build-essential libpq-dev && \
+    apt-get install -y --no-install-recommends \
+      build-essential \
+      libpq-dev \
+      libyaml-dev \
+      libffi-dev \
+      pkg-config \
+      git && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY Gemfile ./
 RUN gem install bundler -v 2.4.22 && \
     bundle config set --local without 'development test' && \
     bundle config set --local path vendor/bundle && \
     bundle config set --local cache_path '/bundle_cache'
 
+COPY Gemfile Gemfile.lock ./
 RUN --mount=type=cache,target=/bundle_cache \
     bundle install --jobs 4 --retry 5
 

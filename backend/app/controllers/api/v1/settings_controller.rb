@@ -11,7 +11,7 @@ module Api
       ].freeze
 
       def show
-        settings = AppSetting.where(key: ALLOWED_KEYS).each_with_object({}) do |s, hash|
+        settings = AppSetting.for_current_admin.where(key: ALLOWED_KEYS).each_with_object({}) do |s, hash|
           hash[s.key] = s.value
         end
         render json: { settings: settings }
@@ -24,7 +24,8 @@ module Api
         settings_params.each do |key, value|
           next unless ALLOWED_KEYS.include?(key)
 
-          record = AppSetting.find_or_initialize_by(key: key)
+          record = AppSetting.find_or_initialize_by(key: key, admin_id: Current.admin_id)
+          record.admin_id = Current.admin_id
           record.value = value.presence
           record.save!
           updated[key] = record.value

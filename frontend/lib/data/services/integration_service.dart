@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import 'package:research_activity_monitoring_system/data/services/api_client.dart';
 
 import 'package:research_activity_monitoring_system/core/config.dart';
 import 'package:research_activity_monitoring_system/data/models/models.dart';
@@ -16,7 +16,7 @@ class IntegrationService {
   static const Duration _maxWait = Duration(hours: 2);
 
   Future<GitHubCheckKeysRegistry> getGithubCheckKeys() async {
-    final response = await http.get(Uri.parse('$baseUrl/selectors/github_check_keys'));
+    final response = await ApiClient.get(Uri.parse('$baseUrl/selectors/github_check_keys'));
     if (response.statusCode == 200) {
       return GitHubCheckKeysRegistry.fromJson(json.decode(response.body));
     } else {
@@ -35,78 +35,68 @@ class IntegrationService {
     int? researcherId,
     int? teamId,
     String? scope,
-    http.Client? httpClient,
     bool Function()? shouldAbort,
     void Function(String jobId)? onJobCreated,
   }) async {
-    final client = httpClient ?? http.Client();
-    final closeClient = httpClient == null;
     final deadline = DateTime.now().add(_maxWait);
 
-    try {
-      final bodyMap = <String, dynamic>{
-        'provider': provider,
-        if (url != null && url.isNotEmpty) 'url': url,
-        if (researcherId != null) 'researcher_id': researcherId,
-        if (teamId != null) 'team_id': teamId,
-        if (scope != null && scope.isNotEmpty) 'scope': scope,
-      };
+    final bodyMap = <String, dynamic>{
+      'provider': provider,
+      if (url != null && url.isNotEmpty) 'url': url,
+      if (researcherId != null) 'researcher_id': researcherId,
+      if (teamId != null) 'team_id': teamId,
+      if (scope != null && scope.isNotEmpty) 'scope': scope,
+    };
 
-      final createResp = await client.post(
-        Uri.parse('$baseUrl/integration_sync_jobs'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(bodyMap),
-      );
+    final createResp = await ApiClient.post(
+      Uri.parse('$baseUrl/integration_sync_jobs'),
+      body: jsonEncode(bodyMap),
+    );
 
-      if (createResp.statusCode != 202 && createResp.statusCode != 200 && createResp.statusCode != 201) {
-        String errorMsg = 'Ошибка постановки задачи (${createResp.statusCode})';
-        var isRateLimit = false;
-        try {
-          final body = json.decode(createResp.body) as Map<String, dynamic>?;
-          if (body?['error'] != null) errorMsg = body!['error'].toString();
-          isRateLimit = body?['rate_limit'] == true;
-        } catch (_) {}
-        if (isRateLimit) throw Exception('rate_limit:$errorMsg');
-        throw Exception(errorMsg);
-      }
-
-      final createJson = json.decode(createResp.body) as Map<String, dynamic>;
-      final jobId = createJson['job_id'] as String?;
-      if (jobId == null || jobId.isEmpty) {
-        throw Exception('Сервер не вернул job_id');
-      }
-
-      onJobCreated?.call(jobId);
-
-      final remaining = deadline.difference(DateTime.now());
-      final timeout = remaining.isNegative ? Duration.zero : remaining;
-
+    if (createResp.statusCode != 202 && createResp.statusCode != 200 && createResp.statusCode != 201) {
+      String errorMsg = 'Ошибка постановки задачи (${createResp.statusCode})';
+      var isRateLimit = false;
       try {
-        return await IntegrationSyncJobSocket.waitForCompletion(
-          wsUrl: '${AppConfig.wsBase}/cable',
-          jobId: jobId,
-          timeout: timeout,
-          shouldAbort: shouldAbort,
-        );
-      } on SyncPreviewAborted {
-        rethrow;
-      } catch (e, st) {
-        debugPrint('Integration sync: WebSocket lost ($e). Falling back to HTTP polling. $st');
-        return await _pollIntegrationSyncJob(
-          client: client,
-          jobId: jobId,
-          deadline: deadline,
-          shouldAbort: shouldAbort,
-        );
-      }
-    } finally {
-      if (closeClient) client.close();
+        final body = json.decode(createResp.body) as Map<String, dynamic>?;
+        if (body?['error'] != null) errorMsg = body!['error'].toString();
+        isRateLimit = body?['rate_limit'] == true;
+      } catch (_) {}
+      if (isRateLimit) throw Exception('rate_limit:$errorMsg');
+      throw Exception(errorMsg);
+    }
+
+    final createJson = json.decode(createResp.body) as Map<String, dynamic>;
+    final jobId = createJson['job_id'] as String?;
+    if (jobId == null || jobId.isEmpty) {
+      throw Exception('Сервер не вернул job_id');
+    }
+
+    onJobCreated?.call(jobId);
+
+    final remaining = deadline.difference(DateTime.now());
+    final timeout = remaining.isNegative ? Duration.zero : remaining;
+
+    try {
+      return await IntegrationSyncJobSocket.waitForCompletion(
+        wsUrl: '${AppConfig.wsBase}/cable',
+        jobId: jobId,
+        timeout: timeout,
+        shouldAbort: shouldAbort,
+      );
+    } on SyncPreviewAborted {
+      rethrow;
+    } catch (e, st) {
+      debugPrint('Integration sync: WebSocket lost ($e). Falling back to HTTP polling. $st');
+      return await _pollIntegrationSyncJob(
+        jobId: jobId,
+        deadline: deadline,
+        shouldAbort: shouldAbort,
+      );
     }
   }
 
   /// Ожидание завершения задачи по Redis-снимку (та же модель, что отдаётся по Action Cable).
   Future<List<dynamic>> _pollIntegrationSyncJob({
-    required http.Client client,
     required String jobId,
     required DateTime deadline,
     bool Function()? shouldAbort,
@@ -122,14 +112,7 @@ class IntegrationService {
         );
       }
 
-      http.Response resp;
-      try {
-        resp = await client.get(Uri.parse('$baseUrl/integration_sync_jobs/$jobId'));
-      } catch (e) {
-        debugPrint('Integration sync poll GET failed: $e');
-        await Future<void>.delayed(interval);
-        continue;
-      }
+      final resp = await ApiClient.get(Uri.parse('$baseUrl/integration_sync_jobs/$jobId'));
 
       if (resp.statusCode == 404) {
         throw Exception(
@@ -178,9 +161,8 @@ class IntegrationService {
     List<dynamic> researcherDevData = const [],
     List<dynamic> teamDevData = const [],
   }) async {
-    final response = await http.post(
+    final response = await ApiClient.post(
       Uri.parse('$baseUrl/integrations/save_achievements'),
-      headers: {'Content-Type': 'application/json'},
       body: json.encode({
         'achievements': achievements,
         'researcher_dev_data': researcherDevData,

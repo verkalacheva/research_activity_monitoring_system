@@ -13,12 +13,14 @@ import 'package:research_activity_monitoring_system/presentation/screens/researc
 class TeamDetailsScreen extends StatefulWidget {
   final Team team;
   final bool isEmbedded;
+  final bool readOnly;
   final Function(Team)? onTeamUpdated;
 
   const TeamDetailsScreen({
     super.key,
     required this.team,
     this.isEmbedded = false,
+    this.readOnly = false,
     this.onTeamUpdated,
   });
 
@@ -82,6 +84,10 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
         _initControllers();
       });
     }
+  }
+
+  bool _isReadOnly(BuildContext context) {
+    return widget.readOnly;
   }
 
   Future<void> _loadResearchers() async {
@@ -191,6 +197,13 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final readOnly = _isReadOnly(context);
+    if (readOnly && _isEditing) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _isEditing = false);
+      });
+    }
+
     final content = SingleChildScrollView(
       padding: const EdgeInsets.all(AppDimensions.paddingLarge),
       child: Form(
@@ -213,7 +226,7 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
                         )
                       : Text(_team.title, style: AppTextStyles.h1),
                 ),
-                if (widget.isEmbedded) ...[
+                if (widget.isEmbedded && !readOnly) ...[
                   const SizedBox(width: 8),
                   IconButton(
                     icon: Icon(_isEditing ? Icons.close : Icons.edit, color: AppColors.primary),
@@ -244,7 +257,9 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
                     ),
                   )
                 : _buildInfoRow('GitHub Repo:', _team.githubRepoUrl ?? 'Не указан',
-                    trailing: _team.githubRepoUrl != null && _team.githubRepoUrl!.isNotEmpty
+                    trailing: _team.githubRepoUrl != null &&
+                            _team.githubRepoUrl!.isNotEmpty &&
+                            !readOnly
                         ? IconButton(
                             icon: const Icon(Icons.sync, color: AppColors.primary),
                             onPressed: _showSyncDialog,
@@ -272,9 +287,9 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
                       onChanged: (value) => setState(() => _selectedLeaderId = value),
                     )
             else
-              _buildLeaderCard(),
+              _buildLeaderCard(readOnly),
             const SizedBox(height: AppDimensions.paddingLarge),
-            _buildCriteriaSection(),
+            _buildCriteriaSection(readOnly),
             if (!_isEditing && (_team.devCriteriaSum != null || _team.devActivitiesSum != null)) ...[
               const SizedBox(height: AppDimensions.paddingLarge),
               const Text('Оценка проекта (разработка):', style: AppTextStyles.h2),
@@ -311,7 +326,7 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
                   ? const Center(child: CircularProgressIndicator())
                   : _buildResearchersSelection()
             else
-              _buildResearchersList(),
+              _buildResearchersList(readOnly),
             if (_isEditing) ...[
               const SizedBox(height: AppDimensions.paddingExtraLarge),
               Center(
@@ -362,7 +377,7 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
     );
   }
 
-  Widget _buildLeaderCard() {
+  Widget _buildLeaderCard(bool readOnly) {
     if (_team.leader == null) {
       return const Card(
         child: Padding(
@@ -408,7 +423,10 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ResearcherProfileScreen(researcher: _team.leader!),
+              builder: (context) => ResearcherProfileScreen(
+                researcher: _team.leader!,
+                readOnly: readOnly,
+              ),
             ),
           );
         },
@@ -416,7 +434,7 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
     );
   }
 
-  Widget _buildResearchersList() {
+  Widget _buildResearchersList(bool readOnly) {
     if (_team.researchers == null || _team.researchers!.isEmpty) {
       return const Card(
         child: Padding(
@@ -470,7 +488,10 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ResearcherProfileScreen(researcher: researcher),
+                  builder: (context) => ResearcherProfileScreen(
+                    researcher: researcher,
+                    readOnly: readOnly,
+                  ),
                 ),
               );
             },
@@ -506,7 +527,7 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
     );
   }
 
-  Widget _buildCriteriaSection() {
+  Widget _buildCriteriaSection(bool readOnly) {
     final metCriteria = _team.devProjectCriteria ?? [];
 
     return Column(
@@ -516,7 +537,7 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
           children: [
             const Text('Критерии проекта:', style: AppTextStyles.h2),
             const Spacer(),
-            if (!_isEditing)
+            if (!_isEditing && !readOnly)
               TextButton.icon(
                 icon: const Icon(Icons.edit, size: 16),
                 label: const Text('Изменить'),

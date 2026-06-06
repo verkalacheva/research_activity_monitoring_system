@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
 
+import '../core/auth/auth_gate.dart';
+import '../core/auth/auth_notifier.dart';
 import '../core/l10n/l10n.dart';
 import '../core/theme/theme.dart';
-import '../presentation/screens/home/home_screen.dart';
 import '../presentation/widgets/sync_notification_bell.dart';
 
 /// Global navigator key so widgets outside the Navigator tree (e.g. the
@@ -34,13 +36,16 @@ class ResearchActivityApp extends StatelessWidget {
           Locale('ru', 'RU'),
         ],
         locale: const Locale('ru', 'RU'),
-        home: const HomeScreen(),
-        builder: (context, child) => Stack(
-          children: [
-            child!,
-            const SyncNotificationBell(),
-          ],
-        ),
+        home: const AuthGate(),
+        builder: (context, child) {
+          final auth = context.watch<AuthNotifier>();
+          return Stack(
+            children: [
+              child!,
+              if (auth.isAuthenticated) const SyncNotificationBell(),
+            ],
+          );
+        },
       ),
     );
   }

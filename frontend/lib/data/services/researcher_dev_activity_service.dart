@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:research_activity_monitoring_system/data/services/api_client.dart';
 import 'package:research_activity_monitoring_system/data/models/models.dart';
 import 'package:research_activity_monitoring_system/core/config.dart';
 
@@ -15,9 +15,8 @@ class ResearcherDevActivityService {
     final body = <String, dynamic>{'count': count};
     if (date != null) body['date'] = date;
 
-    final response = await http.put(
+    final response = await ApiClient.put(
       Uri.parse('$baseUrl/researchers/$researcherId/dev_activities/$activityId'),
-      headers: {'Content-Type': 'application/json'},
       body: json.encode({'dev_activity': body}),
     );
     if (response.statusCode == 200) {
@@ -28,7 +27,7 @@ class ResearcherDevActivityService {
   }
 
   Future<void> delete(int researcherId, int activityId) async {
-    final response = await http.delete(
+    final response = await ApiClient.delete(
       Uri.parse('$baseUrl/researchers/$researcherId/dev_activities/$activityId'),
     );
     if (response.statusCode != 204) {

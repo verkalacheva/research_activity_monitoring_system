@@ -11,14 +11,15 @@ RSpec.describe IntegrationSyncJob do
 
     it 'does nothing when job_id is blank' do
       expect(Integrations::MergeIntegrationSyncJobStatusCommand).not_to receive(:call)
-      described_class.new.perform('', { 'provider' => 'orcid' })
+      described_class.new.perform('', 1, { 'provider' => 'orcid' })
     end
 
     it 'sets running then complete when preview succeeds' do
+      admin = create(:user, role: 'admin')
       allow(Integrations::MergeIntegrationSyncJobStatusCommand).to receive(:call).and_return(Dry::Monads::Success(:ok))
       allow(Integrations::SyncPreviewCommand).to receive(:call).and_return(Dry::Monads::Success({ 'results' => [] }))
 
-      described_class.new.perform('job-ok', { 'provider' => 'orcid', 'researcher_id' => 42 })
+      described_class.new.perform('job-ok', admin.id, { 'provider' => 'orcid', 'researcher_id' => 42 })
 
       expect(Integrations::MergeIntegrationSyncJobStatusCommand).to have_received(:call).with(
         hash_including(job_id: 'job-ok', attrs: hash_including('status' => 'running'))
@@ -29,6 +30,7 @@ RSpec.describe IntegrationSyncJob do
     end
 
     it 'sets failed when preview returns a failure' do
+      admin = create(:user, role: 'admin')
       allow(Integrations::MergeIntegrationSyncJobStatusCommand).to receive(:call).and_return(Dry::Monads::Success(:ok))
       failure_payload = {
         type: :service_unavailable,
@@ -36,7 +38,7 @@ RSpec.describe IntegrationSyncJob do
       }
       allow(Integrations::SyncPreviewCommand).to receive(:call).and_return(Dry::Monads::Failure(failure_payload))
 
-      described_class.new.perform('job-fail', { 'provider' => 'openalex' })
+      described_class.new.perform('job-fail', admin.id, { 'provider' => 'openalex' })
 
       expect(Integrations::MergeIntegrationSyncJobStatusCommand).to have_received(:call).with(
         hash_including(

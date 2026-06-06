@@ -2,6 +2,7 @@
 
 FactoryBot.define do
   factory :team do
+    admin { RequestAuthTenant.admin || association(:user) }
     sequence(:title) { |n| "Проектная команда #{n}" }
     github_repo_url { nil }
     leader          { nil }

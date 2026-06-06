@@ -7,7 +7,8 @@ module Api
       end
 
       def show
-        achievement = Achievement.includes(:achievement_field_answers, :achievement_type).find(params[:id])
+        achievement = find_tenant_record!(Achievement, params[:id])
+        achievement = Achievement.includes(:achievement_field_answers, :achievement_type).find(achievement.id)
         render json: achievement, include: [:achievement_field_answers, :achievement_type]
       rescue ActiveRecord::RecordNotFound
         render_failure({ type: :not_found, message: "Achievement not found" })
@@ -33,7 +34,7 @@ module Api
       end
 
       def destroy
-        achievement = Achievement.find(params[:id])
+        achievement = find_tenant_record!(Achievement, params[:id])
         achievement.destroy
         head :no_content
       rescue ActiveRecord::RecordNotFound

@@ -16,6 +16,9 @@ RSpec.describe Reports::ExecuteGenerateInteractor do
 
   describe '.call' do
     it 'parses JSON payload, broadcasts and succeeds' do
+      admin = create(:user, role: 'admin')
+      Current.user = admin
+
       response = double(
         'grpc_response',
         data: '{"items":[]}',
@@ -31,9 +34,11 @@ RSpec.describe Reports::ExecuteGenerateInteractor do
       expect(result).to be_success
       expect(result.value![:data]).to eq({ 'items' => [] })
       expect(ActionCable.server).to have_received(:broadcast).with(
-        'reports_channel',
-        hash_including(report_type: 'researchers', format: 'json', total_count: 0)
+        "reports_channel:#{admin.id}",
+        hash_including(report_type: 'researchers', format: 'json', total_count: 0, admin_id: admin.id)
       )
+    ensure
+      Current.reset
     end
 
     it 'returns failure on GRPC error without broadcasting' do

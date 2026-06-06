@@ -55,7 +55,7 @@ RSpec.describe 'api/v1/integration_sync_jobs', type: :request do
     parameter name: :id, in: :path, type: :string, description: 'UUID задачи'
 
     let(:job_id) do
-      post '/api/v1/integration_sync_jobs', params: {}, as: :json
+      post '/api/v1/integration_sync_jobs', params: {}, as: :json, headers: json_auth_headers(auth_admin)
       JSON.parse(response.body)['job_id']
     end
     let(:id) { job_id }
@@ -82,14 +82,27 @@ RSpec.describe 'api/v1/integration_sync_jobs', type: :request do
   path '/api/v1/integration_sync_jobs/{id}' do
     parameter name: :id, in: :path, type: :string, description: 'UUID задачи'
 
+    let(:job_id) do
+      post '/api/v1/integration_sync_jobs', params: {}, as: :json, headers: json_auth_headers(auth_admin)
+      JSON.parse(response.body)['job_id']
+    end
+
     delete('cancel integration sync job') do
       tags 'IntegrationSyncJobs'
 
       response(202, 'accepted — запрос на отмену отправлен') do
-        let(:id) { SecureRandom.uuid }
+        let(:id) { job_id }
 
         run_test! do
           expect(response.status).to eq(202)
+        end
+      end
+
+      response(404, 'not found — задача другого tenant или не существует') do
+        let(:id) { SecureRandom.uuid }
+
+        run_test! do
+          expect(response.status).to eq(404)
         end
       end
 

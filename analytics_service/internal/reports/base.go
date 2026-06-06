@@ -30,8 +30,42 @@ func AppendSoftDelete(query string, alias string) string {
 	return query + " WHERE " + condition
 }
 
-// Common model for data rows
+// RowData map for report rows
 type RowData map[string]interface{}
+
+// MatchAdminColumn correlates tenant tables in subqueries, e.g. r2.admin_id = t.admin_id.
+func MatchAdminColumn(column, reference string) string {
+	return fmt.Sprintf(" AND %s = %s.admin_id", column, reference)
+}
+
+// AdminIDFromRequest returns tenant admin_id injected by the Rails API.
+func AdminIDFromRequest(req *pb.ReportRequest) int64 {
+	if req == nil {
+		return 0
+	}
+	for _, f := range req.Filters {
+		if f.Field == "admin_id" && strings.TrimSpace(f.Value) != "" {
+			if id, err := strconv.ParseInt(f.Value, 10, 64); err == nil && id > 0 {
+				return id
+			}
+		}
+	}
+	return 0
+}
+
+// AdminFilterSQL appends AND column = $N for each column when admin_id is set.
+func AdminFilterSQL(adminID int64, argCount int, args []interface{}, columns ...string) (sql string, newArgs []interface{}, newArgCount int) {
+	if adminID <= 0 || len(columns) == 0 {
+		return "", args, argCount
+	}
+	parts := make([]string, 0, len(columns))
+	for _, col := range columns {
+		parts = append(parts, fmt.Sprintf("%s = $%d", col, argCount))
+		args = append(args, adminID)
+		argCount++
+	}
+	return " AND " + strings.Join(parts, " AND "), args, argCount
+}
 
 // Helper to get SQL operator
 func GetOperator(op string) string {

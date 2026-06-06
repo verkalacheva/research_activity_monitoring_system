@@ -33,6 +33,23 @@ func Open(t *testing.T) *sql.DB {
 	return db
 }
 
+// EnsureTestAdmin creates (or finds) the shared integration-test admin user and returns its ID.
+// Idempotent — safe to call from multiple tests without a DB reset between them.
+func EnsureTestAdmin(t *testing.T, db *sql.DB) int64 {
+	t.Helper()
+	var id int64
+	err := db.QueryRow(
+		`INSERT INTO users (email, password_digest, role, is_active, created_at, updated_at)
+		 VALUES ('testadmin@integration.test', 'x', 'admin', true, NOW(), NOW())
+		 ON CONFLICT (email) DO UPDATE SET updated_at = NOW()
+		 RETURNING id`,
+	).Scan(&id)
+	if err != nil {
+		t.Fatalf("ensure test admin: %v", err)
+	}
+	return id
+}
+
 // TruncateAllReportTables очищает данные между тестами.
 func TruncateAllReportTables(t *testing.T, db *sql.DB) {
 	t.Helper()

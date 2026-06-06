@@ -16,6 +16,10 @@ module Reports
       report_params = report_params.symbolize_keys
       extracted = extract_filters(report_params)
       report_params[:filters] = (report_params[:filters] || []) + extracted
+      if Current.admin_id.present?
+        report_params[:filters] = Array(report_params[:filters]).reject { |f| f[:field].to_s == 'admin_id' || f['field'].to_s == 'admin_id' }
+        report_params[:filters] << { field: 'admin_id', operator: 'eq', value: Current.admin_id.to_s }
+      end
       success(report_params)
     end
 

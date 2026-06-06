@@ -73,14 +73,20 @@ RSpec.describe Integrations::SyncPreview::ExecuteInteractor do
     end
 
     it 'maps sync_all results for known researchers' do
-      r = create(:researcher)
+      admin = create(:user, role: 'admin')
+      Current.user = admin
+      r = create(:researcher, admin: admin)
       res = double(researcher_id: r.id, orcid_id: 'x', openalex_id: 'y', achievements: [double])
       response = double(results: [res])
-      allow(Integrations::Client).to receive(:sync_all).with('orcid', cancel_proc: cancel).and_return(response)
+      allow(Integrations::Client).to receive(:sync_all).with(
+        'orcid', admin_id: admin.id, cancel_proc: cancel
+      ).and_return(response)
 
       result = described_class.call(params: { provider: 'orcid' }, cancel_proc: cancel)
       expect(result.value!.size).to eq(1)
       expect(result.value!.first[:researcher_id]).to eq(r.id)
+    ensure
+      Current.reset
     end
 
     it 'returns empty for openalex when id blank' do

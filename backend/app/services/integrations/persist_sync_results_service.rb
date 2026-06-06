@@ -24,10 +24,16 @@ module Integrations
           res_id = attr[:researcher_id]
           next unless res_id
 
-          type = map_type(attr[:type])
-          status = map_status(attr[:title], attr[:description], attr[:url])
-          result = map_result(attr[:title], attr[:description])
-          participation = map_participation(attr[:title], attr[:author_count], attr[:description], attr[:journal_title])
+          researcher = tenant_researcher(res_id)
+          next unless researcher
+
+          admin_id = researcher.admin_id
+          type = map_type(attr[:type], admin_id: admin_id)
+          status = map_status(attr[:title], attr[:description], attr[:url], admin_id: admin_id)
+          result = map_result(attr[:title], attr[:description], admin_id: admin_id)
+          participation = map_participation(
+            attr[:title], attr[:author_count], attr[:description], attr[:journal_title], admin_id: admin_id
+          )
 
           achievement = build_achievement(
             type: type,
@@ -127,7 +133,7 @@ module Integrations
     def save_researcher_dev_data(researcher_id, dev_activities, activity_details = [])
       return unless researcher_id.present?
 
-      researcher = Researcher.find_by(id: researcher_id)
+      researcher = tenant_researcher(researcher_id)
       return unless researcher
 
       team = researcher.teams.first
@@ -138,7 +144,7 @@ module Integrations
 
       Researcher.transaction do
         dev_activities.each do |da|
-          type = DevEmployeeActivityType.find_by(title: da[:activity_type])
+          type = DevEmployeeActivityType.for_admin_id(researcher.admin_id).find_by(title: da[:activity_type])
           next unless type
 
           date = da[:date].present? ? (begin Date.parse(da[:date].to_s); rescue StandardError; Date.current; end) : Date.current
@@ -201,12 +207,12 @@ module Integrations
     def save_team_dev_data(team_id, dev_activities, project_criteria)
       return unless team_id.present?
 
-      team = Team.find_by(id: team_id)
+      team = tenant_team(team_id)
       return unless team
 
       Array(dev_activities).each do |da|
         da = normalize_row(da)
-        type = DevEmployeeActivityType.find_by(title: da[:activity_type])
+        type = DevEmployeeActivityType.for_admin_id(team.admin_id).find_by(title: da[:activity_type])
         next unless type
 
         date = da[:date].present? ? (begin Date.parse(da[:date]); rescue StandardError; Date.current; end) : Date.current
@@ -237,22 +243,23 @@ module Integrations
       end
 
         Array(project_criteria).each do |pc_title|
-        criterion = DevProjectCriterion.find_by(title: pc_title)
+        criterion = DevProjectCriterion.for_admin_id(team.admin_id).find_by(title: pc_title)
         next unless criterion
 
         TeamDevCriterion.find_or_create_by!(team: team, dev_project_criterion: criterion)
       end
     end
 
-    def map_type(raw_type)
-      return AchievementType.find_by(title: 'Другое') || AchievementType.first unless raw_type.present?
+    def map_type(raw_type, admin_id:)
+      scope = AchievementType.for_admin_id(admin_id)
+      return scope.find_by(title: 'Другое') || scope.first unless raw_type.present?
 
       normalized = raw_type.to_s.strip
 
-      found = AchievementType.find_by('lower(title) = ?', normalized.downcase)
+      found = scope.find_by('lower(title) = ?', normalized.downcase)
       return found if found
 
-      found = AchievementType.all.find do |t|
+      found = scope.find do |t|
         normalized.downcase.include?(t.title.downcase) ||
           t.title.downcase.include?(normalized.downcase)
       end
@@ -271,49 +278,64 @@ module Integrations
               when /media|сми|упоминание|новость/ then 'Упоминание в СМИ'
               else 'Другое'
               end
-      AchievementType.find_by(title: title) || AchievementType.find_by(title: 'Другое') || AchievementType.first
+      scope.find_by(title: title) || scope.find_by(title: 'Другое') || scope.first
     end
 
-    def map_status(title, description, url)
+    def map_status(title, description, url, admin_id:)
+      scope = AchievementStatus.for_admin_id(admin_id)
       text = "#{title} #{description} #{url}".downcase
       if text.include?('scopus') || text.include?('web of science') || text.include?('wos') || text.include?('elsevier')
-        AchievementStatus.find_by(title: 'Scopus/Web of Science')
+        scope.find_by(title: 'Scopus/Web of Science')
       elsif text.include?('international') || text.include?('международн')
-        AchievementStatus.find_by(title: 'Международный')
+        scope.find_by(title: 'Международный')
       elsif text.include?('вак') || text.include?('vak')
-        AchievementStatus.find_by(title: 'ВАК')
+        scope.find_by(title: 'ВАК')
       elsif text.include?('rsci')
-        AchievementStatus.find_by(title: 'RSCI')
+        scope.find_by(title: 'RSCI')
       elsif text.include?('университет') || text.include?('university')
-        AchievementStatus.find_by(title: 'Университетский')
+        scope.find_by(title: 'Университетский')
       else
-        AchievementStatus.find_by(title: 'Не указано')
+        scope.find_by(title: 'Не указано')
       end
     end
 
-    def map_result(title, description)
+    def map_result(title, description, admin_id:)
+      scope = AchievementResult.for_admin_id(admin_id)
       text = "#{title} #{description}".downcase
       if text.include?('q1')
-        AchievementResult.find_by(title: 'Q1 (K1 для RSCI)')
+        scope.find_by(title: 'Q1 (K1 для RSCI)')
       elsif text.include?('q2')
-        AchievementResult.find_by(title: 'Q2 (K2)')
+        scope.find_by(title: 'Q2 (K2)')
       elsif text.include?('побед') || text.include?('winner') || text.include?('1 место')
-        AchievementResult.find_by(title: 'Победа')
+        scope.find_by(title: 'Победа')
       else
-        AchievementResult.find_by(title: 'Участие') || AchievementResult.first
+        scope.find_by(title: 'Участие') || scope.first
       end
     end
 
-    def map_participation(title, author_count, description, journal_title = nil)
+    def map_participation(title, author_count, description, journal_title = nil, admin_id:)
+      scope = AchievementParticipation.for_admin_id(admin_id)
       text = "#{title} #{description} #{journal_title}".downcase
       if author_count.to_i > 1 ||
          text.include?('contributors') ||
          text.include?('et al') ||
          text.include?(';')
-        AchievementParticipation.find_by(title: 'Коллективный')
+        scope.find_by(title: 'Коллективный')
       else
-        AchievementParticipation.find_by(title: 'Индивидуальный') || AchievementParticipation.first
+        scope.find_by(title: 'Индивидуальный') || scope.first
       end
+    end
+
+    def tenant_researcher(id)
+      return nil unless id.present? && Current.admin_id.present?
+
+      Researcher.kept.for_current_admin.find_by(id: id)
+    end
+
+    def tenant_team(id)
+      return nil unless id.present? && Current.admin_id.present?
+
+      Team.kept.for_current_admin.find_by(id: id)
     end
   end
 end

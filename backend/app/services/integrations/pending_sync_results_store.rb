@@ -4,12 +4,12 @@ module Integrations
   # Очередь результатов предпросмотра синхронизации в Redis (колокольчик + SyncPreviewDialog).
   # Формат значения — JSON-массив записей в том же виде, что и PUT /api/v1/sync_results.
   class PendingSyncResultsStore
-    REDIS_KEY = 'sync_pending_results'
+    REDIS_KEY_PREFIX = 'sync_pending_results'
     TTL = 7 * 24 * 60 * 60 # 7 days
 
     class << self
-      def read_array
-        raw = redis.get(REDIS_KEY)
+      def read_array(admin_id: Current.admin_id)
+        raw = redis.get(redis_key(admin_id))
         return [] if raw.blank?
 
         parsed = JSON.parse(raw)
@@ -18,20 +18,26 @@ module Integrations
         []
       end
 
-      def write_array(arr)
-        redis.setex(REDIS_KEY, TTL, Array(arr).to_json)
+      def write_array(arr, admin_id: Current.admin_id)
+        redis.setex(redis_key(admin_id), TTL, Array(arr).to_json)
       end
 
-      def clear!
-        redis.del(REDIS_KEY)
+      def clear!(admin_id: Current.admin_id)
+        redis.del(redis_key(admin_id))
       end
 
       # Добавляет одну запись ежедневной синхронизации, заменяя предыдущую с тем же provider.
-      def replace_daily_sync_entry(entry)
-        arr = read_array
+      def replace_daily_sync_entry(entry, admin_id:)
+        arr = read_array(admin_id: admin_id)
         arr.reject! { |e| e.is_a?(Hash) && e['provider'].to_s == 'daily_sync' }
         arr << entry
-        write_array(arr)
+        write_array(arr, admin_id: admin_id)
+      end
+
+      def redis_key(admin_id)
+        raise ArgumentError, 'admin_id required' if admin_id.blank?
+
+        "#{REDIS_KEY_PREFIX}:#{admin_id}"
       end
 
       private

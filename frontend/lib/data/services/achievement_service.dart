@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:research_activity_monitoring_system/data/services/api_client.dart';
+import 'package:research_activity_monitoring_system/data/services/token_storage.dart';
 import 'package:research_activity_monitoring_system/data/models/models.dart';
 import 'package:research_activity_monitoring_system/core/config.dart';
 
@@ -7,7 +9,7 @@ class AchievementService {
   static const String baseUrl = AppConfig.apiV1;
 
   Future<PaginatedResponse<Achievement>> list({int limit = 20, int offset = 0}) async {
-    final response = await http.get(Uri.parse('$baseUrl/achievements/list?limit=$limit&offset=$offset'));
+    final response = await ApiClient.get(Uri.parse('$baseUrl/achievements/list?limit=$limit&offset=$offset'));
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       final List itemsJson = jsonResponse['items'];
@@ -23,9 +25,8 @@ class AchievementService {
     final body = achievement.toJson();
     body['researcher_ids'] = researcherIds;
 
-    final response = await http.post(
+    final response = await ApiClient.post(
       Uri.parse('$baseUrl/achievements'),
-      headers: {'Content-Type': 'application/json'},
       body: json.encode({'achievement': body}),
     );
     
@@ -41,9 +42,8 @@ class AchievementService {
     final body = achievement.toJson();
     body['researcher_ids'] = researcherIds;
 
-    final response = await http.put(
+    final response = await ApiClient.put(
       Uri.parse('$baseUrl/achievements/$id'),
-      headers: {'Content-Type': 'application/json'},
       body: json.encode({'achievement': body}),
     );
 
@@ -56,7 +56,7 @@ class AchievementService {
   }
 
   Future<void> delete(int id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/achievements/$id'));
+    final response = await ApiClient.delete(Uri.parse('$baseUrl/achievements/$id'));
     if (response.statusCode != 204) {
       throw Exception('Failed to delete achievement');
     }
@@ -72,7 +72,11 @@ class AchievementService {
 
   Future<Map<String, dynamic>> _importMultipart(String url, {String? filePath, List<int>? bytes, String? fileName}) async {
     final request = http.MultipartRequest('POST', Uri.parse(url));
-    
+    final token = await TokenStorage.accessToken();
+    if (token != null && token.isNotEmpty) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+
     if (filePath != null) {
       request.files.add(await http.MultipartFile.fromPath('file', filePath));
     } else if (bytes != null && fileName != null) {

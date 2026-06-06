@@ -20,12 +20,14 @@ import 'package:research_activity_monitoring_system/presentation/screens/achieve
 class ResearcherProfileScreen extends StatefulWidget {
   final Researcher researcher;
   final bool isEmbedded;
+  final bool readOnly;
   final Function(Researcher)? onResearcherUpdated;
 
   const ResearcherProfileScreen({
     super.key,
     required this.researcher,
     this.isEmbedded = false,
+    this.readOnly = false,
     this.onResearcherUpdated,
   });
 
@@ -72,6 +74,10 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
     super.initState();
     _researcher = widget.researcher;
     _initControllers();
+    if (widget.readOnly) {
+      _isEditing = false;
+      _isSelectionMode = false;
+    }
     _refreshProfile();
   }
 
@@ -129,7 +135,7 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
     try {
       final results = await Future.wait([
         _researcherService.getById(_researcher.id!),
-        if (_keysRegistry == null) _integrationService.getGithubCheckKeys(),
+        if (!widget.readOnly && _keysRegistry == null) _integrationService.getGithubCheckKeys(),
       ]);
       setState(() {
         _researcher = results[0] as Researcher;
@@ -137,9 +143,13 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
           _keysRegistry = results[1] as GitHubCheckKeysRegistry;
         }
         _isLoading = false;
+        if (!_isEditing) {
+          _emailController.text = _researcher.email ?? '';
+        }
       });
     } catch (e) {
       if (mounted) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка обновления профиля: $e')));
       }
     }
@@ -621,6 +631,7 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
   }
 
   Widget? _buildFab() {
+    if (widget.readOnly) return null;
     return FloatingActionButton(
       heroTag: 'add_achievement_fab',
       onPressed: () async {
@@ -692,7 +703,7 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
                                   color: AppColors.warning,
                                 ),
                               ],
-                              if (widget.isEmbedded) ...[
+                              if (widget.isEmbedded && !widget.readOnly) ...[
                                 const SizedBox(width: 8),
                                 IconButton(
                                   icon: Icon(_isEditing ? Icons.close : Icons.edit, color: AppColors.primary),
@@ -786,7 +797,8 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
             controller: _orcidIdController,
             trailing: _researcher.orcidId != null &&
                     _researcher.orcidId!.trim().isNotEmpty &&
-                    !_isEditing
+                    !_isEditing &&
+                    !widget.readOnly
                 ? IconButton(
                     icon: const Icon(Icons.sync, color: AppColors.primary),
                     onPressed: () {
@@ -813,7 +825,8 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
             controller: _openalexIdController,
             trailing: _researcher.openalexId != null &&
                     _researcher.openalexId!.trim().isNotEmpty &&
-                    !_isEditing
+                    !_isEditing &&
+                    !widget.readOnly
                 ? IconButton(
                     icon: const Icon(Icons.sync, color: AppColors.primary),
                     onPressed: () {
@@ -840,7 +853,8 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
             controller: _githubController,
             trailing: _researcher.github != null &&
                     _researcher.github!.trim().isNotEmpty &&
-                    !_isEditing
+                    !_isEditing &&
+                    !widget.readOnly
                 ? IconButton(
                     icon: const Icon(Icons.sync, color: AppColors.primary),
                     onPressed: () {
@@ -858,7 +872,7 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
                   )
                 : null,
           ),
-          if (!_isEditing) ...[
+          if (!_isEditing && !widget.readOnly) ...[
             const Divider(height: 1, indent: 56),
             _infoRow(
               context,
@@ -970,7 +984,7 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
                 ),
                 child: const Text('Отмена'),
               ),
-            ] else if (isDevTab && allIds.isNotEmpty) ...[
+            ] else if (isDevTab && allIds.isNotEmpty && !widget.readOnly) ...[
               const SizedBox(width: 8),
               TextButton.icon(
                 onPressed: () => setState(() => _isSelectionMode = true),
@@ -985,7 +999,7 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
           ],
         ),
         // Bulk actions bar
-        if (isDevTab && _isSelectionMode && _selectedActivityIds.isNotEmpty)
+        if (isDevTab && _isSelectionMode && _selectedActivityIds.isNotEmpty && !widget.readOnly)
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             margin: const EdgeInsets.only(top: 8),
@@ -1362,7 +1376,7 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
     final isSelected = activity.id != null && _selectedActivityIds.contains(activity.id);
 
     return GestureDetector(
-      onLongPress: activity.id != null && !_isSelectionMode
+      onLongPress: activity.id != null && !_isSelectionMode && !widget.readOnly
           ? () => _enterSelectionMode(activity.id!)
           : null,
       onTap: _isSelectionMode && activity.id != null
@@ -1430,7 +1444,7 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
                 ),
               ),
             ),
-            if (!_isSelectionMode) ...[
+            if (!_isSelectionMode && !widget.readOnly) ...[
               const SizedBox(width: 4),
               IconButton(
                 icon: const Icon(Icons.edit, size: 16, color: AppColors.inactive),
@@ -1693,7 +1707,9 @@ class _ResearcherProfileScreenState extends State<ResearcherProfileScreen> {
                     ),
                 ],
               ),
-              trailing: Row(
+              trailing: widget.readOnly
+                  ? null
+                  : Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(

@@ -25,8 +25,8 @@ RSpec.describe 'api/v1/settings', type: :request do
 
       context 'когда часть настроек задана' do
         before do
-          AppSetting.create!(key: 'llm_model_name', value: 'gpt-4o')
-          AppSetting.create!(key: 'llm_provider',   value: 'openai')
+          create(:app_setting, key: 'llm_model_name', value: 'gpt-4o')
+          create(:app_setting, key: 'llm_provider',   value: 'openai')
         end
 
         response(200, 'successful — содержит заданные ключи') do
@@ -97,7 +97,7 @@ RSpec.describe 'api/v1/settings', type: :request do
       response(200, 'successful — передача nil очищает значение') do
         schema load_schema(:models, :settings, :show)
 
-        before { AppSetting.create!(key: 'github_token', value: 'old_token') }
+        before { create(:app_setting, key: 'github_token', value: 'old_token') }
 
         let(:settings_attributes) { { settings: { github_token: nil } } }
 

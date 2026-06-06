@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
 import 'dart:js' as js;
+import 'package:research_activity_monitoring_system/core/auth/auth_notifier.dart';
 import 'package:research_activity_monitoring_system/data/services/report_service.dart';
 import 'package:research_activity_monitoring_system/data/services/socket_service.dart';
 import 'package:research_activity_monitoring_system/core/theme/app_colors.dart';
@@ -48,9 +50,15 @@ class _ReportScreenState extends State<ReportScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startIfAuthenticated());
+  }
+
+  void _startIfAuthenticated() {
+    if (!mounted) return;
+    if (!context.read<AuthNotifier>().isAuthenticated) return;
     _loadSelectors();
     _loadDashboardData();
-    _initSocket();
+    unawaited(_initSocket());
   }
 
   @override
@@ -59,8 +67,8 @@ class _ReportScreenState extends State<ReportScreen> {
     super.dispose();
   }
 
-  void _initSocket() {
-    SocketService().connect(
+  Future<void> _initSocket() async {
+    await SocketService().connect(
       channel: 'ReportsChannel',
       onMessage: (data) {
         if (data['report_type'] == 'dashboard_overview') {

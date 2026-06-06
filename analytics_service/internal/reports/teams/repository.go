@@ -52,38 +52,43 @@ func (r *Repository) FetchData(req *pb.ReportRequest) ([]DataRow, int32, map[str
 	baseQuery := "SELECT t.id, t.title, " +
 		"TRIM(CONCAT_WS(' ', r.surname, r.name, r.second_name)) as leader_name, " +
 		"(SELECT COUNT(*) FROM researchers_teams rt " +
-		" JOIN researchers r2 ON r2.id = rt.researcher_id AND r2.deleted_at IS NULL " +
+		" JOIN researchers r2 ON r2.id = rt.researcher_id AND r2.deleted_at IS NULL" + reports.MatchAdminColumn("r2.admin_id", "t") +
 		" WHERE rt.team_id = t.id) as members_count, " +
 		"COALESCE((" +
 		"    SELECT ROUND(SUM(a.points)::numeric, 1) " +
 		"    FROM achievements a " +
 		"    JOIN researcher_achievements ra ON a.id = ra.achievement_id " +
 		"    JOIN researchers_teams rt ON ra.researcher_id = rt.researcher_id " +
-		"    JOIN researchers r3 ON r3.id = rt.researcher_id AND r3.deleted_at IS NULL " +
+		"    JOIN researchers r3 ON r3.id = rt.researcher_id AND r3.deleted_at IS NULL" + reports.MatchAdminColumn("r3.admin_id", "t") +
+		"    JOIN achievement_types at ON a.achievement_type_id = at.id AND at.deleted_at IS NULL" + reports.MatchAdminColumn("at.admin_id", "t") +
 		"    WHERE rt.team_id = t.id" + achievDateCond + " " +
 		"      AND a.deleted_at IS NULL " +
 		"), 0) as total_points, " +
 		"COALESCE((" +
 		"    SELECT SUM(dpc.points) FROM team_dev_criteria tdc " +
-		"    JOIN dev_project_criteria dpc ON tdc.dev_project_criterion_id = dpc.id " +
+		"    JOIN dev_project_criteria dpc ON tdc.dev_project_criterion_id = dpc.id" + reports.MatchAdminColumn("dpc.admin_id", "t") +
 		"    WHERE tdc.team_id = t.id " +
 		"), 0) AS criteria_sum, " +
 		"COALESCE((" +
 		"    SELECT SUM(rda.count * deat.points) " +
 		"    FROM researcher_dev_activities rda " +
-		"    JOIN dev_employee_activity_types deat ON rda.dev_employee_activity_type_id = deat.id " +
+		"    JOIN dev_employee_activity_types deat ON rda.dev_employee_activity_type_id = deat.id" + reports.MatchAdminColumn("deat.admin_id", "t") +
 		"    WHERE rda.team_id = t.id " +
 		"), 0) AS activity_sum " +
 		"FROM teams t " +
-		"LEFT JOIN researchers r ON t.leader_id = r.id"
+		"LEFT JOIN researchers r ON t.leader_id = r.id AND (t.leader_id IS NULL OR (r.deleted_at IS NULL AND r.admin_id = t.admin_id))"
 
-	baseQuery = reports.AppendSoftDelete(baseQuery, "t")
-	baseQuery = reports.AppendSoftDelete(baseQuery, "r")
+	whereParts := []string{"t.deleted_at IS NULL"}
 
-	whereAdded := false
+	adminID := reports.AdminIDFromRequest(req)
+	if adminID > 0 {
+		whereParts = append(whereParts, fmt.Sprintf("t.admin_id = $%d", argCount))
+		args = append(args, adminID)
+		argCount++
+	}
 
 	for _, f := range req.Filters {
-		if f.Value == "" || f.Field == "submission_date" {
+		if f.Value == "" || f.Field == "submission_date" || f.Field == "admin_id" {
 			continue
 		}
 		var cond string
@@ -98,16 +103,12 @@ func (r *Repository) FetchData(req *pb.ReportRequest) ([]DataRow, int32, map[str
 			continue
 		}
 
-		if !whereAdded {
-			baseQuery += " WHERE "
-			whereAdded = true
-		} else {
-			baseQuery += " AND "
-		}
-		baseQuery += cond
+		whereParts = append(whereParts, cond)
 		args = append(args, val)
 		argCount++
 	}
+
+	baseQuery += " WHERE " + strings.Join(whereParts, " AND ")
 
 	// Count total
 	countQuery := "SELECT COUNT(*) FROM (" + baseQuery + ") as sub"

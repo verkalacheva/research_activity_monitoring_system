@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:research_activity_monitoring_system/data/services/api_client.dart';
 import 'package:research_activity_monitoring_system/data/models/models.dart';
 import 'package:research_activity_monitoring_system/core/config.dart';
 
@@ -7,7 +7,7 @@ class AchievementTypeService {
   static const String baseUrl = AppConfig.apiV1;
 
   Future<List<AchievementType>> getAll() async {
-    final response = await http.get(Uri.parse('$baseUrl/achievement_types/list?limit=100'));
+    final response = await ApiClient.get(Uri.parse('$baseUrl/achievement_types/list?limit=100'));
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       List itemsJson = jsonResponse['items'];
@@ -18,7 +18,7 @@ class AchievementTypeService {
   }
 
   Future<PaginatedResponse<AchievementType>> list({int limit = 20, int offset = 0}) async {
-    final response = await http.get(Uri.parse('$baseUrl/achievement_types/list?limit=$limit&offset=$offset'));
+    final response = await ApiClient.get(Uri.parse('$baseUrl/achievement_types/list?limit=$limit&offset=$offset'));
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       final List itemsJson = jsonResponse['items'];
@@ -31,9 +31,8 @@ class AchievementTypeService {
   }
 
   Future<AchievementType> create(AchievementType type) async {
-    final response = await http.post(
+    final response = await ApiClient.post(
       Uri.parse('$baseUrl/achievement_types'),
-      headers: {'Content-Type': 'application/json'},
       body: json.encode({'achievement_type': type.toJson()}),
     );
     if (response.statusCode == 201) {
@@ -44,9 +43,8 @@ class AchievementTypeService {
   }
 
   Future<AchievementType> update(int id, AchievementType type) async {
-    final response = await http.put(
+    final response = await ApiClient.put(
       Uri.parse('$baseUrl/achievement_types/$id'),
-      headers: {'Content-Type': 'application/json'},
       body: json.encode({'achievement_type': type.toJson()}),
     );
     if (response.statusCode == 200) {
@@ -57,7 +55,7 @@ class AchievementTypeService {
   }
 
   Future<void> delete(int id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/achievement_types/$id'));
+    final response = await ApiClient.delete(Uri.parse('$baseUrl/achievement_types/$id'));
     if (response.statusCode != 204) {
       throw Exception('Failed to delete achievement type');
     }

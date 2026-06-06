@@ -106,9 +106,13 @@ func (s *server) FetchOpenAlexAchievements(ctx context.Context, req *pb.OpenAlex
 }
 
 func (s *server) SyncAllAchievements(ctx context.Context, req *pb.SyncRequest) (*pb.SyncResponse, error) {
-	log.Printf("Starting full sync for provider: %s", req.Provider)
+	if req.GetAdminId() <= 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "admin_id is required")
+	}
 
-	researchers, err := s.researcherRepository.GetAllWithExternalID(req.Provider)
+	log.Printf("Starting full sync for provider: %s admin_id: %d", req.Provider, req.GetAdminId())
+
+	researchers, err := s.researcherRepository.GetAllWithExternalID(req.Provider, req.GetAdminId())
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "database error: %v", err)
 	}

@@ -1,5 +1,6 @@
 class Researcher < ApplicationRecord
   include SoftDeletable
+  include TenantScoped
 
   # Синхронизировано с выпадающим списком во frontend (researcher_form_screen.dart).
   DEGREE_LEVELS = %w[к.т.н. д.т.н. к.ф.-м.н. д.ф.-м.н. аспирант бакалавр магистрант].freeze
@@ -9,12 +10,16 @@ class Researcher < ApplicationRecord
   has_many :led_teams, class_name: 'Team', foreign_key: 'leader_id', dependent: :nullify
   has_many :researcher_achievements, dependent: :destroy
   has_many :achievements, -> { where(achievements: { deleted_at: nil }) }, through: :researcher_achievements
-  
+
   has_many :researcher_dev_activities, dependent: :destroy
   has_many :researcher_activity_details, dependent: :destroy
 
-  validates :orcid_id, uniqueness: true, allow_blank: true
-  validates :openalex_id, uniqueness: true, allow_blank: true
+  before_validation :normalize_email
+
+  validates :orcid_id, uniqueness: { scope: :admin_id }, allow_blank: true
+  validates :openalex_id, uniqueness: { scope: :admin_id }, allow_blank: true
+  validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
+
 
   def fullName
     [surname, name, second_name].compact.join(' ')
@@ -48,5 +53,11 @@ class Researcher < ApplicationRecord
       github: github
     )
   end
-end
 
+  private
+
+  def normalize_email
+    self.email = email.to_s.strip.downcase.presence
+  end
+
+end

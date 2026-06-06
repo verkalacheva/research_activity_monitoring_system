@@ -5,7 +5,12 @@ class BaseCommand < BaseInteractor
   protected
 
   def create_record(model_class, attributes)
-    record = model_class.new(attributes)
+    attrs = attributes.to_h.symbolize_keys
+    if model_class.column_names.include?('admin_id') && Current.admin_id.present?
+      attrs[:admin_id] ||= Current.admin_id
+    end
+
+    record = model_class.new(attrs)
     if record.save
       success(record)
     else
@@ -38,11 +43,24 @@ class BaseCommand < BaseInteractor
   end
 
   def find_record(model_class, id)
-    record = model_class.find_by(id: id)
+    scope = tenant_scope_for(model_class)
+    record = scope.find_by(id: id)
     if record
       success(record)
     else
       failure(:not_found, "#{model_class} with id #{id} not found")
+    end
+  end
+
+  def tenant_scope_for(model_class)
+    if model_class == Achievement
+      Achievement.kept.joins(:achievement_type).where(achievement_types: { admin_id: Current.admin_id })
+    elsif model_class.respond_to?(:for_current_admin)
+      base = model_class
+      base = base.kept if base.respond_to?(:kept)
+      base.for_current_admin
+    else
+      model_class.all
     end
   end
 
